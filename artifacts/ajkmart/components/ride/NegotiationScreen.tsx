@@ -21,6 +21,7 @@ import {
   acceptRideBid as acceptRideBidApi,
   customerCounterOffer as customerCounterOfferApi,
   type Ride,
+  type RideBid,
 } from "@workspace/api-client-react";
 import { getErrorMessage } from "@/utils/errorUtils";
 
@@ -151,7 +152,7 @@ export function NegotiationScreen({
   }, [rideId, token, rideApiBase]);
 
   const offeredFare = ride?.offeredFare ?? 0;
-  const bids: any[] = ride?.bids ?? [];
+  const bids: RideBid[] = ride?.bids ?? [];
   const sortedBids = [...bids].sort((a, b) => a.fare - b.fare);
   const hasBids = bids.length > 0;
   const elapsedStr =
@@ -547,7 +548,7 @@ export function NegotiationScreen({
                 {bids.length} Bid{bids.length > 1 ? "s" : ""} Received
               </Text>
             </View>
-            {sortedBids.map((bid: any) => (
+            {sortedBids.map((bid) => (
               <View
                 key={bid.id}
                 style={{

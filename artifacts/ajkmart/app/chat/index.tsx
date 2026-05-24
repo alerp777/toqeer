@@ -56,7 +56,7 @@ const { colors: C } = useTheme();
   const apiFetch = useCallback(async (path: string, opts: RequestInit = {}) => {
     const res = await fetch(`${API_BASE}/communication${path}`, {
       ...opts,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers as any) },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers as Record<string, string> | undefined) },
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Failed");
@@ -72,7 +72,7 @@ const { colors: C } = useTheme();
         apiFetch("/me/ajk-id"),
       ]);
       setConversations(convs);
-      setRequests(reqs.filter((r: any) => r.status === "pending"));
+      setRequests(reqs.filter((r: CommRequest) => r.status === "pending"));
       setAjkId(me.ajkId);
     } catch (err) {
       log.warn("[chat/index] Failed to load conversations:", err);

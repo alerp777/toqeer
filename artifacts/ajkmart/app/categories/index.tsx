@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect } from "react";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import {
   ActivityIndicator,
   Dimensions,
@@ -27,7 +28,7 @@ const { width } = Dimensions.get("window");
 const SIDEBAR_W = 90;
 const RIGHT_W = width - SIDEBAR_W;
 
-export default function CategoriesBrowseScreen() {
+function CategoriesBrowseScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -382,3 +383,5 @@ const s = StyleSheet.create({
   },
   ratingText: { fontFamily: Font.semiBold, fontSize: 10, color: "#D97706" },
 });
+
+export default withErrorBoundary(CategoriesBrowseScreenInner);

@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { useTheme } from "@/context/ThemeContext";
 import { API_BASE, SOCKET_BASE } from "@/utils/api";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
@@ -52,7 +53,7 @@ interface CallSignal {
   candidate?: RTCIceCandidateInit;
 }
 
-export default function ChatDetailScreen() {
+function ChatDetailScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -508,3 +509,5 @@ function makeStyles(C: typeof Colors.light) {
     sendBtnDisabled: { opacity: 0.5 },
   });
 }
+
+export default withErrorBoundary(ChatDetailScreenInner);

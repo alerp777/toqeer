@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
@@ -68,7 +69,7 @@ function ServiceBadge({ type }: { type: ServiceKey }) {
   );
 }
 
-export default function UniversalSearchScreen() {
+function UniversalSearchScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -683,3 +684,5 @@ const s = StyleSheet.create({
   loadMoreWrap: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16 },
   loadMoreTxt: { fontSize: 13, fontFamily: "Inter_400Regular", color: C.textMuted },
 });
+
+export default withErrorBoundary(UniversalSearchScreenInner);

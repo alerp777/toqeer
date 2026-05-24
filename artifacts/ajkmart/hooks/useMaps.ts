@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { API_BASE } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 const API = `${API_BASE}/maps`;
 
@@ -61,8 +62,8 @@ export function useMapsAutocomplete(query: string, debounceMs = 300) {
         const r = await fetch(`${API}/autocomplete?input=${encodeURIComponent(query)}`, { signal: ctrl.signal });
         const d = await r.json();
         setPredictions(d.predictions ?? []);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
+      } catch (e: unknown) {
+        if (!(e instanceof Error) || e.name !== "AbortError") {
           setPredictions([]);
         }
       } finally {

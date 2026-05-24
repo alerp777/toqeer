@@ -33,6 +33,7 @@ import {
   type Product, type ProductReview, type ReviewSummary,
 } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 
@@ -346,7 +347,7 @@ function FullScreenImageViewer({
   );
 }
 
-export default function ProductDetailScreen() {
+function ProductDetailScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -722,7 +723,7 @@ const { id } = useLocalSearchParams<{ id: string }>();
             <View style={variantStyles.section}>
               <Text style={variantStyles.title}>Available Options</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {variants.map((v: any) => {
+                {variants.map((v: { id: string; label?: string; price?: number; inStock?: boolean }) => {
                   const isSelected = selectedVariant === v.id;
                   const vPrice = Number(v.price) || price;
                   return (
@@ -1145,3 +1146,5 @@ const variantStyles = StyleSheet.create({
   chipPriceSelected: { color: C.primary },
   oosLabel: { ...Typ.tiny, color: C.danger, marginTop: 2 },
 });
+
+export default withErrorBoundary(ProductDetailScreenInner);

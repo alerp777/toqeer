@@ -389,7 +389,7 @@ function FoodScreenInner() {
             </ScrollView>
           ) : restaurants.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-              {restaurants.map((r: any) => {
+              {restaurants.map((r: { id: string; storeName?: string; name?: string; storeIsOpen?: boolean; storeImage?: string; storeImageUrl?: string }) => {
                 const name = r.storeName || r.name || "Restaurant";
                 const isOpen = r.storeIsOpen !== false;
                 return (

@@ -163,7 +163,7 @@ function RestaurantsScreenInner() {
   });
 
   const restaurants: Restaurant[] = useMemo(() => {
-    const raw = (data as any)?.vendors || (data as any)?.users || [];
+    const raw = data?.vendors || data?.users || [];
     return Array.isArray(raw) ? raw : [];
   }, [data]);
 

@@ -27,6 +27,7 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useApiCall } from "@/hooks/useApiCall";
 import { API_BASE } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { ServiceListSkeleton, FareEstimateSkeleton } from "@/components/ride/Skeletons";
 import { PermissionGuide } from "@/components/PermissionGuide";
 import {
@@ -265,8 +266,8 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
       .then((r) => r.json())
       .then((rideData) => {
         if (rideData?.methods?.length) {
-          const mapped = rideData.methods.map((m: any) => ({
-            id: m.key ?? m.id,
+          const mapped = rideData.methods.map((m: { key?: string; id?: string; label?: string; name?: string }) => ({
+            id: m.key ?? m.id ?? "",
             label: m.label ?? m.name,
           }));
           setPayMethods(mapped);
@@ -507,8 +508,9 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
         `${schoolStudent} has been subscribed to ${selectedRoute.schoolName}!`,
         "success",
       );
-    } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.message || "Network error. Please try again.";
+    } catch (e: unknown) {
+      type ApiShape = { response?: { data?: { error?: string } } };
+      const msg = (e as ApiShape)?.response?.data?.error || getErrorMessage(e, "Network error. Please try again.");
       showToast(msg, "error");
     } finally {
       setSubscribing(false);
@@ -627,8 +629,10 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
           showToast("Ride booked, but location update failed", "info");
         }
       })();
-    } catch (err: any) {
-      const errData = err?.response?.data || err?.data;
+    } catch (err: unknown) {
+      type ErrData = { activeRideId?: string; activeRideStatus?: string; error?: string };
+      type ApiShape = { response?: { data?: ErrData }; data?: ErrData };
+      const errData = (err as ApiShape)?.response?.data ?? (err as ApiShape)?.data;
       if (errData?.activeRideId) {
         onBooked({
           id: errData.activeRideId,
@@ -637,7 +641,7 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
         });
         showToast("You have an active ride. Resuming tracking.", "info");
       } else {
-        const msg = errData?.error || "Network error. Please try again.";
+        const msg = errData?.error || getErrorMessage(err, "Network error. Please try again.");
         showToast(msg, "error");
       }
     } finally {

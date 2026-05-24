@@ -117,18 +117,20 @@ const { colors: C } = useTheme();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["pharmacy-stores"],
-    queryFn: async () => {
+    queryFn: async (): Promise<PharmacyStore[] | { vendors?: PharmacyStore[]; users?: PharmacyStore[] }> => {
       const r = await fetch(`${API_BASE}/vendors?category=pharmacy&slim=true`);
       if (!r.ok) throw new Error("Failed to load pharmacies");
       const json = await r.json();
-      return unwrapApiResponse(json);
+      return unwrapApiResponse(json) as PharmacyStore[] | { vendors?: PharmacyStore[]; users?: PharmacyStore[] };
     },
     staleTime: 60000,
     retry: 1,
   });
 
   const stores: PharmacyStore[] = useMemo(() => {
-    const raw = (data as any)?.vendors || (data as any)?.users || data || [];
+    if (!data) return [];
+    const typed = data as PharmacyStore[] | { vendors?: PharmacyStore[]; users?: PharmacyStore[] };
+    const raw = Array.isArray(typed) ? typed : (typed.vendors ?? typed.users ?? []);
     return Array.isArray(raw) ? raw : [];
   }, [data]);
 

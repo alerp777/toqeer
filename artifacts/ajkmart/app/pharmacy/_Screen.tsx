@@ -169,7 +169,7 @@ function PharmacyScreenInner() {
     try {
       const parsed = JSON.parse(cartItemsParam);
       if (Array.isArray(parsed)) {
-        parsed.forEach((item: any) => {
+        parsed.forEach((item: { productId?: string; name?: string; price?: string; quantity?: number; image?: string }) => {
           if (item?.productId && item?.name && item?.price != null) {
             addToGlobalCart({
               productId: item.productId,
@@ -196,7 +196,7 @@ function PharmacyScreenInner() {
   const [payMethod, setPayMethod] = useState<"wallet" | "cash">("cash");
 
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<{ id: string; label?: string; address: string; icon?: string }[]>([]);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [permGuideType, setPermGuideType] = useState<"camera" | "gallery" | "location" | "notification" | "microphone">("camera");
   const [permGuideVisible, setPermGuideVisible] = useState(false);
@@ -207,7 +207,7 @@ function PharmacyScreenInner() {
     if (!token) return;
     fetch(`${API_BASE}/addresses`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(j => { const data = unwrapApiResponse<{ addresses?: any[] }>(j); if (data?.addresses) setSavedAddresses(data.addresses); })
+      .then(j => { const data = unwrapApiResponse<{ addresses?: { id: string; label?: string; address: string; icon?: string }[] }>(j); if (data?.addresses) setSavedAddresses(data.addresses); })
       .catch((err) => { log.warn("Saved addresses fetch failed:", err instanceof Error ? err.message : String(err)); });
   }, [token]);
 
@@ -1035,7 +1035,7 @@ function PharmacyScreenInner() {
         <TouchableOpacity activeOpacity={0.7} style={{ flex: 1, backgroundColor: C.overlayDark40, justifyContent: "flex-end" }} onPress={() => setShowAddressPicker(false)}>
           <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 34 }}>
             <Text style={{ ...Typ.h3, fontSize: 16, color: C.text, marginBottom: 16 }}>Saved Addresses</Text>
-            {savedAddresses.map((sa: any) => (
+            {savedAddresses.map((sa) => (
               <TouchableOpacity activeOpacity={0.7}
                 key={sa.id}
                 onPress={() => { setAddress(sa.address); setShowAddressPicker(false); }}

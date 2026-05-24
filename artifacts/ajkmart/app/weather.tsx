@@ -404,7 +404,7 @@ function WeatherDetailScreenInner() {
       const data = await resp.json();
       if (data.results?.length) {
         setSearchResults(
-          data.results.map((r: any) => ({
+          data.results.map((r: { latitude: number; longitude: number; name: string; admin1?: string; country?: string }) => ({
             lat: r.latitude,
             lng: r.longitude,
             name: [r.name, r.admin1, r.country].filter(Boolean).join(", "),

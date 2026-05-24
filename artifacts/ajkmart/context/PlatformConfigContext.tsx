@@ -170,6 +170,7 @@ export interface PlatformConfig {
   cities: string[];
   regional?: {
     phoneFormat?: string;
+    phoneHint?: string;
     currency?: string;
     timezone?: string;
   };

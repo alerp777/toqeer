@@ -168,7 +168,7 @@ function ParcelScreenInner() {
       .then(async raw => {
         if (cancelled) return;
         if (raw) {
-          let d: any;
+          let d: Record<string, string> | null;
           try {
             d = JSON.parse(raw);
           } catch {
@@ -247,7 +247,7 @@ function ParcelScreenInner() {
 
     fetch(`${API_BASE}/payments/methods?serviceType=parcel`)
       .then(r => r.json())
-      .then((json: any) => {
+      .then((json: { data?: { methods?: { id: string; label: string; logo?: string; description?: string }[] }; methods?: { id: string; label: string; logo?: string; description?: string }[] }) => {
         const methods: { id: string; label: string; logo?: string; description?: string }[] =
           json?.data?.methods ?? json?.methods ?? [];
         if (methods.length) {
@@ -738,7 +738,7 @@ function ParcelScreenInner() {
                   : C.skyDark;
                 const subLabel = isWallet
                   ? `${T("availableBalance")}: Rs. ${(user?.walletBalance ?? 0).toLocaleString()}`
-                  : (pm as any).description || pm.label;
+                  : pm.description || pm.label;
                 return (
                   <TouchableOpacity activeOpacity={0.7} key={pm.id} onPress={() => setPayMethod(pm.id)} style={[ss.payOpt, active && ss.payOptActive]}>
                     <View style={[ss.payIcon, { backgroundColor: iconBg }]}>

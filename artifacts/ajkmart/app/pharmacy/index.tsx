@@ -135,7 +135,7 @@ function PharmacyScreenInner() {
   const [payMethod, setPayMethod] = useState<"wallet" | "cash">("cash");
 
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<{ id: string; label?: string; address: string; icon?: string }[]>([]);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [permGuideType, setPermGuideType] = useState<"camera" | "gallery" | "location" | "notification" | "microphone">("camera");
   const [permGuideVisible, setPermGuideVisible] = useState(false);
@@ -696,7 +696,7 @@ function PharmacyScreenInner() {
         <Pressable style={{ flex: 1, backgroundColor: C.overlayDark40, justifyContent: "flex-end" }} onPress={() => setShowAddressPicker(false)}>
           <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 34 }}>
             <Text style={{ ...Typ.h3, fontSize: 16, color: C.text, marginBottom: 16 }}>Saved Addresses</Text>
-            {savedAddresses.map((sa: any) => (
+            {savedAddresses.map((sa) => (
               <Pressable
                 key={sa.id}
                 onPress={() => { setAddress(sa.address); setShowAddressPicker(false); }}

@@ -42,7 +42,7 @@ import {
   CountdownTimer,
 } from "@/components/user-shared";
 import { WishlistHeart } from "@/components/WishlistHeart";
-import { getBanners, getTrending, getFlashDeals, type Banner as ApiBanner } from "@workspace/api-client-react";
+import { getBanners, getTrending, getFlashDeals, type Banner as ApiBanner, type Order, type Ride } from "@workspace/api-client-react";
 
 type Banner = ApiBanner & {
   linkType?: string;
@@ -190,8 +190,8 @@ function ActiveTrackerStrip({ userId, tabBarHeight = 0 }: { userId: string; tabB
   if (ordersLoading || ridesLoading) return null;
   if (ordersError || ridesError) return null;
 
-  const activeOrders = Array.isArray(ordersData) ? ordersData.filter((o: any) => !["delivered", "cancelled"].includes(o.status)) : [];
-  const activeRides = Array.isArray(ridesData) ? ridesData.filter((r: any) => !["completed", "cancelled"].includes(r.status)) : [];
+  const activeOrders = Array.isArray(ordersData) ? (ordersData as Order[]).filter(o => !["delivered", "cancelled"].includes(o.status)) : [];
+  const activeRides = Array.isArray(ridesData) ? (ridesData as Ride[]).filter(r => !["completed", "cancelled"].includes(r.status)) : [];
   const total = activeOrders.length + activeRides.length;
   if (total === 0) return null;
 

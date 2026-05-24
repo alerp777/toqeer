@@ -28,7 +28,7 @@ import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { SmartRefresh } from "@/components/ui/SmartRefresh";
-import { useGetWallet } from "@workspace/api-client-react";
+import { useGetWallet, type WalletTransaction } from "@workspace/api-client-react";
 import { API_BASE as API } from "@/utils/api";
 
 const C = Colors.light;
@@ -55,7 +55,9 @@ const TX_STATUS_PENDING  = "pending";
 const TX_STATUS_APPROVED = "approved";
 const TX_STATUS_REJECTED = "rejected";
 
-function TxItem({ tx }: { tx: any }) {
+type TxItemData = WalletTransaction & { status?: string };
+
+function TxItem({ tx }: { tx: TxItemData }) {
   const txStatus: string = tx.status ?? TX_STATUS_PENDING;
   const isManualTx = tx.type === "deposit" || tx.type === "withdrawal";
   const isPending  = isManualTx && txStatus === TX_STATUS_PENDING;
@@ -349,9 +351,9 @@ function DepositModal({ onClose, onSuccess, onFrozen, token, minTopup, maxTopup 
   useEffect(() => {
     fetch(`${API}/payments/methods`)
       .then(r => r.json())
-      .then((data: any) => {
+      .then((data: { methods?: PayMethod[] }) => {
         const depositable: PayMethod[] = (data.methods || [])
-          .filter((m: any) => ["jazzcash", "easypaisa", "bank"].includes(m.id));
+          .filter((m) => ["jazzcash", "easypaisa", "bank"].includes(m.id));
         if (depositable.length === 0) setMethodsError(true);
         else setMethods(depositable);
       })
@@ -499,8 +501,8 @@ function DepositModal({ onClose, onSuccess, onFrozen, token, minTopup, maxTopup 
                       setLoadingMethods(true);
                       fetch(`${API}/payments/methods`)
                         .then(r => r.json())
-                        .then((data: any) => {
-                          const depositable: PayMethod[] = (data.methods || []).filter((m: any) => ["jazzcash", "easypaisa", "bank"].includes(m.id));
+                        .then((data: { methods?: PayMethod[] }) => {
+                          const depositable: PayMethod[] = (data.methods || []).filter((m) => ["jazzcash", "easypaisa", "bank"].includes(m.id));
                           if (depositable.length === 0) setMethodsError(true);
                           else setMethods(depositable);
                         })
@@ -927,7 +929,7 @@ export default function WalletScreen() {
 
   const balance      = socketBalance ?? data?.balance ?? user?.walletBalance ?? 0;
   const transactions = data?.transactions ?? [];
-  const isDebitType  = (t: any) => t.type === "debit" || t.type === "withdrawal" || t.type === "transfer" || t.type === "ride" || t.type === "order" || t.type === "mart" || t.type === "food" || t.type === "pharmacy" || t.type === "parcel";
+  const isDebitType  = (t: WalletTransaction) => t.type === "debit" || t.type === "withdrawal" || t.type === "transfer" || t.type === "ride" || t.type === "order" || t.type === "mart" || t.type === "food" || t.type === "pharmacy" || t.type === "parcel";
   const filtered     = txFilter === "all" ? transactions : txFilter === "debit" ? transactions.filter(isDebitType) : transactions.filter(t => t.type === txFilter);
   const totalIn      = transactions.filter(t => t.type === "credit" || (t.type as string) === "refund" || (t.type as string) === "cashback" || (t.type as string) === "referral" || (t.type as string) === "bonus").reduce((s, t) => s + Number(t.amount), 0);
   const totalOut     = transactions.filter(isDebitType).reduce((s, t) => s + Number(t.amount), 0);

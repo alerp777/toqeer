@@ -35,6 +35,7 @@ import { SmartRefresh } from "@/components/ui/SmartRefresh";
 import Accordion from "@/components/Accordion";
 import { API_BASE as API } from "@/utils/api";
 import { getErrorMessage } from "@/utils/errorUtils";
+import type { Notification, Address, Order, Ride, ParcelBooking, PharmacyOrderResponse } from "@workspace/api-client-react";
 
 const C = Colors.light;
 
@@ -113,7 +114,7 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
       });
       if (!avatarRes.ok) {
         const err = await avatarRes.json().catch(() => ({}));
-        throw new Error((err as any)?.error || "Avatar upload failed");
+        throw new Error(((err as Record<string, unknown>)?.error as string | undefined) || "Avatar upload failed");
       }
       const avatarData = await avatarRes.json();
       const avatarUrl: string = avatarData.avatarUrl;
@@ -325,7 +326,7 @@ function NotificationsModal({ visible, userId, token, onClose }: {
   visible: boolean; userId: string; token?: string; onClose: (unread: number) => void;
 }) {
   const { showToast } = useToast();
-  const [notifs,  setNotifs]  = useState<any[]>([]);
+  const [notifs,  setNotifs]  = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
 
@@ -352,7 +353,7 @@ function NotificationsModal({ visible, userId, token, onClose }: {
     setNotifs(p => p.map(n => n.id === id ? { ...n, isRead: true } : n));
   };
 
-  const handleNotifPress = async (n: any) => {
+  const handleNotifPress = async (n: Notification) => {
     if (!n.isRead) await markOne(n.id);
     onClose(notifs.filter(x => !x.isRead && x.id !== n.id).length);
     const meta = n.meta || {};
@@ -1066,7 +1067,7 @@ function AddressesModal({ visible, userId, token, onClose }: { visible: boolean;
     showToast(T("addressDeleted"), "info");
   };
 
-  const startEdit = (a: any) => {
+  const startEdit = (a: Address) => {
     setEditId(a.id);
     setEditLabel(a.label || "Home");
     setEditAddr(a.address || "");
@@ -1318,15 +1319,15 @@ export default function ProfileScreen() {
         const parcels  = parD.bookings || parD.parcelBookings || [];
 
         const CANCELLED = "cancelled";
-        const activeOrders   = orders.filter((o: any)   => o.status   !== CANCELLED);
-        const activeRides    = rides.filter((r: any)    => r.status   !== CANCELLED);
-        const activePharmacy = pharmacy.filter((p: any) => p.status   !== CANCELLED);
-        const activeParcels  = parcels.filter((p: any)  => p.status   !== CANCELLED);
+        const activeOrders   = (orders   as Order[]).filter(o  => o.status  !== CANCELLED);
+        const activeRides    = (rides    as Ride[]).filter(r   => r.status  !== CANCELLED);
+        const activePharmacy = (pharmacy as PharmacyOrderResponse[]).filter(p => p.status !== CANCELLED);
+        const activeParcels  = (parcels  as ParcelBooking[]).filter(p => p.status !== CANCELLED);
 
-        const spent = activeOrders.reduce((s: number, o: any)   => s + (parseFloat(o.total) || 0), 0)
-                    + activeRides.reduce((s: number,  r: any)   => s + (parseFloat(r.fare)  || 0), 0)
-                    + activePharmacy.reduce((s: number, p: any) => s + (parseFloat(p.total) || 0), 0)
-                    + activeParcels.reduce((s: number,  p: any) => s + (parseFloat(p.price || p.fare || p.total) || 0), 0);
+        const spent = activeOrders.reduce((s, o)   => s + (parseFloat(o.total) || 0), 0)
+                    + activeRides.reduce((s, r)     => s + (parseFloat(r.fare)  || 0), 0)
+                    + activePharmacy.reduce((s, p)  => s + (parseFloat(p.total ?? "") || 0), 0)
+                    + activeParcels.reduce((s, p)   => s + (parseFloat(p.fare) || 0), 0);
 
         setStats({ orders: activeOrders.length, rides: activeRides.length, spent: Math.round(spent) });
         setUnread(nD.unreadCount || 0);

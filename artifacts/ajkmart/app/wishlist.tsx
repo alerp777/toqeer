@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import React, { useCallback, useRef } from "react";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import {
   Animated,
   Dimensions,
@@ -65,7 +66,7 @@ function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (produ
         </View>
         <View style={styles.cardBody}>
           <Text style={styles.cardName} numberOfLines={2}>{p.name}</Text>
-          {(p as any).unit && <Text style={styles.cardUnit}>{(p as any).unit}</Text>}
+          {p.unit && <Text style={styles.cardUnit}>{p.unit}</Text>}
           <View style={styles.cardFooter}>
             <View>
               <Text style={styles.cardPrice}>Rs. {p.price.toLocaleString()}</Text>
@@ -80,7 +81,7 @@ function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (produ
               </View>
             )}
           </View>
-          {(p as any).inStock === false && (
+          {p.inStock === false && (
             <View style={styles.oosBadge}>
               <Text style={styles.oosTxt}>Out of Stock</Text>
             </View>
@@ -91,7 +92,7 @@ function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (produ
   );
 }
 
-export default function WishlistScreen() {
+function WishlistScreenInner() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 20 : insets.top;
   const bottomPad = Math.max(insets.bottom, Platform.OS === "web" ? 20 : 16);
@@ -237,3 +238,5 @@ const styles = StyleSheet.create({
   retryBtn: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
   retryBtnTxt: { fontFamily: Font.bold, fontSize: 14, color: C.textInverse },
 });
+
+export default withErrorBoundary(WishlistScreenInner);

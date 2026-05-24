@@ -24,7 +24,7 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey, type Language } from "@workspace/i18n";
-import { useGetOrders } from "@workspace/api-client-react";
+import { useGetOrders, type Order, type Ride, type ParcelBooking } from "@workspace/api-client-react";
 import { SmartRefresh } from "@/components/ui/SmartRefresh";
 import { CancelModal } from "@/components/CancelModal";
 import type { CancelTarget } from "@/components/CancelModal";
@@ -55,16 +55,16 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, ratingWindowHours, serverNow, onRate, onCancel, onReorder }: {
-  order: any;
+  order: Order;
   liveTracking: boolean;
   reviews: boolean;
   cancelWindowMin: number;
   refundDays: number;
   ratingWindowHours: number;
   serverNow?: number;
-  onRate: (o: any) => void;
-  onCancel: (o: any) => void;
-  onReorder?: (o: any) => void;
+  onRate: (o: Order) => void;
+  onCancel: (o: Order) => void;
+  onReorder?: (o: Order) => void;
 }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -113,11 +113,11 @@ function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, 
       </View>
 
       <View style={styles.cardItems}>
-        {(order.items || []).slice(0, itemsExpanded ? undefined : 2).map((item: any, i: number) => (
+        {(order.items || []).slice(0, itemsExpanded ? undefined : 2).map((item, i: number) => (
           <View key={i} style={styles.itemRow}>
             <View style={styles.itemDot} />
             <Text style={styles.itemText} numberOfLines={1}>{item.quantity}× {item.name}</Text>
-            <Text style={styles.itemPrice}>Rs. {item.price * item.quantity}</Text>
+            <Text style={styles.itemPrice}>Rs. {Number(item.price) * item.quantity}</Text>
           </View>
         ))}
         {(order.items || []).length > 2 && (
@@ -231,11 +231,11 @@ const RIDE_STEPS = ["accepted", "arrived", "in_transit", "completed"];
 const RIDE_STEP_LABELS = ["Accepted", "Arrived", "On Route", "Done"];
 
 function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
-  ride: any;
+  ride: Ride;
   liveTracking: boolean;
   reviews: boolean;
-  onRate: (o: any) => void;
-  onCancel: (o: any) => void;
+  onRate: (o: Ride) => void;
+  onCancel: (o: Ride) => void;
 }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -448,12 +448,12 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
 }
 
 function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCancel }: {
-  order: any;
+  order: Order;
   reviews: boolean;
   cancelWindowMin: number;
   serverNow?: number;
-  onRate: (o: any) => void;
-  onCancel: (o: any) => void;
+  onRate: (o: Order) => void;
+  onCancel: (o: Order) => void;
 }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -491,11 +491,11 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
       )}
 
       <View style={styles.cardItems}>
-        {(order.items || []).slice(0, itemsExpanded ? undefined : 2).map((item: any, i: number) => (
+        {(order.items || []).slice(0, itemsExpanded ? undefined : 2).map((item, i: number) => (
           <View key={i} style={styles.itemRow}>
             <View style={styles.itemDot} />
             <Text style={styles.itemText} numberOfLines={1}>{item.quantity}× {item.name}</Text>
-            <Text style={styles.itemPrice}>Rs. {item.price * item.quantity}</Text>
+            <Text style={styles.itemPrice}>Rs. {Number(item.price) * item.quantity}</Text>
           </View>
         ))}
         {(order.items || []).length > 2 && (
@@ -547,7 +547,7 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
   );
 }
 
-function ParcelCard({ booking }: { booking: any }) {
+function ParcelCard({ booking }: { booking: ParcelBooking }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
   const cfg = PARCEL_STATUS_MAP[booking.status] || PARCEL_STATUS_MAP["pending"]!;
@@ -905,9 +905,9 @@ export default function OrdersScreen() {
     }
   }, [martActive, foodActive, ridesActive, pharmActive, parcelActive]);
 
-  const handleReorder = useCallback(async (order: any) => {
+  const handleReorder = useCallback(async (order: Order) => {
     if (!order.items || order.items.length === 0) return;
-    const validItems = order.items.filter((i: any) => i.productId && i.name && Number(i.price) > 0);
+    const validItems = order.items.filter((i) => i.productId && i.name && Number(i.price) > 0);
     if (validItems.length === 0) {
       showToast("Items from this order are no longer available", "error");
       return;
@@ -916,7 +916,7 @@ export default function OrdersScreen() {
       const productsRes = await fetch(`${API_BASE}/products`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (productsRes.ok) {
         const productsData = await productsRes.json();
-        const productMap = new Map<string, any>((productsData.products || productsData || []).map((p: any) => [p.id, p]));
+        const productMap = new Map<string, { id: string; name: string; price: string; stock?: number }>((productsData.products || productsData || []).map((p: { id: string; name: string; price: string; stock?: number }) => [p.id, p]));
         const priceChangedItems: string[] = [];
         let skippedCount = 0;
         let addedCount = 0;
@@ -954,7 +954,7 @@ export default function OrdersScreen() {
     router.push("/cart");
   }, [addItem, showToast, token]);
 
-  const handleRate = useCallback((order: any) => {
+  const handleRate = useCallback((order: Order) => {
     if (!reviewedIds.has(order.id)) setReviewTarget(order);
   }, [reviewedIds]);
 
@@ -971,15 +971,15 @@ export default function OrdersScreen() {
     { query: { queryKey: ["orders", user?.id], enabled: !!user?.id && anyMartFood, refetchInterval: pollInterval } }
   );
 
-  const [ridesData, setRidesData] = useState<any>(null);
+  const [ridesData, setRidesData] = useState<{ rides: Ride[] } | null>(null);
   const [ridesLoading, setRidesLoading] = useState(false);
   const [ridesError, setRidesError] = useState(false);
 
-  const [pharmData, setPharmData] = useState<any>(null);
+  const [pharmData, setPharmData] = useState<{ orders: PharmacyOrderResponse[] } | null>(null);
   const [pharmLoading, setPharmLoading] = useState(false);
   const [pharmError, setPharmError] = useState(false);
 
-  const [parcelData, setParcelData] = useState<any>(null);
+  const [parcelData, setParcelData] = useState<{ bookings: ParcelBooking[] } | null>(null);
   const [parcelLoading, setParcelLoading] = useState(false);
   const [parcelError, setParcelError] = useState(false);
   const [serverNow, setServerNow] = useState<number>(Date.now());
@@ -996,7 +996,7 @@ export default function OrdersScreen() {
 
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const handleCancel = useCallback((order: any) => {
+  const handleCancel = useCallback((order: Order) => {
     const nowMs = serverNow ?? Date.now();
     const minutesSincePlaced = order.createdAt
       ? (nowMs - new Date(order.createdAt).getTime()) / 60000
@@ -1012,7 +1012,7 @@ export default function OrdersScreen() {
     });
   }, [orderRules.cancelWindowMin, serverNow]);
 
-  const handleCancelPharmacy = useCallback((order: any) => {
+  const handleCancelPharmacy = useCallback((order: Order) => {
     const nowMs = serverNow ?? Date.now();
     const minutesSincePlaced = order.createdAt
       ? (nowMs - new Date(order.createdAt).getTime()) / 60000
@@ -1079,7 +1079,7 @@ export default function OrdersScreen() {
     setParcelLoading(false);
   }, [user?.id, token, parcelActive]);
 
-  const handleCancelRide = useCallback((ride: any) => {
+  const handleCancelRide = useCallback((ride: Ride) => {
     const riderAssigned = ["accepted", "arrived", "in_transit", "ongoing"].includes(ride.status);
     setCancelTarget({
       id: ride.id,
@@ -1129,9 +1129,9 @@ export default function OrdersScreen() {
 
   const globalActiveCount =
     allOrders.filter(o => !["delivered", "cancelled"].includes(o.status)).length +
-    rides.filter((r: any) => !["completed", "cancelled"].includes(r.status)).length +
-    pharmOrders.filter((o: any) => !["delivered", "cancelled"].includes(o.status)).length +
-    parcels.filter((b: any) => !["completed", "cancelled"].includes(b.status)).length;
+    rides.filter((r: Ride) => !["completed", "cancelled"].includes(r.status)).length +
+    pharmOrders.filter((o: Order) => !["delivered", "cancelled"].includes(o.status)).length +
+    parcels.filter((b: ParcelBooking) => !["completed", "cancelled"].includes(b.status)).length;
 
   React.useEffect(() => {
     setHasActiveItems(globalActiveCount > 0);
@@ -1210,12 +1210,12 @@ export default function OrdersScreen() {
       );
     }
 
-    let showOrders: any[] = [];
-    let showMart: any[] = [];
-    let showFood: any[] = [];
-    let showRides: any[] = rides;
-    let showPharm: any[] = pharmOrders;
-    let showParcel: any[] = parcels;
+    let showOrders: Order[] = [];
+    let showMart: Order[] = [];
+    let showFood: Order[] = [];
+    let showRides: Ride[] = rides;
+    let showPharm: PharmacyOrderResponse[] = pharmOrders;
+    let showParcel: ParcelBooking[] = parcels;
 
     switch (activeTab) {
       case "all":

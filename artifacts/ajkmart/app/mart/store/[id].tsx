@@ -25,6 +25,7 @@ import { AuthGateSheet, useAuthGate, useRoleGate, RoleBlockSheet } from "@/compo
 import { CartSwitchModal } from "@/components/CartSwitchModal";
 import { SkeletonBlock } from "@/components/ui/SkeletonBlock";
 import { WishlistHeart } from "@/components/WishlistHeart";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 
@@ -177,7 +178,7 @@ function ProductGridCard({ product, styles, C }: { product: MartProduct, styles:
   );
 }
 
-export default function MartStorePage() {
+function MartStorePageInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -490,3 +491,5 @@ function makeStyles(C: typeof Colors.light) {
   },
   });
 }
+
+export default withErrorBoundary(MartStorePageInner);

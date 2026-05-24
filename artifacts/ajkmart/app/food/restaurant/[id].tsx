@@ -26,6 +26,7 @@ import { useSmartBack } from "@/hooks/useSmartBack";
 import { AuthGateSheet, useAuthGate, useRoleGate, RoleBlockSheet } from "@/components/AuthGateSheet";
 import { CartSwitchModal } from "@/components/CartSwitchModal";
 import { SkeletonBlock } from "@/components/ui/SkeletonBlock";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 
@@ -181,7 +182,7 @@ function MenuItemCard({ item, styles, C }: { item: MenuItem, styles: any, C: any
   );
 }
 
-export default function FoodRestaurantScreen() {
+function FoodRestaurantScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -673,3 +674,5 @@ function makeStyles(C: typeof Colors.light) {
   },
   });
 }
+
+export default withErrorBoundary(FoodRestaurantScreenInner);

@@ -54,3 +54,13 @@ Thumbs.db
 .replit
 .cache/
 .local/
+
+# Test artifacts
+test-results/
+e2e/artifacts/
+
+# AI conversation paste assets (not part of codebase)
+attached_assets/
+
+# Security — no committed key/secret reference files
+mykey*.md

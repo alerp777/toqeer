@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import {
   ActivityIndicator,
   Pressable,
@@ -16,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey, type Language } from "@workspace/i18n";
 import { API_BASE } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 const C = Colors.light;
 
@@ -36,8 +38,8 @@ function useFetch<T>(url: string, token: string | null) {
       const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!r.ok) throw new Error(`Error ${r.status}`);
       setData(await r.json());
-    } catch (e: any) {
-      setError(e.message || "Failed to load");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Failed to load"));
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ function StarRow({ value }: { value: number }) {
   );
 }
 
-export default function MyReviewsScreen() {
+function MyReviewsScreenInner() {
   const insets = useSafeAreaInsets();
   const { token } = useAuth();
   const { language } = useLanguage();
@@ -219,3 +221,5 @@ const s = StyleSheet.create({
   subject:      { fontSize: 11, color: "#6b7280", marginBottom: 2 },
   date:         { fontSize: 11, color: "#9ca3af" },
 });
+
+export default withErrorBoundary(MyReviewsScreenInner);

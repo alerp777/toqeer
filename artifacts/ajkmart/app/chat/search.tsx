@@ -15,6 +15,7 @@ import { Font } from "@/constants/typography";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { API_BASE } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { useSmartBack } from "@/hooks/useSmartBack";
 
 import { useTheme } from "@/context/ThemeContext";
@@ -40,7 +41,7 @@ const { colors: C } = useTheme();
   const apiFetch = useCallback(async (path: string, opts: RequestInit = {}) => {
     const res = await fetch(`${API_BASE}/communication${path}`, {
       ...opts,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers as any) },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers as Record<string, string> | undefined) },
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Failed");
@@ -54,8 +55,8 @@ const { colors: C } = useTheme();
     try {
       const data = await apiFetch(`/search/${searchId.toUpperCase().trim()}`);
       setResult(data);
-    } catch (err: any) {
-      showToast(err.message || "User not found", "error");
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, "User not found"), "error");
     }
     setSearching(false);
   };
@@ -68,8 +69,8 @@ const { colors: C } = useTheme();
       showToast("Request sent!", "success");
       setResult(null);
       setSearchId("");
-    } catch (err: any) {
-      showToast(err.message || "Failed to send request", "error");
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, "Failed to send request"), "error");
     }
     setSending(false);
   };

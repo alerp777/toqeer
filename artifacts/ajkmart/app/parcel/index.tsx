@@ -599,7 +599,7 @@ function ParcelScreenInner() {
                   : C.skyDark;
                 const subLabel = isWallet
                   ? `${T("availableBalance")}: Rs. ${(user?.walletBalance ?? 0).toLocaleString()}`
-                  : (pm as any).description || pm.label;
+                  : pm.description || pm.label;
                 return (
                   <Pressable key={pm.id} onPress={() => setPayMethod(pm.id)} style={[ss.payOpt, active && ss.payOptActive]}>
                     <View style={[ss.payIcon, { backgroundColor: iconBg }]}>

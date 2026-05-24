@@ -23,6 +23,7 @@ import { useToast } from "@/context/ToastContext";
 import { API_BASE } from "@/utils/api";
 import { createLogger } from "@/utils/logger";
 import { SkeletonBlock } from "@/components/ui/SkeletonBlock";
+import { withErrorBoundary } from "@/utils/withErrorBoundary";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 
@@ -107,7 +108,7 @@ function ProductCard({ product, qty, onAdd, onRemove, s, C }: {
   );
 }
 
-export default function PharmacyStoreScreen() {
+function PharmacyStoreScreenInner() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -360,3 +361,5 @@ function makeStyles(C: typeof Colors.light) {
   checkoutBarBtnTxt: { fontSize: 14, fontWeight: "700", color: "#fff" },
   });
 }
+
+export default withErrorBoundary(PharmacyStoreScreenInner);

@@ -27,12 +27,21 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-import { createOrder } from "@workspace/api-client-react";
+import { createOrder, type Order } from "@workspace/api-client-react";
 import { API_BASE } from "@/utils/api";
 import { getErrorMessage } from "@/utils/errorUtils";
 
 const C = Colors.light;
 type PayMethod = "cash" | "wallet" | "jazzcash" | "easypaisa";
+type CreateOrderRequestExtended = {
+  userId?: string;
+  type: string;
+  items: { productId: string; name: string; price: number | string; quantity: number; image?: string | null }[];
+  deliveryAddress?: string;
+  paymentMethod: string;
+  idempotencyKey?: string;
+  promoCode?: string;
+};
 
 interface PaymentMethod {
   id: PayMethod;
@@ -338,7 +347,7 @@ export default function CartScreen() {
             const r = await fetch(`${API_BASE}/payments/${encodeURIComponent(oid)}/status`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
-            const d = await r.json() as any;
+            const d = await r.json() as { status?: string; message?: string };
             if (!mountedRef.current) return;
             if (d.status === "completed" || d.status === "success") {
               const successData = { id: oid.slice(-6).toUpperCase(), time: "30-45 min", payMethod };
@@ -378,9 +387,9 @@ export default function CartScreen() {
       const methods = (rawMethods as Record<string, unknown>)["methods"];
       if (Array.isArray(methods) && methods.length > 0) {
         setAllPayMethods(
-          methods.map((m: any) => ({
-            id: m.id, label: m.label, logo: m.logo,
-            available: m.available, description: m.description, mode: m.mode,
+          methods.map((m: Record<string, unknown>) => ({
+            id: m.id as PayMethod, label: m.label as string, logo: m.logo as string,
+            available: m.available as boolean, description: m.description as string, mode: m.mode as string | undefined,
           })),
         );
       }
@@ -518,7 +527,7 @@ export default function CartScreen() {
   const placeOrder = async (finalPayMethod: PayMethod) => {
     const MAX_RETRIES = 3;
     let lastError: Error | null = null;
-    let order: any = null;
+    let order: Order | null = null;
     const idemKey = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     setPendingAck(true);
 
@@ -534,12 +543,12 @@ export default function CartScreen() {
           paymentMethod: finalPayMethod,
           idempotencyKey: idemKey,
           ...(promoCode ? { promoCode } : {}),
-        } as any);
+        } as unknown as CreateOrderRequestExtended as Parameters<typeof createOrder>[0]);
         lastError = null;
         break;
-      } catch (err: any) {
-        lastError = err;
-        const status = err?.status ?? err?.statusCode ?? 0;
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err : new Error(getErrorMessage(err));
+        const status = (err as { status?: number; statusCode?: number })?.status ?? (err as { status?: number; statusCode?: number })?.statusCode ?? 0;
         if (status >= 400 && status < 500) {
           setPendingAck(false);
           throw err;
@@ -556,7 +565,7 @@ export default function CartScreen() {
     }
 
     if (finalPayMethod === "wallet") {
-      const serverDeducted = parseFloat((order as any).total ?? grandTotal);
+      const serverDeducted = parseFloat(order.total ?? grandTotal);
       updateUser({ walletBalance: (user!.walletBalance ?? 0) - serverDeducted });
     }
 
@@ -578,10 +587,10 @@ export default function CartScreen() {
       }
     })();
 
-    const orderId = (order as any).id as string | undefined;
+    const orderId = order.id as string | undefined;
     const successData = {
       id: (orderId ?? "------").slice(-6).toUpperCase(),
-      time: (order as any).estimatedTime || "30-45 min",
+      time: order.estimatedTime || "30-45 min",
       payMethod: finalPayMethod,
     };
 
@@ -698,7 +707,7 @@ export default function CartScreen() {
     try {
       const GW_MAX_RETRIES = 3;
       let gwLastError: Error | null = null;
-      let order: any = null;
+      let order: Order | null = null;
       const gwIdemKey = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       for (let attempt = 0; attempt < GW_MAX_RETRIES; attempt++) {
         try {
@@ -712,12 +721,12 @@ export default function CartScreen() {
             paymentMethod: payMethod,
             idempotencyKey: gwIdemKey,
             ...(promoCode ? { promoCode } : {}),
-          } as any);
+          } as unknown as CreateOrderRequestExtended as Parameters<typeof createOrder>[0]);
           gwLastError = null;
           break;
-        } catch (err: any) {
-          gwLastError = err;
-          const status = err?.status ?? err?.statusCode ?? 0;
+        } catch (err: unknown) {
+          gwLastError = err instanceof Error ? err : new Error(getErrorMessage(err));
+          const status = (err as { status?: number; statusCode?: number })?.status ?? (err as { status?: number; statusCode?: number })?.statusCode ?? 0;
           if (status >= 400 && status < 500) throw err;
           if (attempt < GW_MAX_RETRIES - 1) {
             const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
@@ -728,7 +737,7 @@ export default function CartScreen() {
       if (gwLastError || !order) {
         throw gwLastError ?? new Error("Order creation failed after retries");
       }
-      const realOrderId = (order as any).id;
+      const realOrderId = order.id;
       if (!realOrderId) { throw new Error("Could not create order"); }
 
       const r = await fetch(`${API_BASE}/payments/initiate`, {
@@ -742,7 +751,7 @@ export default function CartScreen() {
           orderId: realOrderId, mobileNumber: gwMobile.replace(/\D/g, ""),
         }),
       });
-      const data = await r.json() as any;
+      const data = await r.json() as { error?: string; txnRef?: string; transactionRef?: string };
       if (!r.ok) {
         await cancelPendingOrder(realOrderId);
         throw new Error(data.error || "Could not initiate payment");
@@ -772,8 +781,8 @@ export default function CartScreen() {
         const data = await res.json().catch(() => ({}));
         if (__DEV__) console.warn("[cancelPendingOrder] failed:", data.error);
       }
-    } catch (err: any) {
-      if (__DEV__) console.warn("[cancelPendingOrder] network error:", err.message);
+    } catch (err: unknown) {
+      if (__DEV__) console.warn("[cancelPendingOrder] network error:", getErrorMessage(err));
     }
   };
 
