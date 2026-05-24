@@ -591,7 +591,7 @@ function AppRoutes() {
   /* Deep-link guard: capture the current path when an unauthenticated user
      lands on a protected route (e.g. via a push-notification deep link).
      After the user logs in, we redirect them to the originally-intended path. */
-  const PUBLIC_PATHS = ["/", "/login", "/register", "/forgot-password"];
+  const PUBLIC_PATHS = ["/", "/login", "/register", "/forgot-password", "/auth/magic-link"];
   useEffect(() => {
     if (!loading && !user && !PUBLIC_PATHS.includes(location)) {
       intendedRouteRef.current = location;
@@ -931,6 +931,7 @@ function AppRoutes() {
           <Suspense fallback={<PageFallback />}>
             <Switch>
               <Route path="/" component={GuestLanding} />
+              <Route path="/auth/magic-link" component={MagicLinkPage} />
               <Route path="/register">{() => <Register />}</Route>
               <Route path="/forgot-password" component={ForgotPassword} />
               <Route path="/login">{() => <Login />}</Route>

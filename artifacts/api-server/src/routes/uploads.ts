@@ -780,7 +780,7 @@ router.post("/prescription", customerAuth, async (req, res) => {
 /* Auth required — prescription URLs contain PII. Only the uploading customer
    or an authenticated user should be able to resolve the reference. */
 router.get("/prescription/resolve/:refId", customerAuth, (req, res) => {
-  const url = prescriptionRefMap.get(req.params.refId!);
+  const url = prescriptionRefMap.get(req.params["refId"] as string);
   if (url) {
     sendSuccess(res, { url });
   } else {

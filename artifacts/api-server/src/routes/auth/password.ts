@@ -199,7 +199,7 @@ router.post(
           await recordFailedAttempt(spLockoutKey, spMaxAttempts, spLockoutMinutes);
           AuditService.log({
             action: "set_password_wrong_current",
-            userId,
+            affectedUserId: userId,
             ip: getClientIp(req),
             details: "Wrong current password supplied during set-password",
             result: "fail",
@@ -557,7 +557,7 @@ router.post(
         await recordFailedAttempt(lockoutKey, maxAttempts, lockoutMinutes);
         AuditService.log({
           action: "verify_reset_otp_failed",
-          userId: user.id,
+          affectedUserId: user.id,
           ip,
           details: "Invalid or expired OTP supplied during password reset",
           result: "fail",

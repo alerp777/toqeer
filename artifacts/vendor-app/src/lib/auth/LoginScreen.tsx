@@ -440,7 +440,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     }
     const { token, refreshToken } = result.data;
     api.storeTokens(token, refreshToken);
-    await handleSuccess({ id: "", phone: localPhone, roles: [] } as unknown as SDKAuthUser, token);
+    await handleSuccess({} as SDKAuthUser, token);
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -467,7 +467,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       return;
     }
     api.storeTokens(token, refreshToken);
-    await handleSuccess({ id: "", phone: localIdentifier } as unknown as SDKAuthUser, token);
+    await handleSuccess({} as SDKAuthUser, token);
   };
 
   const handleVerify2fa = async () => {
@@ -487,10 +487,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       api.storeTokens(token, refreshToken);
       setTwoFaData(null);
       setTwoFaCode("");
-      await handleSuccess(
-        { id: "", phone: twoFaData!.identifier, roles: [] } as unknown as SDKAuthUser,
-        token
-      );
+      await handleSuccess({} as SDKAuthUser, token);
     } catch (err: unknown) {
       setLoginError(
         err instanceof Error ? translateApiError(err.message) : "Invalid code. Please try again."

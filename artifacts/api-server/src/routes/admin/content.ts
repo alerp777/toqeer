@@ -1631,16 +1631,16 @@ router.patch("/promo-codes/:id", async (req, res) => {
     if (appliesTo !== undefined) updates.appliesTo = appliesTo;
     if (expiresAt !== undefined) updates.expiresAt = expiresAt ? new Date(expiresAt) : null;
     if (isActive !== undefined) updates.isActive = isActive;
-    const [code] = await db
+    const [updatedPromo] = await db
       .update(promoCodesTable)
       .set(updates)
       .where(eq(promoCodesTable.id, req.params["id"] as string))
       .returning();
-    if (!code) {
+    if (!updatedPromo) {
       sendNotFound(res, "Promo code not found");
       return;
     }
-    sendSuccess(res, code);
+    sendSuccess(res, updatedPromo);
   } catch (err) {
     logger.error(
       {

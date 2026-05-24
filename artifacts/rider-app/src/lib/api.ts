@@ -648,9 +648,9 @@ export const api = {
     name: string;
     phone?: string;
     email?: string;
-    cnic: string;
+    cnic?: string;
     vehicleType: string;
-    vehicleRegistration: string;
+    vehicleRegistration?: string;
     drivingLicense: string;
     password?: string;
     captchaToken?: string;
@@ -671,9 +671,9 @@ export const api = {
     name: string;
     phone?: string;
     email?: string;
-    cnic: string;
+    cnic?: string;
     vehicleType: string;
-    vehicleRegistration: string;
+    vehicleRegistration?: string;
     drivingLicense: string;
     password: string;
     captchaToken?: string;
