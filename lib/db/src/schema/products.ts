@@ -53,6 +53,7 @@ export const productsTable = pgTable(
     index("products_category_idx").on(t.category),
     index("products_in_stock_idx").on(t.inStock),
     index("products_type_idx").on(t.type),
+    index("products_created_at_idx").on(t.createdAt),
     check("products_price_positive", sql`${t.price} > 0`),
   ]
 );

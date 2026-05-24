@@ -3,6 +3,7 @@ import { notificationsTable } from "@workspace/db/schema";
 import { t } from "@workspace/i18n";
 import { and, eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { getUserLanguage } from "../lib/getUserLanguage.js";
 import { generateId } from "../lib/id.js";
@@ -14,7 +15,17 @@ import { adminAuth } from "./admin.js";
 
 const router: IRouter = Router();
 
-router.get("/", customerAuth, async (req, res) => {
+const notifReadLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many notification requests. Please slow down." },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+});
+
+router.get("/", customerAuth, notifReadLimiter, async (req, res) => {
   try {
     const userId = req.customerId!;
 

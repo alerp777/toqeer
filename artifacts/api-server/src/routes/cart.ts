@@ -2,11 +2,22 @@ import { db } from "@workspace/db";
 import { cartSnapshotsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 import { logger } from "../lib/logger.js";
 import { sendError, sendSuccess } from "../lib/response.js";
 import { customerAuth } from "../middleware/security.js";
 
 const router: IRouter = Router();
+
+const cartMutateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 20,
+  keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many cart updates. Please slow down." },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+});
 
 /* ── GET /api/cart/snapshot — fetch the user's saved cart snapshot ── */
 router.get("/snapshot", customerAuth, async (req, res) => {
@@ -37,7 +48,7 @@ router.get("/snapshot", customerAuth, async (req, res) => {
 });
 
 /* ── PUT /api/cart/snapshot — upsert the user's cart snapshot ── */
-router.put("/snapshot", customerAuth, async (req, res) => {
+router.put("/snapshot", customerAuth, cartMutateLimiter, async (req, res) => {
   try {
     const userId = req.customerId!;
     const { items } = req.body;
@@ -97,7 +108,7 @@ router.put("/snapshot", customerAuth, async (req, res) => {
 });
 
 /* ── DELETE /api/cart/snapshot — clear the user's cart snapshot ── */
-router.delete("/snapshot", customerAuth, async (req, res) => {
+router.delete("/snapshot", customerAuth, cartMutateLimiter, async (req, res) => {
   try {
     const userId = req.customerId!;
     try {

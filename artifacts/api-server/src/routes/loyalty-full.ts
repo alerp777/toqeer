@@ -7,6 +7,7 @@ import {
 } from "@workspace/db/schema";
 import { desc, eq, inArray, or, sql } from "drizzle-orm";
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { generateId } from "../lib/id.js";
 import { logger } from "../lib/logger.js";
@@ -14,6 +15,15 @@ import { sendError, sendNotFound, sendSuccess, sendValidationError } from "../li
 import { adminAuth, getCachedSettings } from "./admin-shared.js";
 
 const router = Router();
+
+const leaderboardLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many leaderboard requests. Please slow down." },
+  validate: { xForwardedForHeader: false },
+});
 
 const campaignCreateSchema = z.object({
   name: z.string().min(1, "name is required").max(200),
@@ -58,7 +68,7 @@ router.get("/settings", async (_req, res) => {
   }
 });
 
-router.get("/leaderboard", async (_req, res) => {
+router.get("/leaderboard", leaderboardLimiter, async (_req, res) => {
   try {
     const txns = await db
       .select({
@@ -107,7 +117,6 @@ router.get("/leaderboard", async (_req, res) => {
       .select({
         id: usersTable.id,
         name: usersTable.name,
-        phone: usersTable.phone,
         avatar: usersTable.avatar,
       })
       .from(usersTable)
@@ -117,11 +126,10 @@ router.get("/leaderboard", async (_req, res) => {
 
     const leaderboard = topEntries.map((entry, idx) => ({
       rank: idx + 1,
-      ...entry,
+      points: entry.points,
       user: userMap.get(entry.userId) ?? {
         id: entry.userId,
         name: null,
-        phone: null,
         avatar: null,
       },
     }));

@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import { savedAddressesTable } from "@workspace/db/schema";
 import { and, eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { generateId } from "../lib/id.js";
 import {
@@ -16,6 +17,16 @@ import { customerAuth } from "../middleware/security.js";
 import { validateBody } from "../middleware/validate.js";
 
 const router: IRouter = Router();
+
+const addressMutateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many address changes. Please try again in a minute." },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+});
 
 router.use(customerAuth);
 
@@ -69,7 +80,7 @@ const updateAddressSchema = z.object({
   isDefault: z.boolean().optional(),
 });
 
-router.post("/", validateBody(createAddressSchema), async (req, res) => {
+router.post("/", addressMutateLimiter, validateBody(createAddressSchema), async (req, res) => {
   try {
     const userId = req.customerId!;
     const { label, address, city, icon, isDefault } = req.body;
@@ -114,7 +125,7 @@ router.post("/", validateBody(createAddressSchema), async (req, res) => {
   }
 });
 
-router.put("/:id", validateBody(updateAddressSchema), async (req, res) => {
+router.put("/:id", addressMutateLimiter, validateBody(updateAddressSchema), async (req, res) => {
   try {
     const userId = req.customerId!;
     const { label, address, city, icon, isDefault } = req.body;

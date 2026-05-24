@@ -1,4 +1,5 @@
 import { Router, type Request } from "express";
+import rateLimit from "express-rate-limit";
 import { logger } from "../../lib/logger.js";
 import {
   and,
@@ -29,6 +30,16 @@ import {
 } from "./helpers.js";
 
 const router = Router();
+
+const promoActionLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  keyGenerator: (req) => (req as Request & { customerId?: string }).customerId ?? req.ip ?? "anon",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many promo requests. Please slow down." },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+});
 
 router.get("/public", async (req, res) => {
   try {
@@ -176,7 +187,7 @@ router.get("/for-you", customerAuth, async (req: Request, res) => {
   }
 });
 
-router.post("/auto-apply", customerAuth, async (req: Request, res) => {
+router.post("/auto-apply", customerAuth, promoActionLimiter, async (req: Request, res) => {
   try {
     const userId = req.customerId!;
     const { orderTotal, orderType } = req.body as { orderTotal?: unknown; orderType?: string };
@@ -308,7 +319,7 @@ type ValidatedEntry = {
   freeDelivery?: boolean;
 };
 
-router.post("/validate", customerAuth, async (req: Request, res) => {
+router.post("/validate", customerAuth, promoActionLimiter, async (req: Request, res) => {
   try {
     const { code, offerIds, orderTotal, orderType } = req.body as {
       code?: string;

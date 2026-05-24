@@ -173,7 +173,6 @@ router.get("/product/:productId", async (req, res, next) => {
     const rows = await db
       .select({
         id: reviewsTable.id,
-        userId: reviewsTable.userId,
         rating: reviewsTable.rating,
         comment: reviewsTable.comment,
         photos: reviewsTable.photos,

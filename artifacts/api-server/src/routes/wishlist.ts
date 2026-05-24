@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import { productsTable, wishlistTable } from "@workspace/db/schema";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { generateId } from "../lib/id.js";
 import { logger } from "../lib/logger.js";
@@ -11,13 +12,23 @@ import { validateBody } from "../middleware/validate.js";
 
 const router: IRouter = Router();
 
+const wishlistMutateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 20,
+  keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many wishlist changes. Please slow down." },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+});
+
 router.use(customerAuth);
 
 const addToWishlistSchema = z.object({
   productId: z.string().min(1, "productId is required"),
 });
 
-router.post("/", validateBody(addToWishlistSchema), async (req, res) => {
+router.post("/", wishlistMutateLimiter, validateBody(addToWishlistSchema), async (req, res) => {
   try {
     const userId = req.customerId!;
     const { productId } = req.body;
@@ -66,7 +77,7 @@ router.post("/", validateBody(addToWishlistSchema), async (req, res) => {
   }
 });
 
-router.delete("/:productId", async (req, res) => {
+router.delete("/:productId", wishlistMutateLimiter, async (req, res) => {
   try {
     const userId = req.customerId!;
     const productId = req.params["productId"] as string;
