@@ -56,7 +56,14 @@ pnpm --filter @workspace/e2e run test
 
 ## Key Docs
 
+All documentation lives in the [`docs/`](./docs/) folder:
+
 - [docs/AUTH.md](./docs/AUTH.md) — token lifecycle, rate limits, error codes, SDK guide
-- `setup.md` — environment setup and required secrets
+- [docs/OTP_GUIDE.md](./docs/OTP_GUIDE.md) — OTP system architecture, bypass layers, emergency procedures
+- [docs/REGISTRATION_GUIDE.md](./docs/REGISTRATION_GUIDE.md) — how to register users in dev/test without real SMS
+- [docs/RIDER_APP_AUDIT.md](./docs/RIDER_APP_AUDIT.md) — rider app audit: 27 issues, 5 critical fixes
+- [docs/ADMIN_GUIDE.md](./docs/ADMIN_GUIDE.md) — admin panel guide
+- [docs/RIDER_GUIDE.md](./docs/RIDER_GUIDE.md) — rider app guide
+- [docs/BUG_REPORT.md](./docs/BUG_REPORT.md) — known bugs and status
 - `replit.md` — architecture overview and user preferences
 - `/api-docs` — Swagger UI (live when API server is running)
