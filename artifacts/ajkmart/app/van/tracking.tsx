@@ -356,7 +356,7 @@ const insets = useSafeAreaInsets();
           "van:trip-update",
           (data: { event: string; stopsAway?: number }) => {
             if (mounted) {
-              if (data.event === "trip_completed") setTripStatus(T("completedLabel"));
+              if (data.event === "trip_completed") setTripStatus("completed");
               if (data.stopsAway != null) setStopsAway(data.stopsAway);
             }
           },
@@ -372,7 +372,7 @@ const insets = useSafeAreaInsets();
     };
   }, [scheduleId, date, token]);
 
-  const isCompleted = tripStatus === T("completedLabel");
+  const isCompleted = tripStatus === "completed";
   const status = getStatusMessage(location, stopsAway);
 
   return (

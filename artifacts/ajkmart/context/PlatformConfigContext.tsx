@@ -327,7 +327,7 @@ export function PlatformConfigProvider({ children }: { children: React.ReactNode
     fetchingRef.current = true;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      const timeoutId = setTimeout(() => controller.abort(), 20_000);
       let res: Response;
       try {
         res = await fetch(`${API_BASE}/platform-config`, { cache: "no-store", signal: controller.signal });

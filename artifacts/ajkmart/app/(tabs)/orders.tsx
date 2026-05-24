@@ -265,8 +265,8 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
   const cfg = RIDE_STATUS[ride.status] || RIDE_STATUS["searching"]!;
-  const isActive    = ![T("completedLabel"), "cancelled"].includes(ride.status);
-  const isCompleted = ride.status === T("completedLabel");
+  const isActive    = !["completed", "cancelled"].includes(ride.status);
+  const isCompleted = ride.status === "completed";
   const canCancel   = ["searching", "bargaining", "accepted", "arrived"].includes(ride.status);
   const hasRider    = ["accepted", "arrived", "in_transit", "ongoing"].includes(ride.status);
   const rideStepIdx = RIDE_STEPS.indexOf(ride.status);
@@ -576,7 +576,7 @@ function ParcelCard({ booking }: { booking: any }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
   const cfg = PARCEL_STATUS[booking.status] || PARCEL_STATUS["pending"]!;
-  const isActive = ![T("completedLabel"), "cancelled"].includes(booking.status);
+  const isActive = !["completed", "cancelled"].includes(booking.status);
   const parcelLabel = booking.parcelType
     ? booking.parcelType.charAt(0).toUpperCase() + booking.parcelType.slice(1)
     : T("parcel");
@@ -646,7 +646,7 @@ function ParcelCard({ booking }: { booking: any }) {
         </View>
       )}
 
-      {(booking.status === T("completedLabel") || booking.status === "cancelled") && (
+      {(booking.status === "completed" || booking.status === "cancelled") && (
         <Pressable
           style={styles.bookAgainBtn}
           onPress={() => router.push({
@@ -1154,9 +1154,9 @@ export default function OrdersScreen() {
 
   const globalActiveCount =
     allOrders.filter(o => !["delivered", "cancelled"].includes(o.status)).length +
-    rides.filter((r: any) => ![T("completedLabel"), "cancelled"].includes(r.status)).length +
+    rides.filter((r: any) => !["completed", "cancelled"].includes(r.status)).length +
     pharmOrders.filter((o: any) => !["delivered", "cancelled"].includes(o.status)).length +
-    parcels.filter((b: any) => ![T("completedLabel"), "cancelled"].includes(b.status)).length;
+    parcels.filter((b: any) => !["completed", "cancelled"].includes(b.status)).length;
 
   React.useEffect(() => {
     setHasActiveItems(globalActiveCount > 0);
@@ -1278,12 +1278,12 @@ export default function OrdersScreen() {
 
     const activeOrders   = displayOrders.filter(o => !["delivered","cancelled"].includes(o.status));
     const pastOrders     = displayOrders.filter(o => ["delivered","cancelled"].includes(o.status));
-    const activeRides    = displayRides.filter(r => ![T("completedLabel"),"cancelled"].includes(r.status));
-    const pastRides      = displayRides.filter(r => [T("completedLabel"),"cancelled"].includes(r.status));
+    const activeRides    = displayRides.filter(r => !["completed","cancelled"].includes(r.status));
+    const pastRides      = displayRides.filter(r => ["completed","cancelled"].includes(r.status));
     const activePharm    = displayPharm.filter(o => !["delivered","cancelled"].includes(o.status));
     const pastPharm      = displayPharm.filter(o => ["delivered","cancelled"].includes(o.status));
-    const activeParcel   = displayParcel.filter(b => ![T("completedLabel"),"cancelled"].includes(b.status));
-    const pastParcel     = displayParcel.filter(b => [T("completedLabel"),"cancelled"].includes(b.status));
+    const activeParcel   = displayParcel.filter(b => !["completed","cancelled"].includes(b.status));
+    const pastParcel     = displayParcel.filter(b => ["completed","cancelled"].includes(b.status));
 
     const anyActive = activeOrders.length + activeRides.length + activePharm.length + activeParcel.length;
     const anyPast   = pastOrders.length + pastRides.length + pastPharm.length + pastParcel.length;

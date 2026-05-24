@@ -24,7 +24,6 @@ import { searchProducts, getTrendingSearches, useGetCategories } from "@workspac
 import { WishlistHeart } from "@/components/WishlistHeart";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-const T = (key: TranslationKey) => tDual(key, "en");
 
 const C = Colors.light;
 const HISTORY_KEY = "@ajkmart_search_history";

@@ -27,7 +27,6 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-const T = (key: TranslationKey) => tDual(key, "en");
 import { createOrder } from "@workspace/api-client-react";
 import { API_BASE } from "@/utils/api";
 
@@ -63,6 +62,8 @@ function AddressPickerModal({
   onAddressCreated: (a: SavedAddress) => void;
   token: string | null | undefined;
 }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const [showForm, setShowForm] = useState(false);
   const [newLabel, setNewLabel] = useState(T("home"));
   const [newAddress, setNewAddress] = useState("");
@@ -338,7 +339,7 @@ export default function CartScreen() {
             });
             const d = await r.json() as any;
             if (!mountedRef.current) return;
-            if (d.status === T("completedLabel") || d.status === "success") {
+            if (d.status === "completed" || d.status === "success") {
               const successData = { id: oid.slice(-6).toUpperCase(), time: "30-45 min", payMethod };
               setPendingOrderId(oid, successData);
               setPendingAck(true);

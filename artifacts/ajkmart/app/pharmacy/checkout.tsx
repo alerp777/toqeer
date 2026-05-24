@@ -25,7 +25,6 @@ import { createPharmacyOrder } from "@workspace/api-client-react";
 import type { CreatePharmacyOrderRequest } from "@workspace/api-client-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-const T = (key: TranslationKey) => tDual(key, "en");
 
 const log = createLogger("[PharmacyCheckout]");
 

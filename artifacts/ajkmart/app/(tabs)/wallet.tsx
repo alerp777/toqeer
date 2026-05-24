@@ -27,7 +27,6 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-const T = (key: TranslationKey) => tDual(key, "en");
 import { SmartRefresh } from "@/components/ui/SmartRefresh";
 import { useGetWallet } from "@workspace/api-client-react";
 import { API_BASE as API } from "@/utils/api";
@@ -126,6 +125,8 @@ type WithdrawMethod = "jazzcash" | "easypaisa" | "bank";
 type WithdrawStep = "method" | "details" | "done";
 
 function WithdrawModal({ onClose, onSuccess, onFrozen, token, balance, minWithdrawal }: { onClose: () => void; onSuccess: () => void; onFrozen?: () => void; token: string | null; balance: number; minWithdrawal: number }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const [step, setStep]               = useState<WithdrawStep>("method");
   const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
   const [amount, setAmount]           = useState("");
@@ -316,6 +317,8 @@ function WithdrawModal({ onClose, onSuccess, onFrozen, token, balance, minWithdr
 const SUBMITTED_TX_KEY = "wallet_submitted_tx_ids";
 
 function DepositModal({ onClose, onSuccess, onFrozen, token, minTopup, maxTopup }: { onClose: () => void; onSuccess: () => void; onFrozen?: () => void; token: string | null; minTopup: number; maxTopup: number }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const [step, setStep]               = useState<DepositStep>("method");
   const [methods, setMethods]         = useState<PayMethod[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(true);

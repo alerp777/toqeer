@@ -362,7 +362,7 @@ function OrderDetailScreenInner() {
      This ensures rides use ride:{id} and mart/food use order:{id}. */
   useEffect(() => {
     if (!orderId || !token || !order) return;
-    const isTerminal = ["delivered", "cancelled", T("completedLabel")].includes(
+    const isTerminal = ["delivered", "cancelled", "completed"].includes(
       order.status ?? "",
     );
     if (isTerminal) return;
@@ -490,7 +490,7 @@ function OrderDetailScreenInner() {
         if (
           mountedRef.current &&
           fetched &&
-          ["delivered", "cancelled", T("completedLabel")].includes(fetched.status)
+          ["delivered", "cancelled", "completed"].includes(fetched.status)
         ) {
           if (ivRef !== null) clearInterval(ivRef);
         }
@@ -588,7 +588,7 @@ function OrderDetailScreenInner() {
   /* ── Check server whether user has already reviewed this order ── */
   const reviewCheckedRef = useRef(false);
   const orderStatusDelivered =
-    order?.status === "delivered" || order?.status === T("completedLabel");
+    order?.status === "delivered" || order?.status === "completed";
   useEffect(() => {
     if (!orderId || !token || !order) return;
     if (isRide) return;
@@ -730,7 +730,7 @@ function OrderDetailScreenInner() {
       ? RIDE_STEP_LABELS
       : STEP_LABELS;
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG["pending"]!;
-  const isActive = !["delivered", "cancelled", T("completedLabel")].includes(
+  const isActive = !["delivered", "cancelled", "completed"].includes(
     order.status,
   );
   const stepIdx = activeSteps.indexOf(order.status);
@@ -752,7 +752,7 @@ function OrderDetailScreenInner() {
         minutesSincePlaced <= cancelWindowMin;
 
   const isDelivered =
-    order.status === "delivered" || order.status === T("completedLabel");
+    order.status === "delivered" || order.status === "completed";
   const isCashOrder =
     order.paymentMethod === "cod" || order.paymentMethod === "cash";
   const hasExistingRefund =
@@ -1517,7 +1517,7 @@ function OrderDetailScreenInner() {
                         ...Typ.small,
                         marginTop: 2,
                         color:
-                          paymentStatus === T("completedLabel") ||
+                          paymentStatus === "completed" ||
                           paymentStatus === "success"
                             ? C.emerald
                             : paymentStatus === "failed" ||
@@ -1526,7 +1526,7 @@ function OrderDetailScreenInner() {
                               : C.textMuted,
                       }}
                     >
-                      {paymentStatus === T("completedLabel") ||
+                      {paymentStatus === "completed" ||
                       paymentStatus === "success"
                         ? T("paymentConfirmed" as TranslationKey)
                         : paymentStatus === "failed"

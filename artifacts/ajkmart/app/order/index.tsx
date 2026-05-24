@@ -126,6 +126,12 @@ export default function OrderDetailScreen() {
     interpRafRef.current = requestAnimationFrame(tick);
   };
 
+  /* socketActiveRef: true when socket has received at least one live location.
+     When socket is active, the HTTP poll skips updating coordinates (but still
+     fetches ETA) to prevent the "jumping" caused by stale HTTP responses
+     overwriting real-time socket positions. */
+  const socketActiveRef = useRef(false);
+
   // Poll rider live location for all active order types.
   // - Parcel orders: GET /rides/:id/track (returns riderId live loc + ETA)
   // - Pharmacy orders: GET /pharmacy-orders/:id/track (uses riderId from pharmacyOrdersTable)
@@ -139,9 +145,7 @@ export default function OrderDetailScreen() {
 
     const fetchTrack = async () => {
       try {
-        const endpoint = isParcel
-          ? `${API_BASE}/rides/${orderId}/track`
-          : isRide
+        const endpoint = isParcel || isRide
           ? `${API_BASE}/rides/${orderId}/track`
           : isPharmacyType
           ? `${API_BASE}/pharmacy-orders/${orderId}/track`
@@ -153,11 +157,16 @@ export default function OrderDetailScreen() {
         if (res.ok) {
           const d = await res.json();
           if (mountedRef.current) {
-            if (typeof d.riderLat === "number" && typeof d.riderLng === "number") {
-              animateToLocation(d.riderLat, d.riderLng);
-            } else {
-              setRiderLat(null);
-              setRiderLng(null);
+            /* Only update coordinates from HTTP poll when socket has NOT taken
+               over — prevents stale HTTP data from overwriting real-time socket
+               positions and causing the marker to "jump". */
+            if (!socketActiveRef.current) {
+              if (typeof d.riderLat === "number" && typeof d.riderLng === "number") {
+                animateToLocation(d.riderLat, d.riderLng);
+              } else {
+                setRiderLat(null);
+                setRiderLng(null);
+              }
             }
             setEtaMinutes(d.etaMinutes ?? null);
             setTrackFailed(false);
@@ -173,35 +182,53 @@ export default function OrderDetailScreen() {
     return () => { if (ivRef !== null) clearInterval(ivRef); };
   }, [order?.status, orderId, token, isParcel, isRide, isPharmacyType]);
 
-  /* Socket.io: real-time rider location for active delivery/parcel/pharmacy orders */
+  /* Socket.io: real-time rider location for active delivery/parcel/pharmacy orders.
+     Uses the token from AuthContext; if the token is refreshed during a long-lived
+     tracking session the socket will reconnect with the updated token automatically
+     because the effect re-runs whenever `token` changes. */
   useEffect(() => {
     if (!orderId || !token) return;
     const isActive = LIVE_TRACKING_STATUSES.includes(order?.status ?? "");
     if (!isActive) return;
+
+    socketActiveRef.current = false;
 
     /* Ride/parcel orders use ride:{orderId}; delivery orders use order:{orderId} */
     const room = isRide || isParcel ? `ride:${orderId}` : `order:${orderId}`;
     const socketUrl = SOCKET_BASE;
 
     let socket: Socket | null = null;
+    let cancelled = false;
+
     import("socket.io-client").then(({ io }) => {
+      if (cancelled) return;
       socket = io(socketUrl, {
         path: "/api/socket.io",
         query: { rooms: room },
         auth: { token },
         extraHeaders: { Authorization: `Bearer ${token}` },
         transports: ["polling", "websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
       });
       socketRef.current = socket;
       socket.on("connect", () => socket?.emit("join", room));
       socket.on("rider:location", (payload: { latitude: number; longitude: number }) => {
         if (mountedRef.current) {
+          socketActiveRef.current = true;
           animateToLocation(payload.latitude, payload.longitude);
         }
+      });
+      socket.on("disconnect", () => {
+        /* When socket drops, fall back to HTTP poll for location updates */
+        socketActiveRef.current = false;
       });
     });
 
     return () => {
+      cancelled = true;
+      socketActiveRef.current = false;
       socket?.disconnect();
       socketRef.current = null;
       if (interpRafRef.current !== null) {

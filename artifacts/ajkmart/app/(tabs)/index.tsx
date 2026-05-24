@@ -58,11 +58,7 @@ const W = Dimensions.get("window").width;
 const H_PAD = spacing.lg;
 
 function safeNavigate(route: string) {
-  const knownRoutes = new Set<string>([
-    ...Object.values(SERVICE_REGISTRY).map(s => String(s.route)),
-    "/(tabs)", "/(tabs)/orders", "/(tabs)/wallet", "/cart", "/search",
-  ]);
-  if (!route || (!knownRoutes.has(route) && !route.startsWith("/(tabs)"))) {
+  if (!route) {
     router.push("/(tabs)" as Href);
     return;
   }
@@ -195,7 +191,7 @@ function ActiveTrackerStrip({ userId, tabBarHeight = 0 }: { userId: string; tabB
   if (ordersError || ridesError) return null;
 
   const activeOrders = Array.isArray(ordersData) ? ordersData.filter((o: any) => !["delivered", "cancelled"].includes(o.status)) : [];
-  const activeRides = Array.isArray(ridesData) ? ridesData.filter((r: any) => ![T("completedLabel"), "cancelled"].includes(r.status)) : [];
+  const activeRides = Array.isArray(ridesData) ? ridesData.filter((r: any) => !["completed", "cancelled"].includes(r.status)) : [];
   const total = activeOrders.length + activeRides.length;
   if (total === 0) return null;
 

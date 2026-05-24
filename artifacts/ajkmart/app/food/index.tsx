@@ -26,7 +26,6 @@ import { useGetProducts, useGetCategories } from "@workspace/api-client-react";
 import { CartSwitchModal } from "@/components/CartSwitchModal";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-const T = (key: TranslationKey) => tDual(key, "en");
 
 const C = Colors.light;
 
