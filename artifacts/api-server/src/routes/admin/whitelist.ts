@@ -16,7 +16,7 @@ const router = Router();
 router.use(adminAuth);
 
 /* GET /api/admin/whitelist */
-router.get("/", requirePermission("security.whitelist.view"), async (_req, res) => {
+router.get("/", requirePermission("system.whitelist.view"), async (_req, res) => {
   try {
     const rows = await db
       .select()
@@ -30,7 +30,7 @@ router.get("/", requirePermission("security.whitelist.view"), async (_req, res) 
 });
 
 /* POST /api/admin/whitelist */
-router.post("/", requirePermission("security.whitelist.manage"), async (req, res) => {
+router.post("/", requirePermission("system.whitelist.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const { identifier, label, bypassCode, expiresAt } = req.body;
@@ -98,7 +98,7 @@ router.post("/", requirePermission("security.whitelist.manage"), async (req, res
 });
 
 /* PATCH /api/admin/whitelist/:id */
-router.patch("/:id", requirePermission("security.whitelist.manage"), async (req, res) => {
+router.patch("/:id", requirePermission("system.whitelist.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const { id } = req.params as Record<string, string>;
@@ -151,7 +151,7 @@ router.patch("/:id", requirePermission("security.whitelist.manage"), async (req,
 });
 
 /* DELETE /api/admin/whitelist/:id */
-router.delete("/:id", requirePermission("security.whitelist.manage"), async (req, res) => {
+router.delete("/:id", requirePermission("system.whitelist.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const { id } = req.params as Record<string, string>;

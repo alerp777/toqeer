@@ -4,7 +4,7 @@ import { execFile } from "child_process";
 import { randomUUID } from "crypto";
 import type { NextFunction, Request, Response } from "express";
 import { Router, type IRouter } from "express";
-import { readFile, unlink, writeFile } from "fs/promises";
+import { readFile, unlink } from "fs/promises";
 import multer from "multer";
 import os from "os";
 import path from "path";

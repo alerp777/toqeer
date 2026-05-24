@@ -17,7 +17,7 @@ import { addAuditEntry, getClientIp, type AdminRequest } from "../../admin-share
 const router: IRouter = Router();
 
 /* ── GET /admin/service-zones — list all zones ── */
-router.get("/", requirePermission("service.zones.view"), async (_req, res) => {
+router.get("/", requirePermission("fleet.zones.view"), async (_req, res) => {
   try {
     const zones = await db
       .select()
@@ -30,7 +30,7 @@ router.get("/", requirePermission("service.zones.view"), async (_req, res) => {
 });
 
 /* ── POST /admin/service-zones — create a zone ── */
-router.post("/", requirePermission("service.zones.manage"), async (req, res) => {
+router.post("/", requirePermission("fleet.zones.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const {
@@ -112,7 +112,7 @@ router.post("/", requirePermission("service.zones.manage"), async (req, res) => 
 });
 
 /* ── PUT /admin/service-zones/:id — update a zone ── */
-router.put("/:id", requirePermission("service.zones.manage"), async (req, res) => {
+router.put("/:id", requirePermission("fleet.zones.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const id = parseInt(req.params["id"] as string, 10);

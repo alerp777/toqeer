@@ -48,6 +48,20 @@ export const PERMISSIONS = [
   { id: "system.roles.manage", label: "Manage roles & permissions", category: "system" },
   { id: "system.audit.view", label: "View audit log", category: "system" },
   { id: "system.maintenance", label: "Toggle maintenance mode", category: "system" },
+  { id: "system.sms.view", label: "View SMS gateways", category: "system" },
+  {
+    id: "system.sms.manage",
+    label: "Create / edit / delete SMS gateways",
+    category: "system",
+    highRisk: true,
+  },
+  { id: "system.whitelist.view", label: "View OTP bypass whitelist", category: "system" },
+  {
+    id: "system.whitelist.manage",
+    label: "Add / edit / remove OTP bypass whitelist entries",
+    category: "system",
+    highRisk: true,
+  },
 
   // ── Users ─────────────────────────────────────────────────────────
   { id: "users.view", label: "View users", category: "users" },
@@ -115,6 +129,8 @@ export const PERMISSIONS = [
   { id: "fleet.parcel.dispatch", label: "Dispatch parcels", category: "fleet" },
   { id: "fleet.pharmacy.view", label: "View pharmacy orders", category: "fleet" },
   { id: "fleet.pharmacy.dispatch", label: "Dispatch pharmacy orders", category: "fleet" },
+  { id: "fleet.zones.view", label: "View service zones", category: "fleet" },
+  { id: "fleet.zones.manage", label: "Create / edit / delete service zones", category: "fleet" },
 
   // ── Support ───────────────────────────────────────────────────────
   { id: "support.chat.view", label: "View support chats", category: "support" },
