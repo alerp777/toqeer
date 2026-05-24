@@ -12,6 +12,7 @@ import { MaintenanceScreen } from "./components/MaintenanceScreen";
 import { PopupEngine } from "./components/PopupEngine";
 import { PwaInstallBanner } from "./components/PwaInstallBanner";
 import { Toaster } from "./components/ui/toaster";
+import { PageShimmer } from "./components/ui/shimmer";
 import { RiderAuthConfigProvider } from "./lib/AuthConfigContext";
 import { initAnalytics } from "./lib/analytics";
 import { api, apiFetch, setApiTimeoutMs } from "./lib/api";
@@ -115,16 +116,6 @@ const SPLASH_DEADLINE_MS = 15_000;
    accidentally re-prompt within the same browser tab session. */
 const NOTIF_ASKED_KEY = "_ajkm_notifPermissionAsked";
 
-function PageFallback() {
-  return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div
-        className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"
-        style={{ borderColor: "#252836", borderTopColor: "#F0B90B" }}
-      />
-    </div>
-  );
-}
 
 function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -937,7 +928,7 @@ function AppRoutes() {
           />
         )}
         {!sessionExpired && (
-          <Suspense fallback={<PageFallback />}>
+          <Suspense fallback={<PageShimmer />}>
             <Switch>
               <Route path="/" component={GuestLanding} />
               <Route path="/auth/magic-link" component={MagicLinkPage} />
@@ -1233,7 +1224,7 @@ function AppRoutes() {
           </button>
         )}
         <div className="flex-1">
-          <Suspense fallback={<PageFallback />}>
+          <Suspense fallback={<PageShimmer />}>
             <VanDriver />
           </Suspense>
         </div>
@@ -1279,7 +1270,7 @@ function AppRoutes() {
         className="flex-1"
         style={{ paddingBottom: "calc(64px + max(8px, env(safe-area-inset-bottom, 8px)))" }}
       >
-        <Suspense fallback={<PageFallback />}>
+        <Suspense fallback={<PageShimmer />}>
           <Switch>
             <Route path="/">
               {() => (

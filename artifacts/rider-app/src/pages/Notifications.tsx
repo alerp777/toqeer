@@ -19,55 +19,47 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { PullToRefresh } from "../components/PullToRefresh";
+import { ShimmerBlock, ShimmerHeader } from "../components/ui/shimmer";
 import { ErrorState } from "../components/ui/ErrorState";
 import { api } from "../lib/api";
 import { useLanguage } from "../lib/useLanguage";
 
-function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-gray-200 ${className || ""}`} />;
-}
-
 function SkeletonNotifications() {
   return (
-    <div className="min-h-screen bg-[#F5F6F8]">
-      <div
-        className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
-      >
-        <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-green-500/[0.04]" />
-        <div className="absolute bottom-10 -left-16 h-56 w-56 rounded-full bg-white/[0.02]" />
+    <div className="min-h-screen bg-[#F5F6F8] dark:bg-[#0b0e11]">
+      <ShimmerHeader>
         <div className="relative mb-4 flex items-center justify-between">
           <div className="space-y-2">
-            <SkeletonBlock className="h-7 w-36 !bg-white/10" />
-            <SkeletonBlock className="h-4 w-28 !bg-white/10" />
+            <ShimmerBlock variant="on-dark" className="h-7 w-36" />
+            <ShimmerBlock variant="on-dark" className="h-4 w-28" />
           </div>
           <div className="flex gap-2">
-            <SkeletonBlock className="h-10 w-10 rounded-xl !bg-white/[0.06]" />
-            <SkeletonBlock className="h-10 w-24 rounded-xl !bg-white/[0.06]" />
+            <ShimmerBlock variant="on-dark" className="h-10 w-10 rounded-xl" />
+            <ShimmerBlock variant="on-dark" className="h-10 w-24 rounded-xl" />
           </div>
         </div>
         <div className="relative mt-3 grid grid-cols-4 gap-2.5">
           {[1, 2, 3, 4].map((i) => (
-            <SkeletonBlock key={i} className="h-20 rounded-2xl !bg-white/[0.06]" />
+            <ShimmerBlock key={i} variant="on-dark" className="h-20 rounded-2xl" />
           ))}
         </div>
-      </div>
+      </ShimmerHeader>
       <div className="space-y-3 px-4 py-4">
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <SkeletonBlock key={i} className="h-10 w-24 flex-shrink-0 rounded-full" />
+            <ShimmerBlock key={i} className="h-10 w-24 flex-shrink-0 rounded-full" />
           ))}
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="animate-pulse rounded-3xl border border-gray-100 bg-white p-4">
+          <div key={i} className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-4">
             <div className="flex gap-3">
-              <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-gray-100" />
+              <ShimmerBlock className="h-12 w-12 flex-shrink-0 rounded-xl" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-3/4 rounded bg-gray-100" />
-                <div className="h-3 w-full rounded bg-gray-50" />
+                <ShimmerBlock className="h-4 w-3/4 rounded" />
+                <ShimmerBlock className="h-3 w-full rounded" />
                 <div className="flex gap-2">
-                  <div className="h-3 w-16 rounded bg-gray-50" />
-                  <div className="h-3 w-12 rounded bg-gray-50" />
+                  <ShimmerBlock className="h-3 w-16 rounded" />
+                  <ShimmerBlock className="h-3 w-12 rounded" />
                 </div>
               </div>
             </div>

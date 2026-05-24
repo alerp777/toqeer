@@ -25,6 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../components/ui/accordion";
+import { ShimmerBlock } from "../components/ui/shimmer";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/rider-auth";
 import { usePlatformConfig } from "../lib/useConfig";
@@ -34,29 +35,29 @@ function SkeletonEarnings() {
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <div className="animate-pulse space-y-2 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="h-3 w-16 rounded-full bg-gray-100" />
-          <div className="h-8 w-28 rounded-full bg-gray-200" />
-          <div className="h-2.5 w-20 rounded-full bg-gray-100" />
+        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+          <ShimmerBlock className="h-3 w-16 rounded-full" />
+          <ShimmerBlock className="h-8 w-28 rounded-full" />
+          <ShimmerBlock className="h-2.5 w-20 rounded-full" />
         </div>
-        <div className="animate-pulse space-y-2 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="h-3 w-16 rounded-full bg-gray-100" />
-          <div className="h-8 w-12 rounded-full bg-gray-200" />
-          <div className="h-2.5 w-16 rounded-full bg-gray-100" />
+        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+          <ShimmerBlock className="h-3 w-16 rounded-full" />
+          <ShimmerBlock className="h-8 w-12 rounded-full" />
+          <ShimmerBlock className="h-2.5 w-16 rounded-full" />
         </div>
       </div>
-      <div className="animate-pulse space-y-3 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <div className="h-3 w-24 rounded-full bg-gray-100" />
-        <div className="h-3.5 w-full rounded-full bg-gray-200" />
-        <div className="h-2.5 w-28 rounded-full bg-gray-100" />
+      <div className="space-y-3 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+        <ShimmerBlock className="h-3 w-24 rounded-full" />
+        <ShimmerBlock className="h-3.5 w-full rounded-full" />
+        <ShimmerBlock className="h-2.5 w-28 rounded-full" />
       </div>
-      <div className="animate-pulse rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <div className="mb-3 h-3 w-24 rounded-full bg-gray-100" />
+      <div className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+        <ShimmerBlock className="mb-3 h-3 w-24 rounded-full" />
         <div className="grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2 rounded-2xl bg-gray-50 p-4">
-              <div className="mx-auto h-6 w-16 rounded-full bg-gray-200" />
-              <div className="mx-auto h-2.5 w-20 rounded-full bg-gray-100" />
+            <div key={i} className="space-y-2 rounded-2xl bg-gray-50 dark:bg-white/[0.04] p-4">
+              <ShimmerBlock className="mx-auto h-6 w-16 rounded-full" />
+              <ShimmerBlock className="mx-auto h-2.5 w-20 rounded-full" />
             </div>
           ))}
         </div>

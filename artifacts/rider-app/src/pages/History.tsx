@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from "react";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerRow } from "../components/ui/shimmer";
 import { api } from "../lib/api";
 import { formatDateTz, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
@@ -23,20 +24,7 @@ function SkeletonHistory() {
   return (
     <div className="space-y-3 px-4 py-3">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className="flex animate-pulse items-center gap-3 rounded-3xl border border-gray-100 bg-white p-4"
-        >
-          <div className="h-10 w-10 flex-shrink-0 rounded-2xl bg-gray-100" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-32 rounded-full bg-gray-200" />
-            <div className="h-2.5 w-24 rounded-full bg-gray-100" />
-          </div>
-          <div className="flex flex-col items-end space-y-1.5">
-            <div className="h-3.5 w-16 rounded-full bg-gray-200" />
-            <div className="h-5 w-14 rounded-full bg-gray-100" />
-          </div>
-        </div>
+        <ShimmerRow key={i} />
       ))}
     </div>
   );
