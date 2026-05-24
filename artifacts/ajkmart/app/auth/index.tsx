@@ -39,7 +39,7 @@ import {
 } from "@/components/auth-shared";
 
 if (typeof __DEV__ === "undefined") {
-  if (__DEV__) console.warn("[auth] __DEV__ is not defined — Metro bundler may be misconfigured");
+  console.warn("[auth] __DEV__ is not defined — Metro bundler may be misconfigured");
 }
 
 type LoginMethod = "phone" | "email" | "username" | "magic" | "google" | "facebook";

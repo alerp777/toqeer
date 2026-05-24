@@ -41,8 +41,13 @@ async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const json = await res.json() as { data?: T; message?: string } & T;
-  if (!res.ok) throw new Error((json as Record<string, unknown>).message as string ?? "Request failed");
+  const json = await res.json() as { data?: T; error?: string; message?: string } & T;
+  if (!res.ok) {
+    const msg = (json as Record<string, unknown>).error as string
+      ?? (json as Record<string, unknown>).message as string
+      ?? "Request failed";
+    throw new Error(msg);
+  }
   return ((json as Record<string, unknown>).data ?? json) as T;
 }
 
