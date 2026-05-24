@@ -33,6 +33,21 @@ let _io: SocketIOServer | null = null;
 type CachedSession = { userId: string; role?: string; roles?: string } | null;
 const _sessionCache = new Map<string, CachedSession>();
 
+/* ── Per-IP socket connection limiter ────────────────────────────────────
+   A single unauthenticated IP should not be able to hold unlimited sockets
+   and exhaust server file descriptors.  Legitimate clients (rider app,
+   vendor app, admin SPA) never need more than ~10 concurrent sockets per
+   IP; the ceiling of 60 gives headroom for corporate NATs.               */
+const MAX_SOCKETS_PER_IP = 60;
+const _ipSocketCount = new Map<string, number>();
+
+function getClientIp(socket: { handshake: { headers: Record<string, unknown>; address: string } }): string {
+  const fwd = socket.handshake.headers["x-forwarded-for"];
+  if (typeof fwd === "string") return fwd.split(",")[0]!.trim();
+  if (Array.isArray(fwd) && fwd.length > 0) return (fwd[0] as string).trim();
+  return socket.handshake.address;
+}
+
 function getCachedSession(socketId: string, token: string | null): CachedSession {
   if (_sessionCache.has(socketId)) return _sessionCache.get(socketId)!;
   if (!token) {
@@ -397,6 +412,23 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   }, GHOST_CLEANUP_MS);
 
   _io.on("connection", (socket) => {
+    /* ── Per-IP connection cap ─────────────────────────────────────────────
+       Track active socket count per client IP.  Exceeding MAX_SOCKETS_PER_IP
+       triggers an immediate disconnect so a single attacker cannot exhaust
+       server file descriptors through unauthenticated socket spam.         */
+    const clientIp = getClientIp(socket as unknown as { handshake: { headers: Record<string, unknown>; address: string } });
+    const ipCount = (_ipSocketCount.get(clientIp) ?? 0) + 1;
+    _ipSocketCount.set(clientIp, ipCount);
+    if (ipCount > MAX_SOCKETS_PER_IP) {
+      logger.warn(
+        { ip: clientIp, count: ipCount },
+        "[socketio] Per-IP connection limit reached — disconnecting socket"
+      );
+      socket.disconnect(true);
+      _ipSocketCount.set(clientIp, Math.max(0, ipCount - 1));
+      return;
+    }
+
     const headers = socket.handshake.headers as Record<string, string | string[] | undefined>;
     const query = socket.handshake.query as Record<string, unknown>;
     const auth = (socket.handshake.auth ?? {}) as Record<string, unknown>;
@@ -993,6 +1025,14 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
     );
 
     socket.on("disconnect", () => {
+      /* Decrement the per-IP counter so the slot is freed for legitimate
+         reconnects.  Use getClientIp again rather than closing over the
+         earlier value to stay consistent in case the IP was not found.  */
+      const ip = getClientIp(socket as unknown as { handshake: { headers: Record<string, unknown>; address: string } });
+      const prev = _ipSocketCount.get(ip) ?? 0;
+      if (prev <= 1) _ipSocketCount.delete(ip);
+      else _ipSocketCount.set(ip, prev - 1);
+
       _sessionCache.delete(socket.id);
       _pendingRideJoins.delete(socket.id); // cleanup all buffers for this socket
       for (const key of _pendingRideJoins.keys()) {

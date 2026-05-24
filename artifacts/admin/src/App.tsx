@@ -197,11 +197,17 @@ function ProtectedRoute({
       ? has(requirePermission)
       : requirePermission.some((p) => has(p)));
   if (!allowed) return <RedirectTo to="/403" />;
+  /* Wrap each page in its own ErrorBoundary so a crash in one route
+     does not take down the entire admin SPA.                         */
   return fullScreen ? (
-    <Component />
+    <ErrorBoundary>
+      <Component />
+    </ErrorBoundary>
   ) : (
     <AdminLayout>
-      <Component />
+      <ErrorBoundary>
+        <Component />
+      </ErrorBoundary>
     </AdminLayout>
   );
 }

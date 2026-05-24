@@ -64,7 +64,16 @@ const Reviews = lazy(() => import("./pages/Reviews"));
 const PenaltyHistory = lazy(() => import("./pages/PenaltyHistory"));
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, networkMode: "offlineFirst" } },
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      networkMode: "offlineFirst",
+      /* Prevent background refetches from firing on every render while the
+         device is online.  Individual queries override this where tighter
+         freshness is needed (e.g. live ride requests use per-tier intervals). */
+      staleTime: 10_000,
+    },
+  },
 });
 
 /* PWA5: Capacitor-aware base resolution. `BASE_URL` may be `./` or a
