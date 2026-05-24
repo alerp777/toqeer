@@ -7,6 +7,7 @@
  */
 import { useAuth as useAuthContext } from "@/context/AuthContext";
 import { useState, useCallback } from "react";
+import { API_BASE } from "@/utils/api";
 
 export interface AuthResult<T = unknown> {
   success: boolean;
@@ -18,8 +19,6 @@ export interface TokenPair {
   token: string;
   refreshToken?: string;
 }
-
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
 
 function networkError(err: unknown): string {
   if (err instanceof Error && (err.message.includes("fetch") || err.message.includes("network"))) {

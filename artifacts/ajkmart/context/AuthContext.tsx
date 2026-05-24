@@ -235,6 +235,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await secureDelete(TOKEN_KEY);
     await secureDelete(REFRESH_TOKEN_KEY);
     await secureDelete(BIOMETRIC_TOKEN);
+    await secureDelete("ajkmart_pending_token");
+    await secureDelete("ajkmart_reg_token");
     setBiometricEnabledState(false);
     await AsyncStorage.setItem(BIOMETRIC_KEY, "false");
     setUser(null);

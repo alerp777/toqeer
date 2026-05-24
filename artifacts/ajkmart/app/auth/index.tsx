@@ -22,6 +22,7 @@ import { usePlatformConfig, isMethodEnabled } from "@/context/PlatformConfigCont
 import { useToast } from "@/context/ToastContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { normalizePhone, isValidPakistaniPhone } from "@/utils/phone";
+import { API_BASE as API } from "@/utils/api";
 
 import {
   OtpDigitInput,
@@ -37,10 +38,8 @@ import {
   authColors as C,
 } from "@/components/auth-shared";
 
-const API = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
-
 if (typeof __DEV__ === "undefined") {
-  throw new Error("__DEV__ is not defined — Metro bundler misconfiguration");
+  if (__DEV__) console.warn("[auth] __DEV__ is not defined — Metro bundler may be misconfigured");
 }
 
 type LoginMethod = "phone" | "email" | "username" | "magic" | "google" | "facebook";
@@ -550,7 +549,9 @@ export default function AuthScreen() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${res.token}` },
             body: JSON.stringify({ deviceFingerprint: fingerprint }),
           });
-        } catch {}
+        } catch (trustErr: unknown) {
+          if (__DEV__) console.warn("[auth] trust-device failed:", trustErr instanceof Error ? trustErr.message : trustErr);
+        }
       }
       await completeTwoFactorLogin(res.user as AppUser, res.token, res.refreshToken);
       router.replace("/(tabs)");

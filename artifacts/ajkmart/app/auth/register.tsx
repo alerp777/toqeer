@@ -33,7 +33,7 @@ import {
   authColors as C,
 } from "@/components/auth-shared";
 
-const API = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
+import { API_BASE as API } from "@/utils/api";
 
 type RegStep = 1 | 2 | 3 | 4 | 5;
 
@@ -244,7 +244,7 @@ const insets = useSafeAreaInsets();
       const sendOtpRes = await fetch(`${API}/auth/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone, role: "customer" }),
+        body: JSON.stringify({ phone: `0${normalizedPhone}`, role: "customer" }),
       });
       const sendOtpData = await sendOtpRes.json();
       if (!sendOtpRes.ok) {

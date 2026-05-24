@@ -158,7 +158,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {biometricError && (
         <View style={{ padding: 14, backgroundColor: "#fee2e2", borderBottomWidth: 1, borderBottomColor: "#fca5a5" }}>
-          <Text style={{ color: "#b91c1c", fontSize: 13, textAlign: "center" }}>{biometricError}</Text>
+          <Text style={{ color: "#b91c1c", fontSize: 13, textAlign: "center", marginBottom: 6 }}>{biometricError}</Text>
+          <TouchableOpacity
+            onPress={() => setBiometricError(null)}
+            style={{ alignSelf: "center", paddingVertical: 4, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#fca5a5" }}
+            activeOpacity={0.75}
+          >
+            <Text style={{ color: "#7f1d1d", fontSize: 13, fontWeight: "600" }}>Try another method</Text>
+          </TouchableOpacity>
         </View>
       )}
       {/* Social handlers are intentionally NOT passed — social OAuth is not yet
