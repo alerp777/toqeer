@@ -511,7 +511,7 @@ export default function Notifications() {
                     return (
                       <div
                         key={n.id}
-                        className={`cursor-pointer overflow-hidden rounded-3xl border bg-white transition-all duration-300 ${
+                        className={`overflow-hidden rounded-3xl border bg-white transition-all duration-300 ${dest ? "cursor-pointer" : "cursor-default"} ${
                           !n.isRead
                             ? "border-t border-r border-b border-l-4 border-t-gray-100 border-r-gray-100 border-b-gray-100 border-l-green-500 shadow-lg shadow-green-100/50"
                             : "border-gray-100 shadow-sm"

@@ -458,7 +458,9 @@ router.post("/topup", adminAuth, async (req, res) => {
       const transactions = await db
         .select()
         .from(walletTransactionsTable)
-        .where(eq(walletTransactionsTable.userId, userId));
+        .where(eq(walletTransactionsTable.userId, userId))
+        .orderBy(desc(walletTransactionsTable.createdAt))
+        .limit(50);
       sendSuccess(res, { balance: result, transactions: transactions.map(mapTx) });
     } catch (e: unknown) {
       const msg = (e as Error).message ?? "";

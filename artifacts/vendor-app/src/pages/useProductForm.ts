@@ -245,6 +245,8 @@ export function useProductForm({
 
   const updateMut = useMutation({
     mutationFn: () => {
+      const prodId = editProd?.id;
+      if (!prodId) return Promise.resolve(null);
       if (!isOnline) {
         const payload = {
           ...form,
@@ -258,7 +260,7 @@ export function useProductForm({
         const storageMsg = enqueueProductAction(
           "update",
           payload as Record<string, unknown>,
-          editProd!.id
+          prodId
         );
         if (storageMsg && !storageMsg.startsWith("warn:")) {
           showToast("❌ " + storageMsg);
@@ -270,7 +272,7 @@ export function useProductForm({
         return Promise.resolve(null);
       }
       const lowStockThresholdVal = editThreshold !== "" ? Number(editThreshold) : null;
-      return api.updateProduct(editProd!.id, {
+      return api.updateProduct(prodId, {
         ...form,
         price: Number(form.price),
         originalPrice: form.originalPrice ? Number(form.originalPrice) : null,

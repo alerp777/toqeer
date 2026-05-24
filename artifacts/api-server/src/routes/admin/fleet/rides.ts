@@ -1508,7 +1508,7 @@ router.get("/fleet-analytics", async (req: Request, res: Response) => {
           lte(locationLogsTable.createdAt, to)
         )
       )
-      .limit(10000);
+      .limit(5000);
 
     const heatmap = heatPoints.map((p) => ({
       lat: parseFloat(String(p.latitude)),

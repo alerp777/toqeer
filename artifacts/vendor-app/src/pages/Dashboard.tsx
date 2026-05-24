@@ -899,7 +899,7 @@ export default function Dashboard() {
                       <div>
                         <p className="text-sm font-semibold text-gray-800 capitalize">{o.type}</p>
                         <p className="font-mono text-xs text-gray-400">
-                          #{o.id.slice(-6).toUpperCase()}
+                          #{(o.id ?? "").slice(-6).toUpperCase()}
                         </p>
                       </div>
                       <div className="text-right">
@@ -913,7 +913,7 @@ export default function Dashboard() {
                                 : "bg-blue-100 text-blue-700"
                           }`}
                         >
-                          {o.status.toUpperCase()}
+                          {(o.status ?? "").toUpperCase()}
                         </span>
                       </div>
                     </div>

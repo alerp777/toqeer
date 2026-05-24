@@ -2209,7 +2209,7 @@ router.post("/users/export", requirePermission("users.view"), async (req, res) =
         .from(usersTable)
         .where(and(inArray(usersTable.id, ids), isNull(usersTable.deletedAt)))
         .orderBy(desc(usersTable.createdAt))
-        .limit(10000);
+        .limit(2000);
     } else {
       const conditions: SQL[] = [isNull(usersTable.deletedAt) as SQL];
 
@@ -2244,7 +2244,7 @@ router.post("/users/export", requirePermission("users.view"), async (req, res) =
         .from(usersTable)
         .where(and(...conditions))
         .orderBy(desc(usersTable.createdAt))
-        .limit(10000);
+        .limit(2000);
 
       if (conditionTier && conditionTier !== "all") {
         const condCounts = await db

@@ -229,6 +229,10 @@ export default function BannersPage() {
       toast({ title: "Title is required", variant: "destructive" });
       return;
     }
+    if (form.linkType !== "none" && !form.linkValue?.trim()) {
+      toast({ title: `Link value is required for link type "${form.linkType}"`, variant: "destructive" });
+      return;
+    }
     saveBanner.mutate({
       title: form.title.trim(),
       subtitle: form.subtitle.trim() || null,
