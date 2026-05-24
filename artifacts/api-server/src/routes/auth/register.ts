@@ -121,6 +121,11 @@ router.post(
         return;
       }
 
+      if (!storeCategory) {
+        sendError(res, "Store category is required", 400);
+        return;
+      }
+
       if (cnic && !CNIC_REGEX.test(String(cnic).trim())) {
         sendError(res, "CNIC must be in format XXXXX-XXXXXXX-X", 400);
         return;
@@ -580,7 +585,10 @@ router.post(
 
       const bonusAmount = await getCachedSettings()
         .then((s) => parseFloat(s["signup_bonus_amount"] ?? "0") || 0)
-        .catch(() => 0);
+        .catch((err: unknown) => {
+          logger.warn({ err, userId }, "[auth] signup_bonus_amount fetch failed — defaulting to 0");
+          return 0;
+        });
 
       const [updated] = await db.transaction(async (tx) => {
         if (cnic && cnic.trim()) {

@@ -1044,8 +1044,6 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
         "city",
         "phone",
         "bankName",
-        "bankAccount",
-        "bankAccountTitle",
       ]);
       const safe = Object.fromEntries(Object.entries(next).filter(([k]) => SAFE_FIELDS.has(k)));
       localStorage.setItem(DRAFT_KEY, JSON.stringify(safe));
