@@ -31,8 +31,7 @@ import { ToastProvider } from "@/context/ToastContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { API_BASE } from "@/utils/api";
 
-const _domain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
-if (_domain) setBaseUrl(`https://${_domain}/api`);
+if (API_BASE) setBaseUrl(API_BASE);
 
 SplashScreen.preventAutoHideAsync();
 
@@ -298,7 +297,7 @@ export default function RootLayout() {
     );
   }
 
-  if (!_domain) {
+  if (!API_BASE) {
     return <MisconfigScreen />;
   }
 
