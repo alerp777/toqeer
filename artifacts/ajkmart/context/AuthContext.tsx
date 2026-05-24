@@ -17,6 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { useLanguage } from "./LanguageContext";
 import { io, type Socket } from "socket.io-client";
+import { API_BASE, SOCKET_BASE } from "@/utils/api";
 
 export type UserRole = "customer" | "rider" | "vendor";
 
@@ -171,8 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await doLogoutRef.current();
           return;
         }
-        const base = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}`;
-        const res = await fetch(`${base}/api/auth/refresh`, {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSessionExpired(true);
           return;
         }
-        const meRes = await fetch(`${base}/api/users/profile`, {
+        const meRes = await fetch(`${API_BASE}/users/profile`, {
           headers: { Authorization: `Bearer ${data.token}` },
         });
         if (meRes.ok) {
@@ -214,7 +214,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearCustomerLocation = async (userId: string, userToken: string) => {
     try {
-      const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
       await fetch(`${API_BASE}/locations/clear`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` },
@@ -313,7 +312,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return;
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
       await fetch(`${API_BASE}/locations/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` },
@@ -332,8 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = await secureGet(REFRESH_TOKEN_KEY);
       if (!stored) return null;
-      const base = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}`;
-      const res = await fetch(`${base}/api/auth/refresh`, {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: stored }),
@@ -445,8 +442,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedRefreshToken = await secureGet(BIOMETRIC_TOKEN);
       if (!storedRefreshToken) return false;
 
-      const base = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}`;
-      const res = await fetch(`${base}/api/auth/refresh`, {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: storedRefreshToken }),
@@ -460,7 +456,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json() as { token?: string; refreshToken?: string };
       if (!data.token) return false;
 
-      const meRes = await fetch(`${base}/api/users/profile`, {
+      const meRes = await fetch(`${API_BASE}/users/profile`, {
         headers: { Authorization: `Bearer ${data.token}` },
       });
       if (!meRes.ok) return false;
@@ -486,8 +482,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-    const base = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}`;
-    const socket = io(base, {
+    const socket = io(SOCKET_BASE, {
       path: "/api/socket.io",
       auth: { token },
       transports: ["websocket", "polling"],

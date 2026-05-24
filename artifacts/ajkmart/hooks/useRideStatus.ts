@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { getRide as getRideApi } from "@workspace/api-client-react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE } from "@/utils/api";
 
 type RideStatusHookResult = {
   ride: any;
@@ -23,7 +24,7 @@ export function useRideStatus(rideId: string): RideStatusHookResult {
   const mountedRef = useRef(true);
   const sseFailCountRef = useRef(0);
 
-  const apiBase = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+  const apiBase = API_BASE;
 
   const clearRetryTimer = useCallback(() => {
     if (retryTimerRef.current) {

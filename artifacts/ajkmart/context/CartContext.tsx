@@ -51,7 +51,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+import { API_BASE } from "@/utils/api";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { token, socket } = useAuth();

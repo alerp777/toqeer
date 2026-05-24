@@ -1,3 +1,4 @@
+import { API_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
@@ -199,7 +200,6 @@ function ParcelScreenInner() {
           const { latitude: lat, longitude: lng } = pos.coords;
           let address = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           try {
-            const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
             const geoRes = await fetch(`${API_BASE}/maps/geocode?address=${lat},${lng}`);
             if (geoRes.ok) {
               const geoData = await geoRes.json() as { formattedAddress?: string };
@@ -291,7 +291,7 @@ function ParcelScreenInner() {
       let finalDropLat   = dropLat;
       let finalDropLng   = dropLng;
 
-      const GEOCODE_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
+      const GEOCODE_BASE = API_BASE;
       if (finalPickupLat === undefined || finalPickupLng === undefined) {
         try {
           const geoRes = await fetch(`${GEOCODE_BASE}/maps/geocode?address=${encodeURIComponent(pickupAddress)}`);

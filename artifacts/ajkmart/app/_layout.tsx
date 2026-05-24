@@ -109,7 +109,7 @@ function MaintenanceScreen() {
   );
 }
 
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
+import { API_BASE } from "@/utils/api";
 
 function MagicLinkHandler() {
   const { login, setTwoFactorPending } = useAuth();

@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE, SOCKET_BASE } from "@/utils/api";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -113,8 +114,7 @@ export function RideTracker({
     const isActive = ACTIVE_STATUSES.includes(ride?.status ?? "");
     if (!isActive || !rideId) return;
 
-    const domain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
-    const socketUrl = `https://${domain}`;
+    const socketUrl = SOCKET_BASE;
     const socketIoPath = "/api/socket.io";
 
     let socket: import("socket.io-client").Socket | null = null;
@@ -236,7 +236,7 @@ export function RideTracker({
     setRetrying(false);
   };
 
-  const rideApiBase = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+  const rideApiBase = API_BASE;
 
   const graceSecondsLeft = acceptedAt
     ? Math.max(0, CANCEL_GRACE_SEC - Math.floor((Date.now() - acceptedAt) / 1000))
@@ -2219,7 +2219,7 @@ export function RideTracker({
                     if (sosSent) return;
                     setSosLoading(true);
                     try {
-                      const resp = await fetch(`https://${process.env.EXPO_PUBLIC_DOMAIN}/api/sos`, {
+                      const resp = await fetch(`${API_BASE}/sos`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                         body: JSON.stringify({ rideId }),

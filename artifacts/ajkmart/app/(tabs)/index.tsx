@@ -52,7 +52,7 @@ type Banner = ApiBanner & {
   icon?: string;
 };
 
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+import { API_BASE } from "@/utils/api";
 
 const C = Colors.light;
 const W = Dimensions.get("window").width;

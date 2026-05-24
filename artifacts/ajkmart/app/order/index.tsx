@@ -1,3 +1,4 @@
+import { SOCKET_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -180,8 +181,7 @@ export default function OrderDetailScreen() {
 
     /* Ride/parcel orders use ride:{orderId}; delivery orders use order:{orderId} */
     const room = isRide || isParcel ? `ride:${orderId}` : `order:${orderId}`;
-    const domain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
-    const socketUrl = `https://${domain}`;
+    const socketUrl = SOCKET_BASE;
 
     let socket: Socket | null = null;
     import("socket.io-client").then(({ io }) => {

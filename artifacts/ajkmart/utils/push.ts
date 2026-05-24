@@ -4,9 +4,8 @@
  */
 import { Platform } from "react-native";
 import { createLogger } from "@/utils/logger";
+import { API_BASE } from "@/utils/api";
 const log = createLogger("[Push]");
-
-const API_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -25,7 +24,7 @@ export async function registerPush(authToken: string): Promise<void> {
     const existing = await reg.pushManager.getSubscription();
     if (existing) return;
 
-    const vapidRes = await fetch(`https://${API_DOMAIN}/api/push/vapid-key`);
+    const vapidRes = await fetch(`${API_BASE}/push/vapid-key`);
     if (!vapidRes.ok) return;
     const vj = await vapidRes.json();
     const { publicKey } = (
@@ -39,7 +38,7 @@ export async function registerPush(authToken: string): Promise<void> {
     });
 
     const keys = sub.toJSON().keys ?? {};
-    await fetch(`https://${API_DOMAIN}/api/push/subscribe`, {
+    await fetch(`${API_BASE}/push/subscribe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

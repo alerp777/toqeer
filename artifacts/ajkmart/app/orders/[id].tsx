@@ -1,3 +1,4 @@
+import { SOCKET_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import Head from "expo-router/head";
 import { createLogger } from "@/utils/logger";
@@ -371,8 +372,7 @@ function OrderDetailScreenInner() {
     if (!order.type) return;
     const room = getSocketRoom(orderId, order.type);
 
-    const domain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
-    const socketUrl = `https://${domain}`;
+    const socketUrl = SOCKET_BASE;
 
     let socket: Socket | null = null;
     let retryCount = 0;

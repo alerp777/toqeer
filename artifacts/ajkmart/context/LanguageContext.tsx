@@ -7,7 +7,8 @@ import { LANGUAGE_OPTIONS } from "@workspace/i18n";
 const LANG_STORAGE_KEY = "@ajkmart_language";
 const VALID_LANGS = new Set<string>(LANGUAGE_OPTIONS.map(o => o.value));
 const DEFAULT_LANGUAGE: Language = "en";
-const API_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+import { API_BASE as _API_BASE } from "@/utils/api";
+const _LANG_API = _API_BASE;
 
 interface LanguageContextValue {
   language: Language;
@@ -27,7 +28,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 
 async function fetchPlatformDefaultLanguage(): Promise<Language | null> {
   try {
-    const res = await fetch(`https://${API_DOMAIN}/api/platform-config`, { cache: "no-store" });
+    const res = await fetch(`${_LANG_API}/platform-config`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
     const lang = data?.language?.defaultLanguage;
@@ -38,7 +39,7 @@ async function fetchPlatformDefaultLanguage(): Promise<Language | null> {
 
 async function fetchUserLanguage(token: string): Promise<Language | null> {
   try {
-    const res = await fetch(`https://${API_DOMAIN}/api/settings`, {
+    const res = await fetch(`${_LANG_API}/settings`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
@@ -50,7 +51,7 @@ async function fetchUserLanguage(token: string): Promise<Language | null> {
 }
 
 async function putUserLanguage(token: string, lang: string): Promise<void> {
-  await fetch(`https://${API_DOMAIN}/api/settings`, {
+  await fetch(`${_LANG_API}/settings`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -66,7 +67,7 @@ export function NegotiationScreen({
   const [connectionLost, setConnectionLost] = useState(false);
   const consecutiveFailsRef = useRef(0);
 
-  const rideApiBase = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+  const rideApiBase = API_BASE;
 
   useEffect(() => {
     const pulse = (

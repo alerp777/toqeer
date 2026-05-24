@@ -19,6 +19,7 @@ import React, {
   useState,
 } from "react";
 import * as Location from "expo-location";
+import { API_BASE } from "@/utils/api";
 import * as TaskManager from "expo-task-manager";
 import * as Battery from "expo-battery";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -95,7 +96,6 @@ export function RiderLocationProvider({ children }: { children: React.ReactNode 
   const hasActiveTaskRef = useRef(false);
   hasActiveTaskRef.current = hasActiveTask;
 
-  const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
 
   /* ── Poll for active orders/rides to determine dual-mode ── */
   useEffect(() => {

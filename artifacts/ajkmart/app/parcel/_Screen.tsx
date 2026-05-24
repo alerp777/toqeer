@@ -1,3 +1,4 @@
+import { API_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { createLogger } from "@/utils/logger";
@@ -203,7 +204,6 @@ function ParcelScreenInner() {
           const { latitude: lat, longitude: lng } = pos.coords;
           let address = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           try {
-            const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
             const geoRes = await fetch(`${API_BASE}/maps/geocode?address=${lat},${lng}`);
             if (geoRes.ok) {
               const geoData = await geoRes.json() as { formattedAddress?: string };
@@ -245,7 +245,7 @@ function ParcelScreenInner() {
 
   useEffect(() => {
     /* Fetch payment methods filtered to parcel service */
-    const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
+
     fetch(`${API_BASE}/payments/methods?serviceType=parcel`)
       .then(r => r.json())
       .then((json: any) => {
@@ -332,7 +332,7 @@ function ParcelScreenInner() {
       let finalDropLat   = dropLat;
       let finalDropLng   = dropLng;
 
-      const GEOCODE_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
+      const GEOCODE_BASE = API_BASE;
       /* Try to resolve coordinates — best-effort, NOT a hard block.
          Coordinates are optional on the backend (only used for geofencing). */
       let pickupGeoFailed = false;
@@ -544,8 +544,7 @@ function ParcelScreenInner() {
               onBlur={async () => {
                 if (!pickupAddress.trim() || pickupLat !== undefined) return;
                 try {
-                  const GEOCODE_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
-                  const geoRes = await fetch(`${GEOCODE_BASE}/maps/geocode?address=${encodeURIComponent(pickupAddress)}`);
+                  const geoRes = await fetch(`${API_BASE}/maps/geocode?address=${encodeURIComponent(pickupAddress)}`);
                   const geo = await geoRes.json();
                   if (geo?.lat && geo?.lng) { setPickupLat(geo.lat); setPickupLng(geo.lng); setGeoError(null); }
                   else setGeoError("pickup");
@@ -589,8 +588,7 @@ function ParcelScreenInner() {
               onBlur={async () => {
                 if (!dropAddress.trim() || dropLat !== undefined) return;
                 try {
-                  const GEOCODE_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN ?? ""}/api`;
-                  const geoRes = await fetch(`${GEOCODE_BASE}/maps/geocode?address=${encodeURIComponent(dropAddress)}`);
+                  const geoRes = await fetch(`${API_BASE}/maps/geocode?address=${encodeURIComponent(dropAddress)}`);
                   const geo = await geoRes.json();
                   if (geo?.lat && geo?.lng) { setDropLat(geo.lat); setDropLng(geo.lng); setGeoError(null); }
                   else setGeoError("drop");

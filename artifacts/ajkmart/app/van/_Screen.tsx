@@ -16,7 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { useTheme } from "@/context/ThemeContext";
 
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`;
+import { API_BASE } from "@/utils/api";
 
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
