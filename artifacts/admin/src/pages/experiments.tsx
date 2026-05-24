@@ -76,6 +76,7 @@ export default function ExperimentsPage() {
     queryKey: ["admin-experiments"],
     queryFn: () => adminFetch("/experiments"),
     refetchInterval: 30_000,
+    staleTime: 20_000,
   });
   const experiments: Experiment[] = data?.experiments || [];
 

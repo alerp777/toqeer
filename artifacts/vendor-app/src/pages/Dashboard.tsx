@@ -400,11 +400,13 @@ export default function Dashboard() {
     queryKey: ["vendor-orders", "all"],
     queryFn: () => api.getOrders(),
     refetchInterval: 20000,
+    staleTime: 15000,
   });
   const { data: daStatus } = useQuery({
     queryKey: ["vendor-delivery-access"],
     queryFn: () => api.getDeliveryAccessStatus(),
     refetchInterval: 60000,
+    staleTime: 40000,
   });
   const requestDeliveryMut = useMutation({
     mutationFn: (data: { serviceType?: string; reason?: string }) =>

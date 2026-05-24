@@ -157,6 +157,7 @@ export default function FlashDealsPage() {
     queryKey: ["admin-flash-deals"],
     queryFn: () => adminFetch("/flash-deals"),
     refetchInterval: 30000,
+    staleTime: 20000,
   });
   const { data: productsData } = useQuery({
     queryKey: ["admin-products-list"],

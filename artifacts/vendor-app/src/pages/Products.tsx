@@ -242,6 +242,7 @@ export default function Products() {
     queryFn: () =>
       api.getProducts(search || undefined, filterCat !== "all" ? filterCat : undefined),
     refetchInterval: 60000,
+    staleTime: 40000,
   });
   const products: any[] = useMemo(
     () => (Array.isArray(data?.products) ? data.products : []),

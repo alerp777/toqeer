@@ -152,6 +152,7 @@ export default function BannersPage() {
     queryKey: ["admin-banners"],
     queryFn: () => adminFetch("/banners"),
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 
   const banners: Banner[] = data?.banners || [];

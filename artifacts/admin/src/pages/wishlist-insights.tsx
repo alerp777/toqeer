@@ -70,6 +70,7 @@ function useWishlistAnalytics() {
     queryKey: ["admin-wishlist-analytics"],
     queryFn: () => adminFetch("/wishlist-analytics"),
     refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 }
 

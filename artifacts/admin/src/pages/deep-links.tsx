@@ -98,6 +98,7 @@ export default function DeepLinksPage() {
     queryKey: ["admin-deep-links"],
     queryFn: () => adminFetch("/deep-links"),
     refetchInterval: 30_000,
+    staleTime: 20_000,
   });
   const links: DeepLink[] = data?.links || [];
 

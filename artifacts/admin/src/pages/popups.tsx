@@ -274,6 +274,7 @@ export default function PopupsPage() {
     queryKey: ["admin-popups"],
     queryFn: () => adminFetch("/popups"),
     refetchInterval: 30000,
+    staleTime: 20000,
   });
   const campaigns: Campaign[] = campaignsData?.campaigns || [];
 

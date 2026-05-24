@@ -74,9 +74,10 @@ export default function WhatsAppDeliveryLog() {
       return result;
     },
     refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 
-  const logs: any[] = useMemo(() => data?.logs ?? [], [data?.logs]);
+  const logs: unknown[] = useMemo(() => (data?.logs ?? []) as unknown[], [data?.logs]);
   const total: number = data?.total ?? 0;
   const hasMore = page * LIMIT < total;
 

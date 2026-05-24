@@ -35,6 +35,7 @@ export default function Notifications() {
     queryKey: ["vendor-notifications"],
     queryFn: () => api.getNotifications(),
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 
   const notifs: Notification[] = data?.notifications || [];

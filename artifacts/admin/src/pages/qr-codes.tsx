@@ -89,6 +89,7 @@ function useQrCodes() {
     queryKey: ["admin-qr-codes"],
     queryFn: () => adminFetch("/qr-codes"),
     refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 }
 

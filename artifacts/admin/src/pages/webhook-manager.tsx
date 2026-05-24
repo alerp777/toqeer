@@ -79,6 +79,7 @@ export default function WebhookManagerPage() {
     queryKey: ["admin-webhooks"],
     queryFn: () => adminFetch("/webhooks"),
     refetchInterval: 30_000,
+    staleTime: 20_000,
   });
   const webhooks: WebhookReg[] = data?.webhooks || [];
 

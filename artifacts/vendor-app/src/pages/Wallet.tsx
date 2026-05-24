@@ -622,6 +622,7 @@ export default function Wallet() {
     queryKey: ["vendor-wallet"],
     queryFn: () => api.getWallet(),
     refetchInterval: 30000,
+    staleTime: 20000,
     enabled: config.features.wallet,
     retry: 2,
   });

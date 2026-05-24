@@ -900,6 +900,7 @@ export default function KycPage() {
       return (j?.data ?? j) as { records: KycRecord[] };
     },
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 
   useEffect(() => {

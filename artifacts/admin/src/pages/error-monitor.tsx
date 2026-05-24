@@ -579,6 +579,7 @@ export default function ErrorMonitor() {
     ],
     queryFn: () => adminFetch(`/error-reports?${params}`),
     refetchInterval: 30000,
+    staleTime: 20000,
     enabled: activeTab !== "customers" && activeTab !== "filescan",
   });
 
@@ -593,6 +594,7 @@ export default function ErrorMonitor() {
     queryKey: ["customer-reports", customerPage, customerStatusFilter],
     queryFn: () => adminFetch(`/error-reports/customer-reports?${customerParams}`),
     refetchInterval: 30000,
+    staleTime: 20000,
     enabled: activeTab === "customers",
   });
 
@@ -759,6 +761,7 @@ export default function ErrorMonitor() {
       queryKey: ["auto-resolve-settings"],
       queryFn: () => adminFetch("/error-reports/auto-resolve-settings"),
       refetchInterval: 60000,
+      staleTime: 40000,
     }
   );
 
@@ -788,6 +791,7 @@ export default function ErrorMonitor() {
     queryKey: ["auto-resolve-log"],
     queryFn: () => adminFetch("/error-reports/auto-resolve-log?limit=50"),
     refetchInterval: 30000,
+    staleTime: 20000,
     enabled: showAutoResolvePanel,
   });
 
