@@ -433,12 +433,12 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     setVerifying(true);
     const result = await verifyOtp(localPhone, otp);
     setVerifying(false);
-    if (!result.success) {
+    if (!result.success || !result.data) {
       setLoginError(translateApiError(result.error ?? ""));
       setLocalOtp("");
       return;
     }
-    const { token, refreshToken } = result.data!;
+    const { token, refreshToken } = result.data;
     api.storeTokens(token, refreshToken);
     await handleSuccess({ id: "", phone: localPhone, roles: [] } as unknown as SDKAuthUser, token);
   };

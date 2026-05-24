@@ -105,7 +105,8 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
   }, [otpCooldown]);
 
   useEffect(() => {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    const { password: _pw, confirmPassword: _cpw, otp: _otp, ...safeDraft } = draft;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
   }, [draft]);
 
   const total = 5;

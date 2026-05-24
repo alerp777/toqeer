@@ -161,11 +161,14 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       setOtp("");
       return;
     }
-    await handleLoginSuccess(
-      result.data.token,
-      { id: "", phone, roles: ["rider"] },
-      result.data.refreshToken
-    );
+    api.storeTokens(result.data.token, result.data.refreshToken);
+    let profile: Record<string, unknown> = { id: "", phone, roles: ["rider"] };
+    try {
+      profile = (await api.getMe()) as Record<string, unknown>;
+    } catch {
+      /* getMe failed — proceed with minimal profile so login is not blocked */
+    }
+    await handleLoginSuccess(result.data.token, profile, result.data.refreshToken);
   };
 
   const passwordLogin = async () => {
