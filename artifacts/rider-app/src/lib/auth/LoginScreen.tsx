@@ -119,6 +119,22 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     navigate("/");
   };
 
+  /* ── Shared helper: fetch real profile after any login method.
+     Falls back to the minimal object if the network call fails so no
+     login path is ever blocked by a /me error. ── */
+  const fetchRiderProfile = async (
+    token: string,
+    refreshToken: string | undefined,
+    fallback: Record<string, unknown>
+  ): Promise<Record<string, unknown>> => {
+    try {
+      api.storeTokens(token, refreshToken);
+      return (await api.getMe()) as Record<string, unknown>;
+    } catch {
+      return fallback;
+    }
+  };
+
   const sendPhoneOtp = async () => {
     const cleaned = phone.replace(/[^0-9]/g, "");
     if (!/^0?3\d{9}$/.test(cleaned)) {
@@ -190,7 +206,11 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     }
     const token = result.data.token;
     const refreshToken = result.data.refreshToken ?? api.getRefreshToken() ?? "";
-    const profile: Record<string, unknown> = { id: "", phone: identifier.trim(), roles: ["rider"] };
+    const profile = await fetchRiderProfile(token, refreshToken || undefined, {
+      id: "",
+      phone: identifier.trim(),
+      roles: ["rider"],
+    });
     /* Check if native biometrics are available and not yet enrolled — offer
        enrolment immediately after the first successful password login so the
        rider can use fingerprint/face on the next cold start. */
@@ -248,11 +268,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       })) as Record<string, unknown>;
       const token = (res.accessToken ?? res.token) as string;
       const rt2fa = (res.refreshToken ?? res.refresh_token) as string | undefined;
-      await handleLoginSuccess(
-        token,
-        { id: "", phone: twoFactor.identifier, roles: ["rider"] },
-        rt2fa
-      );
+      const profile2fa = await fetchRiderProfile(token, rt2fa, {
+        id: "",
+        phone: twoFactor.identifier,
+        roles: ["rider"],
+      });
+      await handleLoginSuccess(token, profile2fa, rt2fa);
     } catch (e) {
       setError(e instanceof Error ? e.message : (T("loginFailed") as string));
     } finally {
@@ -268,11 +289,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       setError(result.error ?? "Biometric sign-in failed");
       return;
     }
-    await handleLoginSuccess(
+    const bioProfile = await fetchRiderProfile(
       result.data.token,
-      { id: "", phone: "", roles: ["rider"] },
-      result.data.refreshToken
+      result.data.refreshToken,
+      { id: "", phone: "", roles: ["rider"] }
     );
+    await handleLoginSuccess(result.data.token, bioProfile, result.data.refreshToken);
   };
 
   /* ── Email OTP handlers ── */
@@ -307,11 +329,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       const res = (await api.verifyEmailOtp(emailAddress, code)) as Record<string, unknown>;
       const token = (res.accessToken ?? res.token) as string;
       const refreshToken = (res.refreshToken ?? res.refresh_token) as string | undefined;
-      await handleLoginSuccess(
-        token,
-        { id: "", email: emailAddress, roles: ["rider"] },
-        refreshToken
-      );
+      const emailProfile = await fetchRiderProfile(token, refreshToken, {
+        id: "",
+        email: emailAddress,
+        roles: ["rider"],
+      });
+      await handleLoginSuccess(token, emailProfile, refreshToken);
     } catch (e) {
       setError(e instanceof Error ? e.message : "OTP verification failed");
       setEmailOtp("");
@@ -384,19 +407,21 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
           client_id: clientId,
           callback: (response) => {
             setSocialLoading(null);
-            api
-              .socialGoogle({ idToken: response.credential })
-              .then((res) => {
-                const r = res as Record<string, unknown>;
-                const token = (r.accessToken ?? r.token) as string;
-                const rt = (r.refreshToken ?? r.refresh_token) as string | undefined;
-                return handleLoginSuccess(token, { id: "", roles: ["rider"] }, rt);
-              })
-              .then(resolve)
-              .catch((e: unknown) => {
+            void (async () => {
+              try {
+                const res = (await api.socialGoogle({
+                  idToken: response.credential,
+                })) as Record<string, unknown>;
+                const token = (res.accessToken ?? res.token) as string;
+                const rt = (res.refreshToken ?? res.refresh_token) as string | undefined;
+                const gProfile = await fetchRiderProfile(token, rt, { id: "", roles: ["rider"] });
+                await handleLoginSuccess(token, gProfile, rt);
+                resolve();
+              } catch (e: unknown) {
                 setError(e instanceof Error ? e.message : "Google sign-in failed");
                 reject(e as Error);
-              });
+              }
+            })();
           },
           auto_select: false,
           cancel_on_tap_outside: true,
@@ -459,19 +484,24 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         (window as unknown as FbWindow).FB.login(
           (response) => {
             if (response.authResponse?.accessToken) {
-              api
-                .socialFacebook({ accessToken: response.authResponse.accessToken })
-                .then((res) => {
-                  const r = res as Record<string, unknown>;
-                  const token = (r.accessToken ?? r.token) as string;
-                  const rt = (r.refreshToken ?? r.refresh_token) as string | undefined;
-                  return handleLoginSuccess(token, { id: "", roles: ["rider"] }, rt);
-                })
-                .then(resolve)
-                .catch((e: unknown) => {
+              void (async () => {
+                try {
+                  const res = (await api.socialFacebook({
+                    accessToken: response.authResponse!.accessToken,
+                  })) as Record<string, unknown>;
+                  const token = (res.accessToken ?? res.token) as string;
+                  const rt = (res.refreshToken ?? res.refresh_token) as string | undefined;
+                  const fbProfile = await fetchRiderProfile(token, rt, {
+                    id: "",
+                    roles: ["rider"],
+                  });
+                  await handleLoginSuccess(token, fbProfile, rt);
+                  resolve();
+                } catch (e: unknown) {
                   setError(e instanceof Error ? e.message : "Facebook sign-in failed");
                   reject(e as Error);
-                });
+                }
+              })();
             } else {
               reject(new Error("Facebook login cancelled"));
             }
