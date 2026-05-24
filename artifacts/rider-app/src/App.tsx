@@ -12,6 +12,7 @@ import { MaintenanceScreen } from "./components/MaintenanceScreen";
 import { PopupEngine } from "./components/PopupEngine";
 import { PwaInstallBanner } from "./components/PwaInstallBanner";
 import { Toaster } from "./components/ui/toaster";
+import { NetworkStatusBanner } from "./components/NetworkStatusBanner";
 import { PageShimmer } from "./components/ui/shimmer";
 import { RiderAuthConfigProvider } from "./lib/AuthConfigContext";
 import { initAnalytics } from "./lib/analytics";
@@ -1223,6 +1224,7 @@ function AppRoutes() {
             <div className="truncate text-xs opacity-90">{fcmNotif.body}</div>
           </button>
         )}
+        <NetworkStatusBanner />
         <div className="flex-1">
           <Suspense fallback={<PageShimmer />}>
             <VanDriver />
@@ -1258,6 +1260,7 @@ function AppRoutes() {
           <div className="truncate text-xs opacity-90">{fcmNotif.body}</div>
         </button>
       )}
+      <NetworkStatusBanner />
 
       {/* U2: Cap the announcement bar at a compact strip; long messages scroll
           internally rather than consuming a third of the viewport. */}
