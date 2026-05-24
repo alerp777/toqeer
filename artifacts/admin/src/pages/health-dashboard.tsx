@@ -277,22 +277,22 @@ function SystemChecksSection() {
       const d = (await adminAbsoluteFetch("/api/health")) as Record<string, unknown>;
       return { ...(d ?? {}), _apiMs: Date.now() - t0 };
     },
-    refetchInterval: 30_000,
-    staleTime: 20_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 
   const { data: activeUsers, isLoading: usersLoading } = useQuery({
     queryKey: ["stats-active-users"],
     queryFn: () => adminFetch("/stats/active-users") as Promise<{ online: number; total: number }>,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 
   const { data: socketData, isLoading: socketLoading } = useQuery({
     queryKey: ["stats-socket-connections"],
     queryFn: () => adminFetch("/stats/socket-connections") as Promise<{ connected: number }>,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 
   const { data: storageData, isLoading: storageLoading } = useQuery({
@@ -304,15 +304,15 @@ function SystemChecksSection() {
         freeGb: number | null;
         usedGb: number | null;
       }>,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 
   const { data: queueData, isLoading: queueLoading } = useQuery({
     queryKey: ["stats-queue"],
     queryFn: () => adminFetch("/stats/queue") as Promise<{ pending: number; status: string }>,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 
   const checks = (

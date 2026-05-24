@@ -82,7 +82,8 @@ function useConversations() {
   return useQuery({
     queryKey: ["admin-chat-conversations"],
     queryFn: () => adminFetch("/chat-monitor/conversations?limit=200"),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 }
 function useConversationMessages(id: string | null) {
@@ -97,7 +98,8 @@ function useChatReports(status?: string) {
   return useQuery({
     queryKey: ["admin-chat-reports", status || "all"],
     queryFn: () => adminFetch(`/chat-monitor/reports${params}`),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
+    staleTime: 40_000,
   });
 }
 

@@ -76,7 +76,8 @@ export default function SupportChatPage() {
   } = useQuery({
     queryKey: ["admin-support-conversations"],
     queryFn: () => apiFetch("/support-chat/conversations"),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    staleTime: 20000,
   });
 
   const { data: msgsData, isLoading: msgsLoading } = useQuery({

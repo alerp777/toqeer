@@ -1214,7 +1214,8 @@ export default function PromotionsHub() {
   } = useQuery({
     queryKey: ["admin-campaigns"],
     queryFn: () => adminFetch("/promotions/campaigns"),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+    staleTime: 40000,
   });
 
   const {
@@ -1224,13 +1225,15 @@ export default function PromotionsHub() {
   } = useQuery({
     queryKey: ["admin-offers"],
     queryFn: () => adminFetch("/promotions/offers"),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+    staleTime: 40000,
   });
 
   const { data: pendingData } = useQuery({
     queryKey: ["admin-offers-pending"],
     queryFn: () => adminFetch("/promotions/offers/pending"),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+    staleTime: 40000,
   });
 
   const campaigns: Campaign[] = campaignsData?.campaigns ?? [];

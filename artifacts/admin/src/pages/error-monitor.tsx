@@ -487,7 +487,8 @@ function useTabCount(
   const { data } = useQuery({
     queryKey: ["error-count", tab, sourceApp, severity, errorType],
     queryFn: () => adminFetch(`/error-reports?${p}`),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    staleTime: 20000,
   });
   return (data?.pagination?.total ?? 0) as number;
 }
@@ -642,7 +643,8 @@ export default function ErrorMonitor() {
   const { data: customerCountData } = useQuery({
     queryKey: ["customer-reports-count"],
     queryFn: () => adminFetch("/error-reports/customer-reports?status=new&limit=1"),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+    staleTime: 40000,
   });
   const customerNewCount = customerCountData?.pagination?.total ?? 0;
 

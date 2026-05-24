@@ -8,7 +8,10 @@ import { useEffect } from "react";
 const log = createLogger("[admin]");
 
 const REFETCH_INTERVAL = 30_000;
-const RIDES_REFETCH_INTERVAL = 5_000;
+/* Rides list pages use polling as a fallback only — the live-riders-map uses
+   Socket.IO for real-time updates. 15 s is aggressive enough for the table view
+   while halving the per-page backend hit vs. the previous 5 s interval. */
+const RIDES_REFETCH_INTERVAL = 15_000;
 
 // Auth
 export const useAdminLogin = () => {
@@ -143,7 +146,8 @@ export const usePendingUsers = () => {
   const query = useQuery({
     queryKey: ["admin-users-pending"],
     queryFn: () => adminFetch("/users/pending"),
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
   useEffect(() => {
     if (query.isError) {
@@ -1247,8 +1251,8 @@ export const useHealthDashboard = () => {
   return useQuery({
     queryKey: ["admin-health-dashboard"],
     queryFn: () => adminFetch("/system/health-dashboard"),
-    refetchInterval: 10_000,
-    staleTime: 8_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 };
 
@@ -1281,8 +1285,8 @@ export const useDiagnostics = () => {
   return useQuery({
     queryKey: ["admin-diagnostics"],
     queryFn: () => adminFetch("/system/diagnostics"),
-    refetchInterval: 15_000,
-    staleTime: 12_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 };
 
@@ -2153,14 +2157,16 @@ export const useRideAuditTrail = (rideId: string | null) =>
     queryKey: ["admin-ride-audit", rideId],
     queryFn: () => adminFetch(`/rides/${rideId}/audit-trail`),
     enabled: !!rideId,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 
 export const useDispatchMonitor = () =>
   useQuery({
     queryKey: ["admin-dispatch-monitor"],
     queryFn: () => adminFetch("/dispatch-monitor"),
-    refetchInterval: 10_000,
+    refetchInterval: 15_000,
+    staleTime: 10_000,
   });
 
 export const useAuditLog = (params?: {
@@ -2239,7 +2245,8 @@ export const useModerationQueue = () =>
   useQuery({
     queryKey: ["admin-moderation-queue"],
     queryFn: () => adminFetch("/reviews/moderation-queue"),
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 
 export const useApproveReview = () => {
