@@ -3379,17 +3379,27 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
           );
         });
         /* Re-emit the OTP on arrived so that any customer who missed the
-         original socket event (e.g. brief disconnect) gets the OTP now. */
+         original socket event (e.g. brief disconnect) gets the OTP now.
+         We cannot recover the raw OTP from the stored SHA-256 hash, so we
+         generate a fresh one, update the hash in DB, and emit the raw value. */
         if (ride.tripOtp) {
-          emitRideOtp(ride.userId, ride.id, ride.tripOtp, ride.riderId);
+          const freshOtp = String(randomInt(1000, 10000));
+          db.update(ridesTable)
+            .set({ tripOtp: hashTripOtp(freshOtp), updatedAt: new Date() })
+            .where(eq(ridesTable.id, ride.id))
+            .catch((e: Error) =>
+              logger.error({ rideId: ride.id, err: e.message }, "[rider] arrived tripOtp refresh failed")
+            );
+          emitRideOtp(ride.userId, ride.id, freshOtp, ride.riderId);
         }
       }
     }
 
     emitRideDispatchUpdate({ rideId: updated.id, action: "status-change", status });
     emitRideUpdate(updated.id);
+    const { tripOtp: _omitStatusOtp, ...updatedWithoutOtp } = updated;
     const rideStatusBody = {
-      ...updated,
+      ...updatedWithoutOtp,
       fare: safeNum(updated.fare),
       distance: safeNum(updated.distance),
     };

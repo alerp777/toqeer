@@ -674,6 +674,8 @@ const toISO = (v: unknown) => (v ? (v instanceof Date ? v.toISOString() : v) : n
 export function formatRide(r: Record<string, unknown>) {
   return {
     ...r,
+    /* Never expose the stored OTP hash — it is DB-internal only. */
+    tripOtp: undefined,
     fare: parseFloat(String(r.fare ?? "0")),
     distance: parseFloat(String(r.distance ?? "0")),
     offeredFare: r.offeredFare ? parseFloat(String(r.offeredFare)) : null,
