@@ -75,7 +75,7 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
     }
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, vendorId)).limit(1);
     if (!user) {
-      res.status(403).json({ success: false, error: "Vendor account not found" });
+      sendForbidden(res, "Vendor account not found");
       return;
     }
     req.vendorUser = user as typeof user & typeof req.vendorUser;

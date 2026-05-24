@@ -4,7 +4,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useMapsAutocomplete, resolveLocation, staticMapUrl } from "@/hooks/useMaps";
 import type { MapPrediction } from "@/hooks/useMaps";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -176,6 +176,7 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
   const [history, setHistory] = useState<any[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [locLoading, setLocLoading] = useState(false);
+  const lastFareErrRef = useRef(0);
   const [locDenied, setLocDenied] = useState(false);
   const [showBargain, setShowBargain] = useState(false);
   const [offeredFare, setOfferedFare] = useState("");
@@ -390,7 +391,11 @@ export function RideBookingForm({ onBooked, prefillPickup, prefillDrop, prefillT
           if (!cancelled) {
             setEstimate(null);
             setEstimateForType(null);
-            showToast("Could not estimate fare. Please try again.", "error");
+            const now = Date.now();
+            if (now - lastFareErrRef.current > 5000) {
+              lastFareErrRef.current = now;
+              showToast("Could not estimate fare. Please try again.", "error");
+            }
           }
         })
         .finally(() => {

@@ -480,7 +480,7 @@ router.post("/topup", adminAuth, async (req, res) => {
       },
       "[route] unhandled error"
     );
-    res.status(500).json({ success: false, error: "Internal server error" });
+    sendError(res, "Internal server error", 500);
   }
 });
 
@@ -620,7 +620,7 @@ router.post("/deposit", customerAuth, async (req, res) => {
       },
       "[route] unhandled error"
     );
-    res.status(500).json({ success: false, error: "Internal server error" });
+    sendError(res, "Internal server error", 500);
   }
 });
 
@@ -1007,7 +1007,7 @@ router.post("/withdraw", customerAuth, async (req, res) => {
       },
       "[route] unhandled error"
     );
-    res.status(500).json({ success: false, error: "Internal server error" });
+    sendError(res, "Internal server error", 500);
   }
 });
 

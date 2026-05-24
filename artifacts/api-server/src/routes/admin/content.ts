@@ -619,8 +619,27 @@ router.patch("/products/bulk", async (req, res) => {
   }
 });
 
+const updateProductAdminSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").max(200).optional(),
+  description: z.string().max(2000).optional(),
+  price: z.number({ invalid_type_error: "Price must be a number" }).positive("Price must be positive").optional(),
+  originalPrice: z.number().positive().nullable().optional(),
+  category: z.string().min(1).optional(),
+  unit: z.string().max(50).optional(),
+  inStock: z.boolean().optional(),
+  stock: z.number({ invalid_type_error: "Stock must be a number" }).int().min(0, "Stock cannot be negative").optional(),
+  vendorName: z.string().max(200).optional(),
+  deliveryTime: z.string().max(100).optional(),
+  image: z.string().max(500).optional(),
+}).strip();
+
 router.patch("/products/:id", async (req, res) => {
   try {
+    const parsed = updateProductAdminSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      sendValidationError(res, parsed.error.errors[0]?.message ?? "Invalid request body");
+      return;
+    }
     const {
       name,
       description,
@@ -633,7 +652,7 @@ router.patch("/products/:id", async (req, res) => {
       vendorName,
       deliveryTime,
       image,
-    } = req.body;
+    } = parsed.data;
     const updates: Partial<typeof productsTable.$inferInsert> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;

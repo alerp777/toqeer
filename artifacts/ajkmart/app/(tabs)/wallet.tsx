@@ -152,8 +152,9 @@ function WithdrawModal({ onClose, onSuccess, onFrozen, token, balance, minWithdr
 
   const handleSubmit = async () => {
     if (submitting) return;
-    const amt = parseFloat(amount);
-    if (!amount || isNaN(amt) || amt <= 0) { setErr("Please enter a valid amount"); return; }
+    const raw = parseFloat(amount);
+    if (!amount || isNaN(raw) || raw <= 0) { setErr("Please enter a valid amount"); return; }
+    const amt = parseFloat(raw.toFixed(2));
     if (amt < minWithdrawal)               { setErr(`Minimum withdrawal amount is Rs. ${minWithdrawal.toLocaleString()}`); return; }
     if (amt > balance)                      { setErr(`Insufficient balance. Available: Rs. ${balance.toLocaleString()}`); return; }
     if (!accountNumber.trim())              { setErr("Account number is required"); return; }

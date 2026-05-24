@@ -1,7 +1,7 @@
 import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db/schema";
 import { t } from "@workspace/i18n";
-import { and, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -28,56 +28,69 @@ const notifReadLimiter = rateLimit({
 router.get("/", customerAuth, notifReadLimiter, async (req, res) => {
   try {
     const userId = req.customerId!;
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query["limit"] || "50"), 10)));
+    const offset = Math.max(0, parseInt(String(req.query["offset"] || "0"), 10));
 
-    let notifs = await db
+    // Seed welcome notifications on very first visit (only on first page request)
+    if (offset === 0) {
+      const [existing] = await db
+        .select({ id: notificationsTable.id })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.userId, userId))
+        .limit(1);
+
+      if (!existing) {
+        const userLang = await getUserLanguage(userId);
+        await db.insert(notificationsTable).values([
+          {
+            id: generateId(),
+            userId,
+            title: t("notifWelcomeTitle", userLang),
+            body: t("notifWelcomeBody", userLang),
+            type: "system",
+            icon: "star-outline",
+            isRead: false,
+          },
+          {
+            id: generateId(),
+            userId,
+            title: t("notifWalletReadyTitle", userLang),
+            body: t("notifWalletReadyBody", userLang),
+            type: "wallet",
+            icon: "wallet-outline",
+            isRead: false,
+          },
+          {
+            id: generateId(),
+            userId,
+            title: t("notifRideServiceTitle", userLang),
+            body: t("notifRideServiceBody", userLang),
+            type: "ride",
+            icon: "car-outline",
+            isRead: true,
+          },
+        ]);
+      }
+    }
+
+    // Paginated fetch — newest first
+    const notifs = await db
       .select()
       .from(notificationsTable)
       .where(eq(notificationsTable.userId, userId))
-      .orderBy(notificationsTable.createdAt);
+      .orderBy(desc(notificationsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    if (notifs.length === 0) {
-      const userLang = await getUserLanguage(userId);
-      const seeds = [
-        {
-          id: generateId(),
-          userId,
-          title: t("notifWelcomeTitle", userLang),
-          body: t("notifWelcomeBody", userLang),
-          type: "system",
-          icon: "star-outline",
-          isRead: false,
-        },
-        {
-          id: generateId(),
-          userId,
-          title: t("notifWalletReadyTitle", userLang),
-          body: t("notifWalletReadyBody", userLang),
-          type: "wallet",
-          icon: "wallet-outline",
-          isRead: false,
-        },
-        {
-          id: generateId(),
-          userId,
-          title: t("notifRideServiceTitle", userLang),
-          body: t("notifRideServiceBody", userLang),
-          type: "ride",
-          icon: "car-outline",
-          isRead: true,
-        },
-      ];
-      await db.insert(notificationsTable).values(seeds);
-      notifs = await db
-        .select()
-        .from(notificationsTable)
-        .where(eq(notificationsTable.userId, userId))
-        .orderBy(notificationsTable.createdAt);
-    }
+    // Efficient unread count without fetching all rows
+    const [countRow] = await db
+      .select({ unread: count() })
+      .from(notificationsTable)
+      .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.isRead, false)));
 
-    const unreadCount = notifs.filter((n) => !n.isRead).length;
     sendSuccess(res, {
-      notifications: notifs.reverse().map((n) => ({ ...n, createdAt: n.createdAt.toISOString() })),
-      unreadCount,
+      notifications: notifs.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() })),
+      unreadCount: countRow?.unread ?? 0,
     });
   } catch (err) {
     logger.error(

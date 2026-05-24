@@ -62,6 +62,9 @@ export default function OrderDetailScreen() {
     completed:        { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",   label: T("completed") },
     searching:        { color: C.amber, bg: C.amberSoft, icon: "search-outline",           label: T("searching") },
     bargaining:       { color: C.brandBlue, bg: C.brandBlueSoft, icon: "chatbubbles-outline",      label: T("bargaining") },
+    no_riders:        { color: C.red, bg: C.redSoft, icon: "person-remove-outline",       label: "No Riders Available" },
+    payment_failed:   { color: C.red, bg: C.redSoft, icon: "card-outline",                label: "Payment Failed" },
+    failed:           { color: C.red, bg: C.redSoft, icon: "alert-circle-outline",        label: "Failed" },
   };
 
   const STEP_LABELS = [T("statusPlaced"), T("confirmed"), T("preparing"), T("statusOnWay"), T("delivered")];
