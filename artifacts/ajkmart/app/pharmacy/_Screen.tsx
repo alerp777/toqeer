@@ -397,12 +397,11 @@ function PharmacyScreenInner() {
       { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
     );
     const base64 = await FileSystem.readAsStringAsync(compressed.uri, { encoding: "base64" as const });
-    const { API_BASE: _phApi } = await import("@/utils/api");
-    if (!_phApi) {
+    if (!API_BASE) {
       log.error("EXPO_PUBLIC_DOMAIN is not set — prescription upload will fail. Check your environment configuration.");
       throw new Error("EXPO_PUBLIC_DOMAIN is not configured — cannot upload prescription.");
     }
-    const res = await fetch(`${_phApi}/uploads/prescription`, {
+    const res = await fetch(`${API_BASE}/uploads/prescription`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

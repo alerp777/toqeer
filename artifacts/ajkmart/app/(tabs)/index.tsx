@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -51,8 +52,6 @@ type Banner = ApiBanner & {
   subtitle?: string;
   icon?: string;
 };
-
-import { API_BASE } from "@/utils/api";
 
 const C = Colors.light;
 const W = Dimensions.get("window").width;

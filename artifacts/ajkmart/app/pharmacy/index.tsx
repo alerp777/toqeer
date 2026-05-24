@@ -270,7 +270,7 @@ function PharmacyScreenInner() {
       { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
     );
     const base64 = await FileSystem.readAsStringAsync(compressed.uri, { encoding: "base64" as const });
-    const res = await fetch(`${(await import("@/utils/api")).API_BASE}/uploads/prescription`, {
+    const res = await fetch(`${API_BASE}/uploads/prescription`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

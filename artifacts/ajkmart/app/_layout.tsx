@@ -29,6 +29,7 @@ import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
 import { PlatformConfigProvider, usePlatformConfig } from "@/context/PlatformConfigContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
+import { API_BASE } from "@/utils/api";
 
 const _domain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
 if (_domain) setBaseUrl(`https://${_domain}/api`);
@@ -108,8 +109,6 @@ function MaintenanceScreen() {
     </View>
   );
 }
-
-import { API_BASE } from "@/utils/api";
 
 function MagicLinkHandler() {
   const { login, setTwoFactorPending } = useAuth();

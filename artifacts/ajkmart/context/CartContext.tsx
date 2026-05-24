@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE } from "@/utils/api";
 
 export interface CartItem {
   productId: string;
@@ -50,8 +51,6 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | null>(null);
-
-import { API_BASE } from "@/utils/api";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { token, socket } = useAuth();

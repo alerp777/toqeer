@@ -3,12 +3,11 @@ import React, { createContext, useContext, useEffect, useCallback, useState, use
 import { I18nManager } from "react-native";
 import type { Language } from "@workspace/i18n";
 import { LANGUAGE_OPTIONS } from "@workspace/i18n";
+import { API_BASE } from "@/utils/api";
 
 const LANG_STORAGE_KEY = "@ajkmart_language";
 const VALID_LANGS = new Set<string>(LANGUAGE_OPTIONS.map(o => o.value));
 const DEFAULT_LANGUAGE: Language = "en";
-import { API_BASE as _API_BASE } from "@/utils/api";
-const _LANG_API = _API_BASE;
 
 interface LanguageContextValue {
   language: Language;
@@ -28,7 +27,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 
 async function fetchPlatformDefaultLanguage(): Promise<Language | null> {
   try {
-    const res = await fetch(`${_LANG_API}/platform-config`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/platform-config`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
     const lang = data?.language?.defaultLanguage;
@@ -39,7 +38,7 @@ async function fetchPlatformDefaultLanguage(): Promise<Language | null> {
 
 async function fetchUserLanguage(token: string): Promise<Language | null> {
   try {
-    const res = await fetch(`${_LANG_API}/settings`, {
+    const res = await fetch(`${API_BASE}/settings`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
@@ -51,7 +50,7 @@ async function fetchUserLanguage(token: string): Promise<Language | null> {
 }
 
 async function putUserLanguage(token: string, lang: string): Promise<void> {
-  await fetch(`${_LANG_API}/settings`, {
+  await fetch(`${API_BASE}/settings`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
