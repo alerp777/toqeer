@@ -87,6 +87,17 @@ const translations = {
     save: "Save",
     saveChanges: "Save Changes",
     cancel: "Cancel",
+    confirm: "Confirm",
+    submit: "Submit",
+    next: "Next",
+    close: "Close",
+    filter: "Filter",
+    export: "Export",
+    import: "Import",
+    delete: "Delete",
+    create: "Create",
+    failed: "Failed",
+    saveFailed: "Save failed. Please try again.",
     loading: "Loading...",
     retry: "Retry",
     error: "Error",
@@ -1032,7 +1043,6 @@ const translations = {
     freeLabel: "FREE",
     codLimit: "COD limit",
     itemsLabel: "items",
-    export: "Export",
     recentOrders: "Recent Orders",
     recentRides: "Recent Rides",
     noRecentOrders: "No recent orders",
@@ -5539,3 +5549,9 @@ export const NASTALIQ_FONT = "NotoNastaliqUrdu_400Regular";
 export const NASTALIQ_FONT_MEDIUM = "NotoNastaliqUrdu_500Medium";
 export const NASTALIQ_FONT_SEMI = "NotoNastaliqUrdu_600SemiBold";
 export const NASTALIQ_FONT_BOLD = "NotoNastaliqUrdu_700Bold";
+
+/**
+ * React Hooks & Context
+ */
+export { useTranslation, LanguageProvider } from "./react";
+export type { LanguageProviderProps } from "./react";

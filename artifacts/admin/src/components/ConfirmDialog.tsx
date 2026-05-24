@@ -9,6 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAdminTranslation } from "@/lib/AdminLanguageContext";
+import type { TranslationKey } from "@workspace/i18n";
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -26,13 +28,20 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   variant = "default",
   busy = false,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  const { t } = useAdminTranslation();
+
+  // Use translated defaults if not provided
+  const finalConfirmLabel = confirmLabel || t("confirm" as TranslationKey);
+  const finalCancelLabel = cancelLabel || t("cancel" as TranslationKey);
+  const loadingText = t("loading" as TranslationKey);
+
   return (
     <Dialog
       open={open}
@@ -58,14 +67,14 @@ export function ConfirmDialog({
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            {cancelLabel}
+            {finalCancelLabel}
           </Button>
           <Button
             variant={variant === "destructive" ? "destructive" : "default"}
             onClick={onConfirm}
             disabled={busy}
           >
-            {busy ? "Working..." : confirmLabel}
+            {busy ? loadingText : finalConfirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

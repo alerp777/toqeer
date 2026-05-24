@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/adminAuthContext";
+import { AdminLanguageProvider } from "@/lib/AdminLanguageContext";
 import { setupAdminFetcherHandlers } from "@/lib/adminFetcher";
 import { adminTheme } from "@/lib/auth/theme";
 import { ThemeProvider } from "@/lib/auth/ThemeContext";
@@ -522,15 +523,17 @@ export default function App() {
         <TooltipProvider>
           <ThemeProvider theme={adminTheme}>
             <AdminAuthProvider>
-              <WouterRouter base="/admin">
-                <GlobalAuthRedirect />
-                <VersionCheckInit />
-                <LanguageInit />
-                <IntegrationsInit />
-                <AppRoutes />
-                <FirstLoginCredentialsDialog />
-                <Toaster />
-              </WouterRouter>
+              <AdminLanguageProvider>
+                <WouterRouter base="/admin">
+                  <GlobalAuthRedirect />
+                  <VersionCheckInit />
+                  <LanguageInit />
+                  <IntegrationsInit />
+                  <AppRoutes />
+                  <FirstLoginCredentialsDialog />
+                  <Toaster />
+                </WouterRouter>
+              </AdminLanguageProvider>
             </AdminAuthProvider>
           </ThemeProvider>
         </TooltipProvider>
