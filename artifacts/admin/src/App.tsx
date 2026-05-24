@@ -100,6 +100,9 @@ const queryClient = new QueryClient({
       retry: QUERY_RETRY_COUNT,
       retryDelay: QUERY_RETRY_DELAY_MS,
       refetchOnWindowFocus: false,
+      /* Prevent redundant background refetches while cached data is still
+         fresh.  Per-query overrides (polling hooks) take precedence.     */
+      staleTime: 10_000,
     },
   },
 });

@@ -9,6 +9,7 @@ import {
 } from "@workspace/db/schema";
 import { and, count, desc, eq, ilike, or, sql, sum } from "drizzle-orm";
 import { Router } from "express";
+import { z } from "zod";
 import { requirePermission } from "../../middleware/require-permission.js";
 import {
   addAuditEntry,
