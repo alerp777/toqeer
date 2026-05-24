@@ -1,5 +1,6 @@
 import { createLogger } from "@/lib/logger";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PullToRefresh } from "../components/PullToRefresh";
 import { getPollingIntervalForTier, useNetworkQuality } from "../hooks/useNetworkQuality";
 const log = createLogger("[Home]");
 
@@ -598,8 +599,18 @@ export default function Home() {
             }
           });
       },
-      () => {
-        setGpsWarningWithRef(T("gpsNotAvailable"));
+      (error: GeolocationPositionError) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          /* Rider denied location access — Settings must be opened manually. */
+          log.warn("[Home] GPS permission denied by user");
+          setGpsWarningWithRef(T("gpsNotAvailable"));
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          /* Hardware/network can't determine position — likely GPS off. */
+          setGpsWarningWithRef(T("gpsNotAvailable"));
+        } else {
+          /* TIMEOUT — transient signal loss; use the less alarming message. */
+          setGpsWarningWithRef(T("gpsLocationError"));
+        }
       },
       { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 }
     );
@@ -853,6 +864,16 @@ export default function Home() {
     );
   };
 
+  /* Pull-to-refresh: invalidate live request feed + active task + re-sync
+     the rider's own profile so balance / status changes show immediately. */
+  const handlePullRefresh = useCallback(async () => {
+    await Promise.allSettled([
+      qc.invalidateQueries({ queryKey: ["rider-requests"] }),
+      qc.invalidateQueries({ queryKey: ["rider-active"] }),
+      refreshUser(),
+    ]);
+  }, [qc, refreshUser]);
+
   if (authLoading) return <SkeletonHome />;
 
   const greeting = (() => {
@@ -882,7 +903,11 @@ export default function Home() {
   const topBannerOffsetPx = topBannerCount * BANNER_H_PX;
 
   return (
-    <div className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-[#F5F6F8]">
+    <PullToRefresh
+      onRefresh={handlePullRefresh}
+      accentColor="#F0B90B"
+      className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-[#F5F6F8]"
+    >
       <FixedBanners
         socketConnected={socketConnected}
         effectiveOnline={effectiveOnline}
@@ -1198,6 +1223,6 @@ export default function Home() {
           }}
         />
       )}
-    </div>
+    </PullToRefresh>
   );
 }

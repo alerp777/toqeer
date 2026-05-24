@@ -530,11 +530,13 @@ export default function Wallet() {
     return g;
   };
 
+  /* COD summary is low-urgency — 60 s polling is sufficient and avoids
+     hammering the server simultaneously with the wallet transaction feed. */
   const { data: codData, refetch: refetchCod } = useQuery({
     queryKey: ["rider-cod"],
     queryFn: () => api.getCodSummary(),
     staleTime: 60_000,
-    refetchInterval: 30000,
+    refetchInterval: 60_000,
     enabled: config.features.wallet,
   });
 

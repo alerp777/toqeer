@@ -1026,9 +1026,12 @@ export const api = {
     }),
 
   /* Wallet */
-  /* getWallet — kept for backward compatibility. Calls the legacy non-paged
-     endpoint shape `{ balance, transactions }` via `?legacy=1`. New code
-     should use `getWalletPage` for cursor pagination. */
+  /**
+   * @deprecated Use {@link getWalletPage} instead. `getWallet` fetches all
+   * transactions in one non-paginated response (`?legacy=1`) and will be
+   * removed in a future release. Callers should migrate to the
+   * cursor-paginated `getWalletPage` API.
+   */
   getWallet: () => apiFetch("/riders/wallet/transactions?legacy=1"),
   /* getWalletPage — cursor-paginated. Returns `{ balance, items, nextCursor, limit }`.
      Pass `cursor` (opaque string from the previous response) to fetch the

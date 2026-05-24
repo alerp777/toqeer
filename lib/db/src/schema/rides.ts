@@ -76,6 +76,13 @@ export const ridesTable = pgTable(
     index("rides_rider_id_idx").on(t.riderId),
     index("rides_status_idx").on(t.status),
     index("rides_created_at_idx").on(t.createdAt),
+    // Dispatch-loop queries filter by dispatched_rider_id to locate the currently
+    // assigned rider; without an index these do full table scans as the table grows.
+    index("rides_dispatched_rider_id_idx").on(t.dispatchedRiderId),
+    // Scheduled-ride queries filter on scheduledAt for upcoming trip windows.
+    index("rides_scheduled_at_idx").on(t.scheduledAt),
+    // Pool-ride grouping queries join on pool_group_id.
+    index("rides_pool_group_id_idx").on(t.poolGroupId),
     // NOTE: a partial unique index `rides_one_active_per_user` on (user_id) WHERE status IN
     // ('searching','bargaining','accepted','arrived','in_transit') is enforced via migration
     // 0052_rides_one_active_per_user.sql. Drizzle's index() helper does not support WHERE

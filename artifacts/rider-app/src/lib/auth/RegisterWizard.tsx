@@ -105,7 +105,17 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
   }, [otpCooldown]);
 
   useEffect(() => {
-    const { password: _pw, confirmPassword: _cpw, otp: _otp, ...safeDraft } = draft;
+    /* Strip sensitive PII fields before persisting to localStorage so that
+       device-sharing or devtools inspection cannot expose credentials or
+       government ID numbers. Sensitive fields are re-entered by the rider
+       on the relevant step when they return to a saved draft. */
+    const {
+      password: _pw,
+      confirmPassword: _cpw,
+      otp: _otp,
+      cnic: _cnic,
+      ...safeDraft
+    } = draft;
     localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
   }, [draft]);
 
