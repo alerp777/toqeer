@@ -14,6 +14,7 @@ import type { AuthUser as SDKAuthUser } from "@workspace/auth-react";
 import { useRateLimitCountdown } from "@workspace/auth-react";
 import { loadFacebookAccessToken, loadGoogleGSIToken } from "@workspace/auth-utils";
 import { tDual, type TranslationKey } from "@workspace/i18n";
+import { Link2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { api } from "../api";
@@ -200,6 +201,12 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [devOtp, setDevOtp] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  /* ── Magic Link ── */
+  const [showMagicLink, setShowMagicLink] = useState(false);
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicSending, setMagicSending] = useState(false);
 
   /* ── 2FA state ── */
   const [twoFaData, setTwoFaData] = useState<{ tempToken: string; identifier: string } | null>(
@@ -400,6 +407,28 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       );
     }
   }, [auth.facebookAppId, handleSuccess, T, translateApiError]);
+
+  /* ── Magic Link handler ── */
+  const sendMagicLinkHandler = async () => {
+    if (
+      !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(
+        magicEmail
+      )
+    ) {
+      setLoginError("Enter a valid email address");
+      return;
+    }
+    setLoginError(null);
+    setMagicSending(true);
+    try {
+      await api.magicLinkSend(magicEmail);
+      setMagicSent(true);
+    } catch (e) {
+      setLoginError(e instanceof Error ? e.message : "Failed to send magic link");
+    } finally {
+      setMagicSending(false);
+    }
+  };
 
   const handleSendOtp = async () => {
     const phone = localPhone.trim();
@@ -818,6 +847,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 setLoginMode(mode);
                 setLoginError(null);
                 setOtpStep("phone");
+                setShowMagicLink(false);
+                setMagicSent(false);
+                setMagicEmail("");
               }}
               style={{
                 flex: 1,
@@ -1141,8 +1173,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           </form>
         )}
 
-        {/* ── Social login ── */}
-        {(auth.google || auth.facebook) && (
+        {/* ── Social login + Magic Link ── */}
+        {(auth.google || auth.facebook || auth.magicLink) && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
               <div style={{ flex: 1, height: 1, background: theme.border }} />
@@ -1218,6 +1250,95 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   </svg>
                   Continue with Facebook
                 </button>
+              )}
+              {auth.magicLink && !showMagicLink && (
+                <button
+                  onClick={() => setShowMagicLink(true)}
+                  style={{
+                    width: "100%",
+                    height: 44,
+                    borderRadius: 12,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.background,
+                    color: theme.text,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                  }}
+                >
+                  <Link2 size={16} />
+                  Sign in with Magic Link
+                </button>
+              )}
+              {auth.magicLink && showMagicLink && (
+                <div
+                  style={{
+                    background: theme.background,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: 12,
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                  }}
+                >
+                  {magicSent ? (
+                    <p
+                      style={{
+                        color: theme.textMuted,
+                        fontSize: 13,
+                        margin: 0,
+                        textAlign: "center",
+                      }}
+                    >
+                      ✉️ Magic link sent! Check your inbox and click the link to sign in.
+                    </p>
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        value={magicEmail}
+                        onChange={(e) => setMagicEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && void sendMagicLinkHandler()}
+                        placeholder="Enter your email"
+                        style={{
+                          width: "100%",
+                          height: 44,
+                          padding: "0 14px",
+                          borderRadius: 10,
+                          background: theme.surface,
+                          border: `1.5px solid ${theme.border}`,
+                          color: theme.text,
+                          fontSize: 14,
+                          outline: "none",
+                        }}
+                      />
+                      <button
+                        onClick={() => void sendMagicLinkHandler()}
+                        disabled={magicSending}
+                        style={{
+                          width: "100%",
+                          height: 40,
+                          borderRadius: 10,
+                          border: "none",
+                          background: magicSending
+                            ? `${theme.primary}60`
+                            : `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})`,
+                          color: "#fff",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: magicSending ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {magicSending ? "Sending…" : "Send Magic Link"}
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </>
