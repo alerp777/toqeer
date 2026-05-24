@@ -10,12 +10,14 @@ import {
   sendSuccess,
   sendValidationError,
 } from "../../../lib/response.js";
+import { requirePermission } from "../../../middleware/require-permission.js";
 import { getCachedSettings } from "../../../middleware/security.js";
+import { addAuditEntry, getClientIp, type AdminRequest } from "../../admin-shared.js";
 
 const router: IRouter = Router();
 
 /* ── GET /admin/service-zones — list all zones ── */
-router.get("/", async (_req, res) => {
+router.get("/", requirePermission("service.zones.view"), async (_req, res) => {
   try {
     const zones = await db
       .select()
@@ -28,7 +30,8 @@ router.get("/", async (_req, res) => {
 });
 
 /* ── POST /admin/service-zones — create a zone ── */
-router.post("/", async (req, res) => {
+router.post("/", requirePermission("service.zones.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
     const {
       name,
@@ -92,6 +95,16 @@ router.post("/", async (req, res) => {
       .returning();
 
     invalidateZoneCache();
+
+    void addAuditEntry({
+      action: "service_zone_created",
+      ip: getClientIp(req),
+      adminId: adminReq.adminId,
+      adminName: adminReq.adminName,
+      details: `Admin created service zone '${String(name)}' in ${String(city)} (r=${radiusNum.toFixed(2)}km)`,
+      result: "success",
+    });
+
     sendCreated(res, zone);
   } catch (_err) {
     sendError(res, "Internal server error", 500);
@@ -99,7 +112,8 @@ router.post("/", async (req, res) => {
 });
 
 /* ── PUT /admin/service-zones/:id — update a zone ── */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermission("service.zones.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
     const id = parseInt(req.params["id"] as string, 10);
     if (isNaN(id)) {
@@ -170,6 +184,16 @@ router.put("/:id", async (req, res) => {
     }
 
     invalidateZoneCache();
+
+    void addAuditEntry({
+      action: "service_zone_updated",
+      ip: getClientIp(req),
+      adminId: adminReq.adminId,
+      adminName: adminReq.adminName,
+      details: `Admin updated service zone id=${id}`,
+      result: "success",
+    });
+
     sendSuccess(res, updated);
   } catch (_err) {
     sendError(res, "Internal server error", 500);
@@ -177,7 +201,8 @@ router.put("/:id", async (req, res) => {
 });
 
 /* ── DELETE /admin/service-zones/:id ── */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermission("service.zones.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
     const id = parseInt(req.params["id"] as string, 10);
     if (isNaN(id)) {
@@ -188,7 +213,7 @@ router.delete("/:id", async (req, res) => {
     const [deleted] = await db
       .delete(serviceZonesTable)
       .where(eq(serviceZonesTable.id, id))
-      .returning({ id: serviceZonesTable.id });
+      .returning({ id: serviceZonesTable.id, name: serviceZonesTable.name });
 
     if (!deleted) {
       sendNotFound(res, "Service zone not found");
@@ -196,6 +221,16 @@ router.delete("/:id", async (req, res) => {
     }
 
     invalidateZoneCache();
+
+    void addAuditEntry({
+      action: "service_zone_deleted",
+      ip: getClientIp(req),
+      adminId: adminReq.adminId,
+      adminName: adminReq.adminName,
+      details: `Admin deleted service zone '${deleted.name}' (id: ${id})`,
+      result: "success",
+    });
+
     sendSuccess(res, { deleted: true, id });
   } catch (_err) {
     sendError(res, "Internal server error", 500);

@@ -4,7 +4,7 @@ import { execFile } from "child_process";
 import { randomUUID } from "crypto";
 import type { NextFunction, Request, Response } from "express";
 import { Router, type IRouter } from "express";
-import { unlink, writeFile } from "fs/promises";
+import { readFile, unlink, writeFile } from "fs/promises";
 import multer from "multer";
 import os from "os";
 import path from "path";
@@ -351,8 +351,14 @@ const upload = multer({
   limits: { fileSize: MULTER_PERMISSIVE_IMAGE_LIMIT },
 });
 
+/* H-2 Fix: use diskStorage for videos to prevent OOM on large concurrent uploads.
+   Files are written to os.tmpdir() and cleaned up after upload or on error. */
 const videoUpload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, os.tmpdir()),
+    filename: (_req, _file, cb) =>
+      cb(null, `video_${Date.now()}_${randomUUID().slice(0, 8)}`),
+  }),
   limits: { fileSize: MULTER_PERMISSIVE_VIDEO_LIMIT },
 });
 
@@ -816,14 +822,28 @@ router.post(
         return;
       }
 
-      const { mimetype, buffer, originalname } = req.file;
+      /* H-2 Fix: req.file.path is on disk (diskStorage). Read it into a buffer
+         for size-check and upstream upload, then clean up the temp file. */
+      const { mimetype, originalname, path: videoTmpPath } = req.file;
 
       const limits = await getUploadLimits();
       if (!limits.videoFormats.includes(mimetype)) {
+        unlink(videoTmpPath).catch(() => undefined);
         sendValidationError(res, "Only MP4, MOV, and WebM videos are allowed");
         return;
       }
+
+      let buffer: Buffer;
+      try {
+        buffer = await readFile(videoTmpPath);
+      } catch (readErr) {
+        logger.error({ readErr }, "[uploads] failed to read video temp file from disk");
+        sendError(res, "Upload failed. Please try again.");
+        return;
+      }
+
       if (buffer.length > limits.maxVideoSize) {
+        unlink(videoTmpPath).catch(() => undefined);
         sendValidationError(
           res,
           `Video too large. Maximum ${Math.round(limits.maxVideoSize / (1024 * 1024))}MB allowed`
@@ -831,9 +851,8 @@ router.post(
         return;
       }
 
-      const tmpPath = path.join(os.tmpdir(), `upload_${randomUUID()}.tmp`);
       try {
-        await writeFile(tmpPath, buffer);
+        /* Run ffprobe directly on the temp file — no redundant write needed. */
         const { stdout } = await execFileAsync("ffprobe", [
           "-v",
           "error",
@@ -841,7 +860,7 @@ router.post(
           "format=duration",
           "-of",
           "default=noprint_wrappers=1:nokey=1",
-          tmpPath,
+          videoTmpPath,
         ], { timeout: 15_000 }); /* 15s hard cap — prevents DoS via malformed video */
         const duration = parseFloat(stdout.trim());
         if (isNaN(duration)) {
@@ -873,9 +892,9 @@ router.post(
         );
         return;
       } finally {
-        unlink(tmpPath).catch((err: unknown) => {
+        unlink(videoTmpPath).catch((err: unknown) => {
           logger.warn(
-            { err: err instanceof Error ? err.message : String(err), tmpPath },
+            { err: err instanceof Error ? err.message : String(err), tmpPath: videoTmpPath },
             "[uploads] temp video file cleanup failed"
           );
         });

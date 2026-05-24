@@ -32,6 +32,7 @@ import {
   formatRide,
   generateId,
   generateOtp,
+  hashTripOtp,
   getCachedSettings,
   getRoadDistanceKm,
   getUserLanguage,
@@ -1271,7 +1272,7 @@ router.patch("/:id/accept-bid", customerAuth, async (req, res) => {
     }
 
     let updated:
-      | { rideUpdate: typeof ridesTable.$inferSelect; bid: typeof rideBidsTable.$inferSelect }
+      | { rideUpdate: typeof ridesTable.$inferSelect; bid: typeof rideBidsTable.$inferSelect; otp: string }
       | undefined;
     try {
       updated = await db.transaction(async (tx) => {
@@ -1437,7 +1438,16 @@ router.patch("/:id/accept-bid", customerAuth, async (req, res) => {
             )
           );
 
-        return { rideUpdate, bid };
+        /* C-1 + C-3 Fix: generate OTP *inside* the transaction so the ride is
+           never left in accepted state without a valid OTP hash.
+           Store SHA-256 hash — raw OTP is returned for Socket.IO delivery only. */
+        const otp = generateOtp();
+        await tx
+          .update(ridesTable)
+          .set({ tripOtp: hashTripOtp(otp), updatedAt: new Date() })
+          .where(eq(ridesTable.id, rideUpdate!.id));
+
+        return { rideUpdate, bid, otp };
       });
     } catch (e: unknown) {
       const status = e instanceof RideApiError ? e.httpStatus : 400;
@@ -1457,20 +1467,9 @@ router.patch("/:id/accept-bid", customerAuth, async (req, res) => {
       return;
     }
 
-    const { rideUpdate, bid } = updated;
+    const { rideUpdate, bid, otp } = updated;
     const agreedFare = parseFloat(bid.fare);
 
-    const otp = generateOtp();
-    await db
-      .update(ridesTable)
-      .set({ tripOtp: otp, updatedAt: new Date() })
-      .where(eq(ridesTable.id, rideUpdate!.id))
-      .catch((e: Error) =>
-        logger.error(
-          { rideId: rideUpdate!.id, err: e.message },
-          "[rides/accept-bid] tripOtp DB update failed"
-        )
-      );
     emitRideOtp(rideUpdate!.userId, rideUpdate!.id, otp, rideUpdate!.riderId);
 
     const bidLang = await getUserLanguage(bid.riderId);

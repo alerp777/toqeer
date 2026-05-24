@@ -14,7 +14,7 @@ import {
   walletTransactionsTable,
 } from "@workspace/db/schema";
 import { t, type TranslationKey } from "@workspace/i18n";
-import { randomInt } from "crypto";
+import { createHash, randomInt } from "crypto";
 import { and, asc, count, eq, gte, isNull, ne, or, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
@@ -531,6 +531,14 @@ export function generateOtp(): string {
   return String(randomInt(1000, 10000));
 }
 
+/**
+ * Hash a trip OTP for safe database storage (SHA-256 hex).
+ * The raw OTP is only emitted to the customer via Socket.IO and never persisted in plaintext.
+ */
+export function hashTripOtp(otp: string): string {
+  return createHash("sha256").update(otp.trim()).digest("hex");
+}
+
 export async function getRoadDistanceKm(
   lat1: number,
   lng1: number,
@@ -678,7 +686,6 @@ export function formatRide(r: Record<string, unknown>) {
     startedAt: toISO(r.startedAt),
     completedAt: toISO(r.completedAt),
     cancelledAt: toISO(r.cancelledAt),
-    tripOtp: r.tripOtp ?? null,
     otpVerified: r.otpVerified ?? false,
     isParcel: r.isParcel ?? false,
     receiverName: r.receiverName ?? null,

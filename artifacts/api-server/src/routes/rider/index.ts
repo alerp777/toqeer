@@ -20,7 +20,7 @@ import {
 } from "@workspace/db/schema";
 import { t } from "@workspace/i18n";
 import { normalizeVehicleType } from "@workspace/service-constants";
-import { randomInt, randomUUID } from "crypto";
+import { createHash, randomInt, randomUUID } from "crypto";
 import {
   and,
   avg,
@@ -72,6 +72,11 @@ import {
   getClientIp,
   verifyUserJwt,
 } from "../../middleware/security.js";
+
+/** Hash a trip OTP for safe DB storage — SHA-256 hex of trimmed input. */
+function hashTripOtp(otp: string): string {
+  return createHash("sha256").update(otp.trim()).digest("hex");
+}
 
 /* ── CSRF double-submit cookie protection ────────────────────────────────────
    State-change POST endpoints (accept, cancel, status update) validate that the
@@ -2721,11 +2726,12 @@ router.post("/rides/:id/accept", csrfDoubleSubmit, validateRiderProfileComplete,
         logger.error("[rider] background op failed:", err.message);
       });
 
-    /* Generate trip OTP and emit to customer */
+    /* Generate trip OTP and emit to customer.
+       Store SHA-256 hash in DB — raw OTP only goes to customer via Socket.IO. */
     const tripOtp = String(randomInt(1000, 10000));
     await db
       .update(ridesTable)
-      .set({ tripOtp, updatedAt: new Date() })
+      .set({ tripOtp: hashTripOtp(tripOtp), updatedAt: new Date() })
       .where(eq(ridesTable.id, updated.id))
       .catch((e: Error) => {
         logger.error({ rideId: updated.id, err: e.message }, "[rider] tripOtp DB update failed");
@@ -2800,7 +2806,7 @@ router.post("/rides/:id/verify-otp", otpLimiter, async (req, res) => {
       );
       return;
     }
-    if (ride.tripOtp.trim() !== otp.trim()) {
+    if (ride.tripOtp !== hashTripOtp(otp)) {
       /* Track failed attempt with a single atomic SQL statement.
        The CASE expression handles expiry entirely in the DB:
        - If the row is new or expired → count resets to 1, window starts fresh

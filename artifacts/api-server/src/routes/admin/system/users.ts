@@ -1524,6 +1524,17 @@ router.post("/users/:id/otp/bypass", requirePermission("users.edit"), async (req
 router.post("/users/:id/otp/generate", requirePermission("users.edit"), async (req, res) => {
   const userId = req.params["id"] as string;
   const adminReq = req as AdminRequest;
+  /* C-2 Security Fix: Generating and returning a live OTP in the API response
+     allows any admin with users.edit to silently take over any user account.
+     Restrict this to super_admin role only. */
+  if (adminReq.adminRole !== "super_admin") {
+    sendError(
+      res,
+      "Generating a live OTP for a user requires the super_admin role. Use the OTP bypass feature for standard support workflows.",
+      403
+    );
+    return;
+  }
   try {
     const [user] = await db
       .select({

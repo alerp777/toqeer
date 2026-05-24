@@ -9,13 +9,14 @@ import { Router } from "express";
 import { generateId } from "../../lib/id.js";
 import { logger } from "../../lib/logger.js";
 import { sendError, sendNotFound, sendSuccess } from "../../lib/response.js";
-import { adminAuth } from "../admin-shared.js";
+import { requirePermission } from "../../middleware/require-permission.js";
+import { addAuditEntry, adminAuth, getClientIp, type AdminRequest } from "../admin-shared.js";
 
 const router = Router();
 router.use(adminAuth);
 
 /* GET /api/admin/whitelist */
-router.get("/", async (_req, res) => {
+router.get("/", requirePermission("security.whitelist.view"), async (_req, res) => {
   try {
     const rows = await db
       .select()
@@ -23,19 +24,14 @@ router.get("/", async (_req, res) => {
       .orderBy(desc(whitelistUsersTable.createdAt));
     res.json({ entries: rows });
   } catch (err) {
-    logger.error(
-      {
-        error: err instanceof Error ? err.message : String(err),
-        timestamp: new Date().toISOString(),
-      },
-      "[route] unhandled error"
-    );
+    logger.error({ err }, "[whitelist] list failed");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 /* POST /api/admin/whitelist */
-router.post("/", async (req, res) => {
+router.post("/", requirePermission("security.whitelist.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
     const { identifier, label, bypassCode, expiresAt } = req.body;
 
@@ -55,19 +51,38 @@ router.post("/", async (req, res) => {
       return;
     }
 
+    if (expiresAt) {
+      const expDate = new Date(expiresAt);
+      if (isNaN(expDate.getTime()) || expDate <= new Date()) {
+        sendError(res, "expiresAt must be a valid future date");
+        return;
+      }
+    }
+
     const id = generateId();
     try {
+      const normalizedIdentifier = String(identifier).toLowerCase().trim();
       const [row] = await db
         .insert(whitelistUsersTable)
         .values({
           id,
-          identifier: identifier.toLowerCase().trim(),
+          identifier: normalizedIdentifier,
           label: label || null,
           bypassCode,
           isActive: true,
           expiresAt: expiresAt ? new Date(expiresAt) : null,
         })
         .returning();
+
+      void addAuditEntry({
+        action: "whitelist_entry_created",
+        ip: getClientIp(req),
+        adminId: adminReq.adminId,
+        adminName: adminReq.adminName,
+        details: `Admin added '${normalizedIdentifier}' to OTP bypass whitelist${label ? ` (label: ${label})` : ""}`,
+        result: "success",
+      });
+
       sendSuccess(res, { entry: row });
     } catch (err: unknown) {
       if (err instanceof Error && err.message?.includes("unique")) {
@@ -77,31 +92,34 @@ router.post("/", async (req, res) => {
       throw err;
     }
   } catch (err) {
-    logger.error(
-      {
-        error: err instanceof Error ? err.message : String(err),
-        timestamp: new Date().toISOString(),
-      },
-      "[route] unhandled error"
-    );
+    logger.error({ err }, "[whitelist] create failed");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 /* PATCH /api/admin/whitelist/:id */
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requirePermission("security.whitelist.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
     const { id } = req.params as Record<string, string>;
     const { label, bypassCode, isActive, expiresAt } = req.body;
 
     const [existing] = await db
-      .select({ id: whitelistUsersTable.id })
+      .select({ id: whitelistUsersTable.id, identifier: whitelistUsersTable.identifier })
       .from(whitelistUsersTable)
       .where(eq(whitelistUsersTable.id, id!))
       .limit(1);
     if (!existing) {
       sendNotFound(res, "Whitelist entry");
       return;
+    }
+
+    if (expiresAt !== undefined && expiresAt !== null) {
+      const expDate = new Date(expiresAt);
+      if (isNaN(expDate.getTime()) || expDate <= new Date()) {
+        sendError(res, "expiresAt must be a valid future date");
+        return;
+      }
     }
 
     const updates: Partial<typeof whitelistUsersTable.$inferInsert> = { updatedAt: new Date() };
@@ -115,32 +133,53 @@ router.patch("/:id", async (req, res) => {
       .set(updates)
       .where(eq(whitelistUsersTable.id, id!))
       .returning();
+
+    void addAuditEntry({
+      action: "whitelist_entry_updated",
+      ip: getClientIp(req),
+      adminId: adminReq.adminId,
+      adminName: adminReq.adminName,
+      details: `Admin updated whitelist entry for '${existing.identifier}' (id: ${id})`,
+      result: "success",
+    });
+
     sendSuccess(res, { entry: updated });
   } catch (err) {
-    logger.error(
-      {
-        error: err instanceof Error ? err.message : String(err),
-        timestamp: new Date().toISOString(),
-      },
-      "[route] unhandled error"
-    );
+    logger.error({ err }, "[whitelist] update failed");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 /* DELETE /api/admin/whitelist/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermission("security.whitelist.manage"), async (req, res) => {
+  const adminReq = req as AdminRequest;
   try {
-    await db.delete(whitelistUsersTable).where(eq(whitelistUsersTable.id, req.params.id!));
+    const { id } = req.params as Record<string, string>;
+
+    const [existing] = await db
+      .select({ id: whitelistUsersTable.id, identifier: whitelistUsersTable.identifier })
+      .from(whitelistUsersTable)
+      .where(eq(whitelistUsersTable.id, id!))
+      .limit(1);
+    if (!existing) {
+      sendNotFound(res, "Whitelist entry");
+      return;
+    }
+
+    await db.delete(whitelistUsersTable).where(eq(whitelistUsersTable.id, id!));
+
+    void addAuditEntry({
+      action: "whitelist_entry_deleted",
+      ip: getClientIp(req),
+      adminId: adminReq.adminId,
+      adminName: adminReq.adminName,
+      details: `Admin removed '${existing.identifier}' from OTP bypass whitelist`,
+      result: "success",
+    });
+
     sendSuccess(res, { deleted: true });
   } catch (err) {
-    logger.error(
-      {
-        error: err instanceof Error ? err.message : String(err),
-        timestamp: new Date().toISOString(),
-      },
-      "[route] unhandled error"
-    );
+    logger.error({ err }, "[whitelist] delete failed");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
