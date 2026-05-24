@@ -54,9 +54,10 @@ import {
 const router = Router();
 
 // Rate limiting for login attempts: max 5 failed attempts per 15 minutes per IP
+// Relaxed cap (500) is applied only in development; staging and production always get the strict cap (5).
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV !== "production" ? 500 : 5,
+  max: process.env.NODE_ENV === "development" ? 500 : 5,
   message: { error: "Too many login attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -65,9 +66,10 @@ const loginLimiter = rateLimit({
 });
 
 // Rate limiting for 2FA verification: max 5 failed attempts per 15 minutes per IP
+// Relaxed cap (500) is applied only in development; staging and production always get the strict cap (5).
 const verifyTotpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV !== "production" ? 500 : 5,
+  max: process.env.NODE_ENV === "development" ? 500 : 5,
   message: { error: "Too many 2FA verification attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,

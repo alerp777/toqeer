@@ -231,13 +231,19 @@ const router: IRouter = Router();
 
 const safeNum = (v: unknown, def = 0) => {
   const n = parseFloat(String(v ?? def));
-  return isNaN(n) ? def : n;
+  if (isNaN(n)) {
+    logger.warn({ value: v, default: def }, "[rider] safeNum: NaN coercion — falling back to default");
+    return def;
+  }
+  return n;
 };
 
 /* ── Server-side idempotency deduplication for mutating rider actions ──────
    Stores responses for X-Idempotency-Key for 5 minutes so retried requests
    (offline queue replays, network retries) return the same response instead of
-   executing the action a second time.                                        */
+   executing the action a second time.
+   When Redis is available the store is cluster-safe; when it is not, an
+   in-memory Map is used as a fallback (entries are lost on restart/scale-out).  */
 interface IdempotencyEntry {
   status: number;
   body: unknown;
@@ -245,18 +251,59 @@ interface IdempotencyEntry {
 }
 const idempotencyCache = new Map<string, IdempotencyEntry>();
 const IDEM_TTL_MS = 5 * 60_000;
+const IDEM_TTL_SEC = Math.ceil(IDEM_TTL_MS / 1000);
+
+/* Lazy import of redisClient so the module loads even if Redis is unconfigured.
+   A startup-time check runs immediately (non-blocking) so operators can see the
+   warning in logs at boot rather than only on the first idempotent request.     */
+let _redisForIdem: import("ioredis").default | null | undefined = undefined;
+async function getRedisForIdem() {
+  if (_redisForIdem !== undefined) return _redisForIdem;
+  try {
+    const { redisClient } = await import("../../lib/redis.js");
+    _redisForIdem = redisClient ?? null;
+    if (!_redisForIdem) {
+      logger.warn("[rider] Redis unavailable — idempotency cache is in-memory only (not cluster-safe, entries lost on restart)");
+    }
+  } catch {
+    _redisForIdem = null;
+  }
+  return _redisForIdem;
+}
+
+/* Startup probe — runs once at module init so operators see the Redis status
+   in server logs immediately, not only when the first idempotent request arrives. */
+setImmediate(() => {
+  getRedisForIdem().catch((err: unknown) => {
+    logger.warn({ err }, "[rider] Startup idempotency Redis probe failed");
+  });
+});
 
 function idemCacheKey(req: Request): string | null {
   const key = req.headers["x-idempotency-key"];
   if (!key || typeof key !== "string") return null;
   /* Scope by rider + HTTP method + route path to prevent cross-endpoint/cross-user collisions */
   const riderId = req.riderId ?? "anon";
-  return `${riderId}:${req.method}:${req.path}:${key}`;
+  return `idem:${riderId}:${req.method}:${req.path}:${key}`;
 }
 
-function checkIdempotency(req: Request, res: Response): boolean {
+async function checkIdempotency(req: Request, res: Response): Promise<boolean> {
   const cacheKey = idemCacheKey(req);
   if (!cacheKey) return false;
+  const redis = await getRedisForIdem();
+  if (redis) {
+    try {
+      const raw = await redis.get(cacheKey);
+      if (raw) {
+        const entry = JSON.parse(raw) as IdempotencyEntry;
+        res.status(entry.status).json(entry.body);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      logger.warn({ err }, "[rider] Redis idempotency check failed — falling back to memory");
+    }
+  }
   const now = Date.now();
   /* Sweep stale entries on each call (amortised cleanup) */
   idempotencyCache.forEach((v, k) => {
@@ -270,17 +317,31 @@ function checkIdempotency(req: Request, res: Response): boolean {
   return false;
 }
 
-function storeIdempotency(req: Request, status: number, body: unknown): void {
+async function storeIdempotency(req: Request, status: number, body: unknown): Promise<void> {
   const cacheKey = idemCacheKey(req);
   if (!cacheKey) return;
-  idempotencyCache.set(cacheKey, { status, body, ts: Date.now() });
+  const entry: IdempotencyEntry = { status, body, ts: Date.now() };
+  const redis = await getRedisForIdem();
+  if (redis) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(entry), "EX", IDEM_TTL_SEC);
+      return;
+    } catch (err) {
+      logger.warn({ err }, "[rider] Redis idempotency store failed — falling back to memory");
+    }
+  }
+  idempotencyCache.set(cacheKey, entry);
 }
 
 /** Middleware: blocks ride acceptance when the rider's vehicle profile is incomplete,
     the account is suspended/restricted, or there are active penalties in the last 30 days. */
 async function validateRiderProfileComplete(req: Request, res: Response, next: NextFunction): Promise<void> {
   const riderId = req.riderId;
-  if (!riderId) { next(); return; }
+  if (!riderId) {
+    logger.error("[rider] validateRiderProfileComplete: riderId is absent after riderAuth — unexpected auth state");
+    sendError(res, "Authentication context missing", 500);
+    return;
+  }
   try {
     /* 1. Check user account status */
     const [user] = await db
@@ -403,10 +464,21 @@ const MAX_PROOF_PHOTO_BYTES = 5 * 1024 * 1024;
    We measure only the base64 payload (after the data URI prefix) for accuracy. */
 const MAX_PROOF_PHOTO_BASE64_LEN = Math.ceil(MAX_PROOF_PHOTO_BYTES * (4 / 3));
 
+// TODO: migrate proofPhoto storage from base64 DB column to file storage (S3/CDN).
+// Storing large base64 blobs in PostgreSQL inflates row size, slows queries, and
+// increases backup size. Follow-up: upload the decoded bytes to object storage,
+// persist only the resulting URL in proofPhotoUrl, and drop the inline data URI.
 function proofPhotoWithinLimit(dataUri: string): boolean {
   const commaIdx = dataUri.indexOf(",");
   const payload = commaIdx >= 0 ? dataUri.slice(commaIdx + 1) : dataUri;
-  return payload.length <= MAX_PROOF_PHOTO_BASE64_LEN;
+  const withinLimit = payload.length <= MAX_PROOF_PHOTO_BASE64_LEN;
+  if (!withinLimit) {
+    logger.warn(
+      { payloadLen: payload.length, maxLen: MAX_PROOF_PHOTO_BASE64_LEN },
+      "[rider] proofPhoto payload exceeds 5 MB limit — request will be rejected"
+    );
+  }
+  return withinLimit;
 }
 
 const orderStatusSchema = z.object({
@@ -1505,7 +1577,7 @@ router.get("/active", async (req, res) => {
         customerName: customer?.name || null,
         customerPhone: revealPhone ? customer?.phone || null : maskPhone(customer?.phone),
         vendorStoreName: vendor?.storeName || null,
-        vendorPhone: vendor?.phone || null,
+        vendorPhone: revealPhone ? vendor?.phone || null : maskPhone(vendor?.phone),
       };
     }
 
@@ -1526,7 +1598,7 @@ router.get("/active", async (req, res) => {
    Uses WHERE riderId IS NULL to prevent two riders accepting the same order (race condition) */
 router.post("/orders/:id/accept", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const paramParsed = idParamSchema.safeParse(req.params);
     if (!paramParsed.success) {
       sendValidationError(res, "Invalid order ID");
@@ -1702,7 +1774,7 @@ router.post("/orders/:id/accept", async (req, res) => {
       });
 
     const responseBody = { ...updated, total: safeNum(updated.total) };
-    storeIdempotency(req, 200, { success: true, data: responseBody });
+    await storeIdempotency(req, 200, { success: true, data: responseBody });
     sendSuccess(res, responseBody);
   } catch (err) {
     logger.error(
@@ -1721,7 +1793,7 @@ router.post("/orders/:id/accept", async (req, res) => {
    for future broadcasts of the same order. No penalty is applied. */
 router.post("/orders/:id/reject", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const paramParsed = idParamSchema.safeParse(req.params);
     if (!paramParsed.success) {
       sendValidationError(res, "Invalid order ID");
@@ -1758,7 +1830,7 @@ router.post("/orders/:id/reject", async (req, res) => {
         );
       });
 
-    storeIdempotency(req, 200, { success: true, data: { orderId, reason } });
+    await storeIdempotency(req, 200, { success: true, data: { orderId, reason } });
     sendSuccess(res, { orderId, reason });
   } catch (err) {
     logger.error(
@@ -2025,7 +2097,7 @@ router.get("/cancel-stats", async (req, res) => {
 /* ── PATCH /rider/orders/:id/status — Update order status (delivered) ── */
 router.patch("/orders/:id/status", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = orderStatusSchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "Invalid status");
@@ -2084,7 +2156,7 @@ router.patch("/orders/:id/status", async (req, res) => {
         cancelledByRider: true,
         cancelPenalty: penalty,
       };
-      storeIdempotency(req, 200, { success: true, data: cancelledBody });
+      await storeIdempotency(req, 200, { success: true, data: cancelledBody });
       sendSuccess(res, cancelledBody);
       return;
     }
@@ -2446,7 +2518,7 @@ router.patch("/orders/:id/status", async (req, res) => {
     }
 
     const orderStatusBody = { ...updated, total: safeNum(updated.total) };
-    storeIdempotency(req, 200, { success: true, data: orderStatusBody });
+    await storeIdempotency(req, 200, { success: true, data: orderStatusBody });
     sendSuccess(res, orderStatusBody);
   } catch (err) {
     logger.error(
@@ -2464,7 +2536,7 @@ router.patch("/orders/:id/status", async (req, res) => {
    Uses WHERE riderId IS NULL to prevent two riders accepting same ride (race condition) */
 router.post("/rides/:id/accept", csrfDoubleSubmit, validateRiderProfileComplete, rideAcceptLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const paramParsed = idParamSchema.safeParse(req.params);
     if (!paramParsed.success) {
       sendValidationError(res, "Invalid ride ID");
@@ -2746,7 +2818,7 @@ router.post("/rides/:id/accept", csrfDoubleSubmit, validateRiderProfileComplete,
       fare: safeNum(updated.fare),
       distance: safeNum(updated.distance),
     };
-    storeIdempotency(req, 200, { success: true, data: rideAcceptBody });
+    await storeIdempotency(req, 200, { success: true, data: rideAcceptBody });
     sendSuccess(res, rideAcceptBody);
   } catch (err) {
     logger.error(
@@ -2763,7 +2835,7 @@ router.post("/rides/:id/accept", csrfDoubleSubmit, validateRiderProfileComplete,
 /* ── POST /rider/rides/:id/verify-otp — Verify customer OTP before starting trip ── */
 router.post("/rides/:id/verify-otp", otpLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const riderId = req.riderId!;
     const rideId = req.params["id"] as string;
     const parsed = otpVerifySchema.safeParse(req.body ?? {});
@@ -2878,7 +2950,7 @@ router.post("/rides/:id/verify-otp", otpLimiter, async (req, res) => {
       .where(eq(ridesTable.id, rideId));
     emitRideDispatchUpdate({ rideId, action: "otp-verified", status: ride.status });
     emitRideUpdate(rideId);
-    storeIdempotency(req, 200, {
+    await storeIdempotency(req, 200, {
       success: true,
       message: "OTP verified. You may now start the trip.",
     });
@@ -2904,7 +2976,7 @@ const rideCancelBodySchema = z.object({
 });
 router.post("/rides/cancel", csrfDoubleSubmit, rideCancelLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = rideCancelBodySchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "Invalid request body");
@@ -2932,7 +3004,7 @@ router.post("/rides/cancel", csrfDoubleSubmit, rideCancelLimiter, async (req, re
       .where(and(eq(ridesTable.id, rideId), eq(ridesTable.riderId, riderId)));
     emitRideUpdate(rideId);
     const body = { success: true, message: "Ride cancelled" };
-    storeIdempotency(req, 200, body);
+    await storeIdempotency(req, 200, body);
     sendSuccess(res, body);
   } catch (err) {
     logger.error({ error: err instanceof Error ? err.message : String(err) }, "[route] POST /rides/cancel error");
@@ -2943,7 +3015,7 @@ router.post("/rides/cancel", csrfDoubleSubmit, rideCancelLimiter, async (req, re
 /* ── PATCH /rider/rides/:id/status — Update ride status (completed/cancelled) ── */
 router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, conditionalCancelLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = rideStatusSchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "Invalid status");
@@ -3321,7 +3393,7 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
       fare: safeNum(updated.fare),
       distance: safeNum(updated.distance),
     };
-    storeIdempotency(req, 200, { success: true, data: rideStatusBody });
+    await storeIdempotency(req, 200, { success: true, data: rideStatusBody });
     sendSuccess(res, rideStatusBody);
   } catch (err) {
     logger.error(
@@ -3338,7 +3410,7 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
 /* ── POST /rider/rides/:id/counter — Rider submits a bid on a bargaining ride (InDrive multi-bid) ── */
 router.post("/rides/:id/counter", rideBidLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = counterSchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "counterFare required");
@@ -3511,7 +3583,7 @@ router.post("/rides/:id/counter", rideBidLimiter, async (req, res) => {
     emitRideDispatchUpdate({ rideId, action: "bid", status: "bargaining" });
     emitRideUpdate(rideId);
     const counterBody = { bid: { ...bid, fare: safeNum(bid!.fare) } };
-    storeIdempotency(req, 200, { success: true, data: counterBody });
+    await storeIdempotency(req, 200, { success: true, data: counterBody });
     sendSuccess(res, counterBody);
   } catch (err) {
     logger.error(
@@ -3528,7 +3600,7 @@ router.post("/rides/:id/counter", rideBidLimiter, async (req, res) => {
 /* ── POST /rider/rides/:id/reject-offer — Rider dismisses a bargaining ride (local dismiss, no DB lock) ── */
 router.post("/rides/:id/reject-offer", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     /* InDrive model: riders don't lock the ride anymore, so "rejection" is purely a local dismiss.
      If this rider had submitted a pending bid, we cancel it. */
     const riderId = req.riderId!;
@@ -3546,7 +3618,7 @@ router.post("/rides/:id/reject-offer", async (req, res) => {
         )
       );
 
-    storeIdempotency(req, 200, { success: true, message: "Ride dismissed" });
+    await storeIdempotency(req, 200, { success: true, message: "Ride dismissed" });
     sendSuccess(res, undefined, "Ride dismissed");
   } catch (err) {
     logger.error(
@@ -3573,7 +3645,7 @@ const rideEventLogSchema = z.object({
 
 router.post("/rides/:id/event-log", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const riderId = req.riderId!;
     const rideId = req.params["id"] as string;
 
@@ -3609,7 +3681,7 @@ router.post("/rides/:id/event-log", async (req, res) => {
       lng: lng != null ? String(lng) : null,
     });
 
-    storeIdempotency(req, 200, { success: true, data: { id: logId, rideId, event } });
+    await storeIdempotency(req, 200, { success: true, data: { id: logId, rideId, event } });
     sendSuccess(res, { id: logId, rideId, event }, "Event logged");
   } catch (err) {
     logger.error(
@@ -4575,7 +4647,7 @@ router.get("/wallet/transactions", async (req, res) => {
 /* ── POST /rider/wallet/withdraw — Atomic withdrawal (prevents race condition) ── */
 router.post("/wallet/withdraw", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = withdrawSchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "Invalid input");
@@ -4659,7 +4731,7 @@ router.post("/wallet/withdraw", async (req, res) => {
         });
 
       const withdrawBody = { newBalance: parseFloat(result.toFixed(2)), amount: amt, txId };
-      storeIdempotency(req, 200, { success: true, data: withdrawBody });
+      await storeIdempotency(req, 200, { success: true, data: withdrawBody });
       sendSuccess(res, withdrawBody);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Withdrawal failed";
@@ -4761,7 +4833,7 @@ const remitSchema = z.object({
 /* M-05: Rate-limit COD remittance to prevent accidental double-submission spam. */
 router.post("/cod/remit", codRemitLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const riderId = req.riderId!;
     const parsed = remitSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -4842,7 +4914,7 @@ router.post("/cod/remit", codRemitLimiter, async (req, res) => {
       transactionId: txId,
       message: "Remittance submitted for admin verification",
     };
-    storeIdempotency(req, 200, { success: true, data: remitBody });
+    await storeIdempotency(req, 200, { success: true, data: remitBody });
     sendSuccess(res, remitBody);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to submit remittance";
@@ -5043,7 +5115,7 @@ router.get("/wallet/min-balance", async (req, res) => {
 /* M-05: Limit deposit submissions to 10 per 15 minutes per rider. */
 router.post("/wallet/deposit", riderDepositLimiter, async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const parsed = depositSchema.safeParse(req.body);
     if (!parsed.success) {
       sendValidationError(res, parsed.error.issues[0]?.message || "Invalid input");
@@ -5132,7 +5204,7 @@ router.post("/wallet/deposit", riderDepositLimiter, async (req, res) => {
       );
 
     const depositBody = { txId, amount: amt };
-    storeIdempotency(req, 200, { success: true, data: depositBody });
+    await storeIdempotency(req, 200, { success: true, data: depositBody });
     sendSuccess(res, depositBody);
   } catch (err) {
     logger.error(
@@ -6041,7 +6113,7 @@ async function handleIgnorePenalty(
 /* ── POST /rider/rides/:id/ignore — Rider ignores a ride request ── */
 router.post("/rides/:id/ignore", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const riderId = req.riderId!;
     const rideId = req.params["id"] as string;
 
@@ -6058,7 +6130,7 @@ router.post("/rides/:id/ignore", async (req, res) => {
     const penalty = await handleIgnorePenalty(riderId);
 
     const ignoreBody = { rideId, ignorePenalty: penalty };
-    storeIdempotency(req, 200, { success: true, data: ignoreBody });
+    await storeIdempotency(req, 200, { success: true, data: ignoreBody });
     sendSuccess(res, ignoreBody);
   } catch (err) {
     logger.error(
@@ -6155,7 +6227,7 @@ const sosSchema = z.object({
 /* ── POST /rider/sos — Rider SOS alert ── */
 router.post("/sos", async (req, res) => {
   try {
-    if (checkIdempotency(req, res)) return;
+    if (await checkIdempotency(req, res)) return;
     const settings = await getCachedSettings();
     if ((settings["feature_sos"] ?? "on") !== "on") {
       sendError(res, "SOS feature is currently disabled", 503);
@@ -6244,7 +6316,7 @@ router.post("/sos", async (req, res) => {
     });
 
     const sosResponseBody = { alertId, sentAt: now.toISOString() };
-    storeIdempotency(req, 200, { success: true, data: sosResponseBody });
+    await storeIdempotency(req, 200, { success: true, data: sosResponseBody });
     sendSuccess(res, sosResponseBody);
   } catch (err) {
     logger.error(

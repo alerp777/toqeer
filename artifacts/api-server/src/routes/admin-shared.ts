@@ -48,7 +48,7 @@ export { logger } from "../lib/logger.js";
 /* ── CONSTANTS ─────────────────────────────────────────────────────────── */
 
 export const ADMIN_TOKEN_TTL_HRS = 24;
-export const ADMIN_REFRESH_TTL_DAYS = 30;
+export const ADMIN_REFRESH_TTL_DAYS = 7;
 export const ADMIN_MAX_ATTEMPTS = 5;
 export const ADMIN_LOCKOUT_TIME = 15;
 

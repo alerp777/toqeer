@@ -105,6 +105,10 @@ router.post("/otp/disable", async (req, res) => {
       : undefined;
   const adminReq = req as AdminRequest;
 
+  if (!minutes || minutes < 1 || minutes > 1440) {
+    return sendValidationError(res, "Minutes must be between 1 and 1440 (max 24 hours)");
+  }
+
   try {
     const _auditDetails = reason
       ? `Disabled OTP for ${minutes} minutes. Reason: ${reason}`

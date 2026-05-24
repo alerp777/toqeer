@@ -58,8 +58,14 @@ router.get("/admin-accounts", requirePermission("system.roles.manage"), async (r
 });
 
 /* ── PATCH /admin-accounts/:id ──────────────────────────────────── */
+const ALLOWED_ADMIN_ROLES = ["super_admin", "admin", "moderator", "support", "finance"] as const;
+
 const patchSchema = z.object({
-  role: z.string().min(1).max(64).optional(),
+  role: z.enum(ALLOWED_ADMIN_ROLES, {
+    errorMap: () => ({
+      message: `role must be one of: ${ALLOWED_ADMIN_ROLES.join(", ")}`,
+    }),
+  }).optional(),
   isActive: z.boolean().optional(),
 });
 
