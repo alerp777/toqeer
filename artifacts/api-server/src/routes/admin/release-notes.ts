@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { Router } from "express";
 import { generateId } from "../../lib/id.js";
 import { logger } from "../../lib/logger.js";
+import { addAuditEntry, getClientIp, type AdminRequest } from "../admin-shared.js";
 import {
   sendCreated,
   sendError,
@@ -139,9 +140,17 @@ router.patch("/release-notes/:id", async (req, res) => {
 /* ── DELETE /admin/release-notes/:id ── */
 router.delete("/release-notes/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const { id } = req.params as { id: string };
     try {
       await db.execute(sql`DELETE FROM release_notes WHERE id = ${id}`);
+      void addAuditEntry({
+        action: "release_note_delete",
+        adminId: adminReq.adminId,
+        ip: getClientIp(req),
+        details: `Deleted release note ${id}`,
+        result: "success",
+      });
       sendSuccess(res, { deleted: true });
     } catch (_e) {
       sendError(res, "Failed to delete release note");

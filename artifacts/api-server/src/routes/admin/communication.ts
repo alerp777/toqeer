@@ -15,6 +15,7 @@ import { generateId } from "../../lib/id.js";
 import { logger } from "../../lib/logger.js";
 import { getIO } from "../../lib/socketio.js";
 import { generateRoleTemplate } from "../../services/communicationAI.js";
+import { addAuditEntry, getClientIp, type AdminRequest } from "../admin-shared.js";
 
 const router = Router();
 
@@ -510,8 +511,19 @@ router.put("/communication/roles/:id", async (req, res) => {
 
 router.delete("/communication/roles/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const { id } = req.params as Record<string, string>;
-    await db.delete(communicationRolesTable).where(eq(communicationRolesTable.id, id));
+    const [deleted] = await db
+      .delete(communicationRolesTable)
+      .where(eq(communicationRolesTable.id, id))
+      .returning({ id: communicationRolesTable.id, name: communicationRolesTable.name });
+    void addAuditEntry({
+      action: "communication_role_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted communication role ${id}${deleted?.name ? ` (${deleted.name})` : ""}`,
+      result: "success",
+    });
     res.json({ data: { status: "deleted" } });
   } catch (_e) {
     res.status(500).json({ error: "Failed to delete role" });

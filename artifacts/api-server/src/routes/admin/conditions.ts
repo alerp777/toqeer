@@ -13,10 +13,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { generateId } from "../../lib/id.js";
 import { logger } from "../../lib/logger.js";
-import { sendValidationError } from "../../lib/response.js";
+import { sendError, sendNotFound, sendSuccess, sendValidationError } from "../../lib/response.js";
 import { sendPushToRole } from "../../lib/webpush.js";
 import { alertAccountRestriction } from "../../services/email.js";
-import { getCachedSettings } from "../admin-shared.js";
+import {
+  addAuditEntry,
+  getCachedSettings,
+  getClientIp,
+  type AdminRequest,
+} from "../admin-shared.js";
 
 const router = Router();
 
@@ -574,11 +579,28 @@ router.patch("/conditions/:id", async (req, res) => {
 
 router.delete("/conditions/:id", async (req, res) => {
   try {
-    await db.delete(accountConditionsTable).where(eq(accountConditionsTable.id, req.params.id));
-    res.json({ success: true });
+    const adminReq = req as AdminRequest;
+    const conditionId = req.params["id"] as string;
+    const [deleted] = await db
+      .delete(accountConditionsTable)
+      .where(eq(accountConditionsTable.id, conditionId))
+      .returning({ id: accountConditionsTable.id, userId: accountConditionsTable.userId });
+    if (!deleted) {
+      sendNotFound(res, "Condition not found");
+      return;
+    }
+    void addAuditEntry({
+      action: "condition_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted account condition ${conditionId} for user ${deleted.userId}`,
+      result: "success",
+      affectedUserId: deleted.userId,
+    });
+    sendSuccess(res, { success: true });
   } catch (error) {
     logger.error("[admin/conditions] delete error:", error);
-    res.status(500).json({ success: false, error: "An internal error occurred" });
+    sendError(res, "An internal error occurred", 500);
   }
 });
 
@@ -590,6 +612,7 @@ router.post("/conditions/bulk", async (req, res) => {
       return;
     }
     try {
+      const adminReq = req as AdminRequest;
       const { ids, action, reason } = p.data;
       if (action === "lift") {
         const result = await db
@@ -597,7 +620,7 @@ router.post("/conditions/bulk", async (req, res) => {
           .set({
             isActive: false,
             liftedAt: new Date(),
-            liftedBy: "admin",
+            liftedBy: adminReq.adminId || "system",
             liftReason: reason || "Bulk lift by admin",
             updatedAt: new Date(),
           })
@@ -605,6 +628,13 @@ router.post("/conditions/bulk", async (req, res) => {
             and(inArray(accountConditionsTable.id, ids), eq(accountConditionsTable.isActive, true))
           )
           .returning({ id: accountConditionsTable.id });
+        void addAuditEntry({
+          action: "conditions_bulk_lift",
+          adminId: adminReq.adminId,
+          ip: getClientIp(req),
+          details: `Bulk lifted ${result.length} conditions (IDs: ${ids.slice(0, 5).join(", ")}${ids.length > 5 ? "…" : ""})`,
+          result: "success",
+        });
         return res.json({ success: true, affected: result.length });
       }
       if (action === "delete") {
@@ -612,6 +642,13 @@ router.post("/conditions/bulk", async (req, res) => {
           .delete(accountConditionsTable)
           .where(inArray(accountConditionsTable.id, ids))
           .returning({ id: accountConditionsTable.id });
+        void addAuditEntry({
+          action: "conditions_bulk_delete",
+          adminId: adminReq.adminId,
+          ip: getClientIp(req),
+          details: `Bulk deleted ${result.length} conditions (IDs: ${ids.slice(0, 5).join(", ")}${ids.length > 5 ? "…" : ""})`,
+          result: "success",
+        });
         return res.json({ success: true, affected: result.length });
       }
       return res.status(400).json({ success: false, error: "Unsupported action" });

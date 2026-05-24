@@ -5,6 +5,7 @@ import { Router } from "express";
 import { generateId } from "../../lib/id.js";
 import { logger } from "../../lib/logger.js";
 import { sendCreated, sendError, sendNotFound, sendSuccess } from "../../lib/response.js";
+import { addAuditEntry, getClientIp, type AdminRequest } from "../admin-shared.js";
 
 const router = Router();
 
@@ -127,10 +128,18 @@ router.patch("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const { id } = req.params as Record<string, string>;
     try {
       const [deleted] = await db.delete(faqsTable).where(eq(faqsTable.id, id)).returning();
       if (!deleted) return sendNotFound(res, "FAQ not found");
+      void addAuditEntry({
+        action: "faq_delete",
+        adminId: adminReq.adminId,
+        ip: getClientIp(req),
+        details: `Deleted FAQ ${id}${deleted.question ? ` — "${deleted.question.slice(0, 60)}"` : ""}`,
+        result: "success",
+      });
       return sendSuccess(res, { ok: true });
     } catch (err) {
       logger.error(

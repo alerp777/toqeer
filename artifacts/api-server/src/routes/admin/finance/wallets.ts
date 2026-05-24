@@ -1102,6 +1102,15 @@ router.delete(
           "checkmark-circle-outline"
         );
       }
+      const adminReq = req as AdminRequest;
+      void addAuditEntry({
+        action: "rider_penalty_delete",
+        adminId: adminReq.adminId,
+        ip: getClientIp(req),
+        details: `Reversed penalty ${pid} for rider ${riderId} — type: ${penalty.type}, amount: ${penalty.amount}`,
+        result: "success",
+        affectedUserId: riderId,
+      });
       res.json({ success: true });
     } catch (err) {
       logger.error(

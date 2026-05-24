@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
@@ -190,6 +191,7 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <Pressable style={sheet.overlay} onPress={onClose}>
         <Pressable style={sheet.container} onPress={e => e.stopPropagation()}>
           <View style={sheet.handle} />
@@ -313,6 +315,7 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
           </View>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

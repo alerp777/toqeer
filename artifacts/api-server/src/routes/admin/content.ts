@@ -742,6 +742,7 @@ router.patch("/products/:id", async (req, res) => {
 
 router.delete("/products/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const [product] = await db
       .update(productsTable)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -751,6 +752,13 @@ router.delete("/products/:id", async (req, res) => {
       sendNotFound(res, "Product not found");
       return;
     }
+    void addAuditEntry({
+      action: "product_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted product ${req.params["id"]}`,
+      result: "success",
+    });
     sendSuccess(res, { success: true });
   } catch (err) {
     logger.error(
@@ -1121,6 +1129,7 @@ router.patch("/categories/:id", async (req, res) => {
 
 router.delete("/categories/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const id = req.params["id"] as string;
 
     await db
@@ -1138,6 +1147,13 @@ router.delete("/categories/:id", async (req, res) => {
       return;
     }
 
+    void addAuditEntry({
+      action: "category_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted category ${id}${deleted.name ? ` (${deleted.name})` : ""}`,
+      result: "success",
+    });
     sendSuccess(res, { success: true });
   } catch (err) {
     logger.error(
@@ -1334,6 +1350,7 @@ router.put("/banners/:id", bannerUpdateHandler);
 
 router.delete("/banners/:id", async (req, res) => {
   try {
+    const adminReq = req as AdminRequest;
     const bannerId = req.params["id"] as string;
     const [deleted] = await db
       .delete(bannersTable)
@@ -1343,6 +1360,13 @@ router.delete("/banners/:id", async (req, res) => {
       sendNotFound(res, "Banner not found");
       return;
     }
+    void addAuditEntry({
+      action: "banner_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted banner ${bannerId}${deleted.title ? ` (${deleted.title})` : ""}`,
+      result: "success",
+    });
     sendSuccess(res, { success: true, id: bannerId });
   } catch (err) {
     logger.error(
@@ -1477,7 +1501,16 @@ router.patch("/flash-deals/:id", async (req, res) => {
 
 router.delete("/flash-deals/:id", async (req, res) => {
   try {
-    await db.delete(flashDealsTable).where(eq(flashDealsTable.id, req.params["id"] as string));
+    const adminReq = req as AdminRequest;
+    const dealId = req.params["id"] as string;
+    await db.delete(flashDealsTable).where(eq(flashDealsTable.id, dealId));
+    void addAuditEntry({
+      action: "flash_deal_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted flash deal ${dealId}`,
+      result: "success",
+    });
     sendSuccess(res, { success: true });
   } catch (err) {
     logger.error(
@@ -1655,7 +1688,16 @@ router.patch("/promo-codes/:id", async (req, res) => {
 
 router.delete("/promo-codes/:id", async (req, res) => {
   try {
-    await db.delete(promoCodesTable).where(eq(promoCodesTable.id, req.params["id"] as string));
+    const adminReq = req as AdminRequest;
+    const codeId = req.params["id"] as string;
+    await db.delete(promoCodesTable).where(eq(promoCodesTable.id, codeId));
+    void addAuditEntry({
+      action: "promo_code_delete",
+      adminId: adminReq.adminId,
+      ip: getClientIp(req),
+      details: `Deleted promo code ${codeId}`,
+      result: "success",
+    });
     sendSuccess(res, { success: true });
   } catch (err) {
     logger.error(
