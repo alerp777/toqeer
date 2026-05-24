@@ -1325,14 +1325,14 @@ router.patch(
         return;
       }
       const ref = refNo ? `paid:${refNo.trim()}` : "paid:manual";
-      /* Atomic compare-and-swap: only succeeds if still 'pending', preventing double-approval */
+      /* Atomic compare-and-swap: only succeeds if still 'pending' or NULL (unset), preventing double-approval */
       const [updated] = await db
         .update(walletTransactionsTable)
         .set({ reference: ref })
         .where(
           and(
             eq(walletTransactionsTable.id, txId),
-            eq(walletTransactionsTable.reference, "pending")
+            sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
           )
         )
         .returning();
@@ -1426,7 +1426,7 @@ router.patch(
             .where(
               and(
                 eq(walletTransactionsTable.id, txId),
-                eq(walletTransactionsTable.reference, "pending")
+                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
               )
             )
             .returning();

@@ -134,14 +134,17 @@ router.get("/pending-counts", async (_req: Request, res: Response) => {
         .where(
           and(
             eq(walletTransactionsTable.type, "withdrawal"),
-            eq(walletTransactionsTable.reference, "pending")
+            sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
           )
         ),
       db
         .select({ count: count() })
         .from(walletTransactionsTable)
         .where(
-          and(sql`type IN ('topup', 'deposit')`, eq(walletTransactionsTable.reference, "pending"))
+          and(
+            sql`type IN ('topup', 'deposit')`,
+            sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL OR ${walletTransactionsTable.reference} LIKE 'pending:%')`
+          )
         ),
       db
         .select({ count: count() })

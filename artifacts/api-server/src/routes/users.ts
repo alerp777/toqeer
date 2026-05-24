@@ -783,7 +783,7 @@ router.delete("/delete-account", validateBody(DeleteAccountSchema), async (req, 
         and(
           eq(walletTransactionsTable.userId, userId),
           eq(walletTransactionsTable.type, "withdrawal"),
-          eq(walletTransactionsTable.reference, "pending")
+          sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
         )
       );
 

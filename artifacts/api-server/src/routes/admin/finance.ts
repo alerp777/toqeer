@@ -1193,7 +1193,7 @@ router.patch(
             .where(
               and(
                 eq(walletTransactionsTable.id, tx.id),
-                eq(walletTransactionsTable.reference, "pending")
+                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
               )
             )
             .returning({ id: walletTransactionsTable.id });
@@ -1270,7 +1270,7 @@ router.patch(
             .where(
               and(
                 eq(walletTransactionsTable.id, tx.id),
-                eq(walletTransactionsTable.reference, "pending")
+                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} IS NULL)`
               )
             )
             .returning({ id: walletTransactionsTable.id });
