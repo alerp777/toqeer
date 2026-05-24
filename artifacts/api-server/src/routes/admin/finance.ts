@@ -1450,7 +1450,7 @@ router.patch(
           .where(
             and(
               eq(walletTransactionsTable.id, txId),
-              sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%')`
+              sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%' OR ${walletTransactionsTable.reference} IS NULL)`
             )
           )
           .returning({ id: walletTransactionsTable.id });
@@ -1527,7 +1527,7 @@ router.patch(
       .where(
         and(
           eq(walletTransactionsTable.id, txId),
-          sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%')`
+          sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%' OR ${walletTransactionsTable.reference} IS NULL)`
         )
       )
       .returning({ id: walletTransactionsTable.id });
@@ -1643,7 +1643,7 @@ router.post(
             .where(
               and(
                 eq(walletTransactionsTable.id, tx.id),
-                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%')`
+                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%' OR ${walletTransactionsTable.reference} IS NULL)`
               )
             )
             .returning({ id: walletTransactionsTable.id });
@@ -1755,7 +1755,7 @@ router.post(
             .where(
               and(
                 eq(walletTransactionsTable.id, tx.id),
-                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%')`
+                sql`(${walletTransactionsTable.reference} = 'pending' OR ${walletTransactionsTable.reference} LIKE 'pending:%' OR ${walletTransactionsTable.reference} IS NULL)`
               )
             )
             .returning({ id: walletTransactionsTable.id });

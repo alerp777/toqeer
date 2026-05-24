@@ -7,7 +7,7 @@ import {
   walletTransactionsTable,
 } from "@workspace/db/schema";
 import { t, type TranslationKey } from "@workspace/i18n";
-import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import { getUserLanguage } from "../lib/getUserLanguage.js";
 import { generateId } from "../lib/id.js";
@@ -313,27 +313,30 @@ router.get("/my-subscriptions", customerAuth, async (req, res) => {
       .where(eq(schoolSubscriptionsTable.userId, userId))
       .orderBy(desc(schoolSubscriptionsTable.createdAt));
 
-    /* Enrich with route info */
-    const enriched = await Promise.all(
-      subs.map(async (sub) => {
-        const [route] = await db
-          .select()
-          .from(schoolRoutesTable)
-          .where(eq(schoolRoutesTable.id, sub.routeId))
-          .limit(1);
-        return {
-          ...sub,
-          monthlyAmount: safeNum(sub.monthlyAmount),
-          route: route ? formatRoute(route) : null,
-          startDate: sub.startDate instanceof Date ? sub.startDate.toISOString() : sub.startDate,
-          nextBillingDate:
-            sub.nextBillingDate instanceof Date
-              ? sub.nextBillingDate.toISOString()
-              : sub.nextBillingDate,
-          createdAt: sub.createdAt instanceof Date ? sub.createdAt.toISOString() : sub.createdAt,
-        };
-      })
+    /* Batch-fetch all referenced routes in one query — eliminates N+1 */
+    const routeIds = [...new Set(subs.map((s) => s.routeId).filter(Boolean))];
+    const routeRows =
+      routeIds.length > 0
+        ? await db
+            .select()
+            .from(schoolRoutesTable)
+            .where(inArray(schoolRoutesTable.id, routeIds))
+        : [];
+    const routeMap = new Map(
+      routeRows.map((r) => [r.id, formatRoute(r as Record<string, unknown>)])
     );
+
+    const enriched = subs.map((sub) => ({
+      ...sub,
+      monthlyAmount: safeNum(sub.monthlyAmount),
+      route: routeMap.get(sub.routeId) ?? null,
+      startDate: sub.startDate instanceof Date ? sub.startDate.toISOString() : sub.startDate,
+      nextBillingDate:
+        sub.nextBillingDate instanceof Date
+          ? sub.nextBillingDate.toISOString()
+          : sub.nextBillingDate,
+      createdAt: sub.createdAt instanceof Date ? sub.createdAt.toISOString() : sub.createdAt,
+    }));
 
     res.json({ subscriptions: enriched });
   } catch (err) {

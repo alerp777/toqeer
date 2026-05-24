@@ -306,7 +306,8 @@ router.get("/routes/:id", async (req, res, next) => {
       return;
     }
 
-    const schedules = await db
+    /* Single query with two JOINs — eliminates getVanCodeForSchedule N+1 */
+    const enrichedSchedules = await db
       .select({
         id: vanSchedulesTable.id,
         routeId: vanSchedulesTable.routeId,
@@ -319,17 +320,12 @@ router.get("/routes/:id", async (req, res, next) => {
         vehiclePlate: vanVehiclesTable.plateNumber,
         vehicleModel: vanVehiclesTable.model,
         seatLayout: vanVehiclesTable.seatLayout,
+        vanCode: vanDriversTable.vanCode,
       })
       .from(vanSchedulesTable)
       .leftJoin(vanVehiclesTable, eq(vanSchedulesTable.vehicleId, vanVehiclesTable.id))
+      .leftJoin(vanDriversTable, eq(vanDriversTable.userId, vanSchedulesTable.driverId))
       .where(and(eq(vanSchedulesTable.routeId, route.id), eq(vanSchedulesTable.isActive, true)));
-
-    const enrichedSchedules = await Promise.all(
-      schedules.map(async (s) => {
-        const vanCode = await getVanCodeForSchedule(s.id);
-        return { ...s, vanCode };
-      })
-    );
 
     sendSuccess(res, { ...route, schedules: enrichedSchedules });
   } catch (e) {
@@ -748,7 +744,8 @@ router.post("/bookings", customerAuth, paymentLimiter, async (req, res, _next) =
 router.get("/bookings", customerAuth, async (req, res, next) => {
   try {
     const userId = req.customerId!;
-    const bookings = await db
+    /* Single query — leftJoin through schedule's driverId eliminates getVanCodeForSchedule N+1 */
+    const enriched = await db
       .select({
         id: vanBookingsTable.id,
         scheduleId: vanBookingsTable.scheduleId,
@@ -771,19 +768,14 @@ router.get("/bookings", customerAuth, async (req, res, next) => {
         routeTo: vanRoutesTable.toAddress,
         departureTime: vanSchedulesTable.departureTime,
         tripStatus: vanSchedulesTable.tripStatus,
+        vanCode: vanDriversTable.vanCode,
       })
       .from(vanBookingsTable)
       .leftJoin(vanRoutesTable, eq(vanBookingsTable.routeId, vanRoutesTable.id))
       .leftJoin(vanSchedulesTable, eq(vanBookingsTable.scheduleId, vanSchedulesTable.id))
+      .leftJoin(vanDriversTable, eq(vanDriversTable.userId, vanSchedulesTable.driverId))
       .where(eq(vanBookingsTable.userId, userId))
       .orderBy(desc(vanBookingsTable.createdAt));
-
-    const enriched = await Promise.all(
-      bookings.map(async (b) => {
-        const vanCode = await getVanCodeForSchedule(b.scheduleId);
-        return { ...b, vanCode };
-      })
-    );
 
     sendSuccess(res, enriched);
   } catch (e) {
@@ -1802,7 +1794,8 @@ router.patch("/admin/vehicles/:id", adminAuth, async (req, res, _next) => {
 
 router.get("/admin/schedules", adminAuth, async (_req, res, _next) => {
   try {
-    const schedules = await db
+    /* Single query — leftJoin vanDriversTable eliminates per-schedule N+1 vanCode lookup */
+    const enriched = await db
       .select({
         id: vanSchedulesTable.id,
         routeId: vanSchedulesTable.routeId,
@@ -1816,24 +1809,14 @@ router.get("/admin/schedules", adminAuth, async (_req, res, _next) => {
         routeName: vanRoutesTable.name,
         vehiclePlate: vanVehiclesTable.plateNumber,
         driverName: usersTable.name,
+        vanCode: vanDriversTable.vanCode,
       })
       .from(vanSchedulesTable)
       .leftJoin(vanRoutesTable, eq(vanSchedulesTable.routeId, vanRoutesTable.id))
       .leftJoin(vanVehiclesTable, eq(vanSchedulesTable.vehicleId, vanVehiclesTable.id))
       .leftJoin(usersTable, eq(vanSchedulesTable.driverId, usersTable.id))
+      .leftJoin(vanDriversTable, eq(vanDriversTable.userId, vanSchedulesTable.driverId))
       .orderBy(asc(vanSchedulesTable.departureTime));
-
-    const enriched = await Promise.all(
-      schedules.map(async (s) => {
-        if (!s.driverId) return { ...s, vanCode: null };
-        const [driver] = await db
-          .select({ vanCode: vanDriversTable.vanCode })
-          .from(vanDriversTable)
-          .where(eq(vanDriversTable.userId, s.driverId))
-          .limit(1);
-        return { ...s, vanCode: driver?.vanCode ?? null };
-      })
-    );
 
     sendSuccess(res, enriched);
   } catch (_e) {

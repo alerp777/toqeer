@@ -607,45 +607,39 @@ router.delete("/school-routes/:id", async (req: Request, res: Response) => {
 router.get("/school-subscriptions", async (req: Request, res: Response) => {
   try {
     const routeIdFilter = req.query["routeId"] as string | undefined;
-    const query = routeIdFilter
-      ? db
-          .select()
-          .from(schoolSubscriptionsTable)
-          .where(eq(schoolSubscriptionsTable.routeId, routeIdFilter))
-      : db.select().from(schoolSubscriptionsTable);
-    const subs = await query.orderBy(desc(schoolSubscriptionsTable.createdAt));
-    /* Enrich with user info */
-    const enriched = await Promise.all(
-      subs.map(async (sub) => {
-        const [user] = await db
-          .select({ name: usersTable.name, phone: usersTable.phone })
-          .from(usersTable)
-          .where(eq(usersTable.id, sub.userId))
-          .limit(1);
-        const [route] = await db
-          .select({
-            routeName: schoolRoutesTable.routeName,
-            schoolName: schoolRoutesTable.schoolName,
-          })
-          .from(schoolRoutesTable)
-          .where(eq(schoolRoutesTable.id, sub.routeId))
-          .limit(1);
-        return {
-          ...sub,
-          monthlyAmount: parseFloat(String(sub.monthlyAmount ?? "0")),
-          userName: user?.name || null,
-          userPhone: user?.phone || null,
-          routeName: route?.routeName || null,
-          schoolName: route?.schoolName || null,
-          startDate: sub.startDate instanceof Date ? sub.startDate.toISOString() : sub.startDate,
-          nextBillingDate:
-            sub.nextBillingDate instanceof Date
-              ? sub.nextBillingDate.toISOString()
-              : sub.nextBillingDate,
-          createdAt: sub.createdAt instanceof Date ? sub.createdAt.toISOString() : sub.createdAt,
-        };
+    /* Single JOIN eliminates N+1 per-subscription user/route lookups */
+    const baseQuery = db
+      .select({
+        id: schoolSubscriptionsTable.id,
+        userId: schoolSubscriptionsTable.userId,
+        routeId: schoolSubscriptionsTable.routeId,
+        status: schoolSubscriptionsTable.status,
+        monthlyAmount: schoolSubscriptionsTable.monthlyAmount,
+        startDate: schoolSubscriptionsTable.startDate,
+        nextBillingDate: schoolSubscriptionsTable.nextBillingDate,
+        createdAt: schoolSubscriptionsTable.createdAt,
+        userName: usersTable.name,
+        userPhone: usersTable.phone,
+        routeName: schoolRoutesTable.routeName,
+        schoolName: schoolRoutesTable.schoolName,
       })
-    );
+      .from(schoolSubscriptionsTable)
+      .leftJoin(usersTable, eq(usersTable.id, schoolSubscriptionsTable.userId))
+      .leftJoin(schoolRoutesTable, eq(schoolRoutesTable.id, schoolSubscriptionsTable.routeId));
+    const rows = await (routeIdFilter
+      ? baseQuery.where(eq(schoolSubscriptionsTable.routeId, routeIdFilter))
+      : baseQuery
+    ).orderBy(desc(schoolSubscriptionsTable.createdAt));
+    const enriched = rows.map((row) => ({
+      ...row,
+      monthlyAmount: parseFloat(String(row.monthlyAmount ?? "0")),
+      startDate: row.startDate instanceof Date ? row.startDate.toISOString() : row.startDate,
+      nextBillingDate:
+        row.nextBillingDate instanceof Date
+          ? row.nextBillingDate.toISOString()
+          : row.nextBillingDate,
+      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+    }));
     sendSuccess(res, { subscriptions: enriched, total: enriched.length });
   } catch (error: unknown) {
     sendError(res, (error as Error).message || "Failed to fetch school subscriptions", 500);

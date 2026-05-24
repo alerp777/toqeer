@@ -1,3 +1,4 @@
+import { inArray } from "drizzle-orm";
 import { Router } from "express";
 import {
   adminAuth,
@@ -95,43 +96,48 @@ async function buildRideSSEPayload(rideId: string): Promise<Record<string, unkno
           .orderBy(rideBidsTable.createdAt)
       : [];
 
-  const formattedBids = await Promise.all(
-    bids.map(async (b) => {
-      const [riderProfile] = await db
-        .select({
-          vehiclePlate: riderProfilesTable.vehiclePlate,
-          vehicleType: riderProfilesTable.vehicleType,
-        })
-        .from(riderProfilesTable)
-        .where(eq(riderProfilesTable.userId, b.riderId))
-        .limit(1);
+  /* Batch-fetch riderProfiles + ratings in 2 queries instead of 2*N */
+  const bidRiderIds = [...new Set(bids.map((b) => b.riderId))];
+  const [profileRows, ratingAggRows] =
+    bidRiderIds.length > 0
+      ? await Promise.all([
+          db
+            .select({
+              userId: riderProfilesTable.userId,
+              vehiclePlate: riderProfilesTable.vehiclePlate,
+              vehicleType: riderProfilesTable.vehicleType,
+            })
+            .from(riderProfilesTable)
+            .where(inArray(riderProfilesTable.userId, bidRiderIds)),
+          db
+            .select({
+              riderId: rideRatingsTable.riderId,
+              starsAvg: sql<string>`AVG(${rideRatingsTable.stars})`,
+              total: sql<string>`COUNT(*)`,
+            })
+            .from(rideRatingsTable)
+            .where(inArray(rideRatingsTable.riderId, bidRiderIds))
+            .groupBy(rideRatingsTable.riderId),
+        ])
+      : [[], []];
+  const profileMap = new Map(profileRows.map((p) => [p.userId, p]));
+  const ratingMap = new Map(ratingAggRows.map((r) => [r.riderId, r]));
 
-      const ratingRows = await db
-        .select({
-          starsAvg: sql<string>`AVG(stars)`,
-          total: sql<string>`COUNT(*)`,
-        })
-        .from(rideRatingsTable)
-        .where(eq(rideRatingsTable.riderId, b.riderId));
-
-      const ratingAvg = ratingRows[0]?.starsAvg
-        ? Math.round(parseFloat(ratingRows[0].starsAvg) * 10) / 10
-        : null;
-      const totalRides = ratingRows[0]?.total ? parseInt(ratingRows[0].total, 10) : 0;
-
-      return {
-        ...b,
-        fare: parseFloat(b.fare),
-        vehiclePlate: riderProfile?.vehiclePlate ?? null,
-        vehicleType: riderProfile?.vehicleType ?? null,
-        ratingAvg,
-        totalRides,
-        expiresAt: b.expiresAt instanceof Date ? b.expiresAt.toISOString() : b.expiresAt,
-        createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
-        updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt,
-      };
-    })
-  );
+  const formattedBids = bids.map((b) => {
+    const prof = profileMap.get(b.riderId);
+    const rat = ratingMap.get(b.riderId);
+    return {
+      ...b,
+      fare: parseFloat(b.fare),
+      vehiclePlate: prof?.vehiclePlate ?? null,
+      vehicleType: prof?.vehicleType ?? null,
+      ratingAvg: rat?.starsAvg ? Math.round(parseFloat(rat.starsAvg) * 10) / 10 : null,
+      totalRides: rat?.total ? parseInt(rat.total, 10) : 0,
+      expiresAt: b.expiresAt instanceof Date ? b.expiresAt.toISOString() : b.expiresAt,
+      createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
+      updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt,
+    };
+  });
 
   let riderLat: number | null = null;
   let riderLng: number | null = null;
@@ -339,43 +345,48 @@ router.get("/:id", customerAuth, verifyOwnership("ride"), async (req, res, next)
             .orderBy(rideBidsTable.createdAt)
         : [];
 
-    const formattedBids = await Promise.all(
-      bids.map(async (b) => {
-        const [riderProfile] = await db
-          .select({
-            vehiclePlate: riderProfilesTable.vehiclePlate,
-            vehicleType: riderProfilesTable.vehicleType,
-          })
-          .from(riderProfilesTable)
-          .where(eq(riderProfilesTable.userId, b.riderId))
-          .limit(1);
+    /* Batch-fetch riderProfiles + ratings in 2 queries instead of 2*N */
+    const bidRiderIds2 = [...new Set(bids.map((b) => b.riderId))];
+    const [profileRows2, ratingAggRows2] =
+      bidRiderIds2.length > 0
+        ? await Promise.all([
+            db
+              .select({
+                userId: riderProfilesTable.userId,
+                vehiclePlate: riderProfilesTable.vehiclePlate,
+                vehicleType: riderProfilesTable.vehicleType,
+              })
+              .from(riderProfilesTable)
+              .where(inArray(riderProfilesTable.userId, bidRiderIds2)),
+            db
+              .select({
+                riderId: rideRatingsTable.riderId,
+                starsAvg: sql<string>`AVG(${rideRatingsTable.stars})`,
+                total: sql<string>`COUNT(*)`,
+              })
+              .from(rideRatingsTable)
+              .where(inArray(rideRatingsTable.riderId, bidRiderIds2))
+              .groupBy(rideRatingsTable.riderId),
+          ])
+        : [[], []];
+    const profileMap2 = new Map(profileRows2.map((p) => [p.userId, p]));
+    const ratingMap2 = new Map(ratingAggRows2.map((r) => [r.riderId, r]));
 
-        const ratingRows = await db
-          .select({
-            starsAvg: sql<string>`AVG(stars)`,
-            total: sql<string>`COUNT(*)`,
-          })
-          .from(rideRatingsTable)
-          .where(eq(rideRatingsTable.riderId, b.riderId));
-
-        const ratingAvg = ratingRows[0]?.starsAvg
-          ? Math.round(parseFloat(ratingRows[0].starsAvg) * 10) / 10
-          : null;
-        const totalRides = ratingRows[0]?.total ? parseInt(ratingRows[0].total, 10) : 0;
-
-        return {
-          ...b,
-          fare: parseFloat(b.fare),
-          vehiclePlate: riderProfile?.vehiclePlate ?? null,
-          vehicleType: riderProfile?.vehicleType ?? null,
-          ratingAvg,
-          totalRides,
-          expiresAt: b.expiresAt instanceof Date ? b.expiresAt.toISOString() : b.expiresAt,
-          createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
-          updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt,
-        };
-      })
-    );
+    const formattedBids = bids.map((b) => {
+      const prof = profileMap2.get(b.riderId);
+      const rat = ratingMap2.get(b.riderId);
+      return {
+        ...b,
+        fare: parseFloat(b.fare),
+        vehiclePlate: prof?.vehiclePlate ?? null,
+        vehicleType: prof?.vehicleType ?? null,
+        ratingAvg: rat?.starsAvg ? Math.round(parseFloat(rat.starsAvg) * 10) / 10 : null,
+        totalRides: rat?.total ? parseInt(rat.total, 10) : 0,
+        expiresAt: b.expiresAt instanceof Date ? b.expiresAt.toISOString() : b.expiresAt,
+        createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
+        updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt,
+      };
+    });
 
     let riderLat: number | null = null;
     let riderLng: number | null = null;
