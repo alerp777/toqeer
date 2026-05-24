@@ -1,3 +1,4 @@
+import { withServiceGuard } from "@/components/ServiceGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -30,15 +31,15 @@ const log = createLogger("[PharmacyCheckout]");
 
 type Step = "review" | "address" | "payment" | "done";
 
-const PAYMENT_OPTIONS = [
-  { key: "cash", label: T("cashOnDelivery"), icon: "cash-outline" as const },
-  { key: "wallet", label: T("walletBalanceLabel"), icon: "wallet-outline" as const },
-];
-
-export default function PharmacyCheckoutScreen() {
+function PharmacyCheckoutScreen() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
+
+  const PAYMENT_OPTIONS = [
+    { key: "cash", label: T("cashOnDelivery"), icon: "cash-outline" as const },
+    { key: "wallet", label: T("walletBalanceLabel"), icon: "wallet-outline" as const },
+  ];
 
 const { colors: C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -362,3 +363,4 @@ function makeStyles(C: typeof Colors.light) {
     doneBtnSecondaryTxt: { color: C.text, fontSize: 15, fontWeight: "600" },
   });
 }
+export default withServiceGuard("pharmacy", PharmacyCheckoutScreen);

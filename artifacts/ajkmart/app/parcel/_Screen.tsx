@@ -52,10 +52,10 @@ const PARCEL_TYPE_DEFS: Omit<ParcelType, "baseFare">[] = [
   { id: "clothes",     label: "Clothes",     emoji: "👕", desc: "Garments, accessories" },
   { id: "electronics", label: "Electronics", emoji: "📱", desc: "Phones, gadgets, devices" },
   { id: "food",        label: "Food/Gift",   emoji: "🎁", desc: "Packed food, gift items" },
-  { id: "other",       label: T("other"),       emoji: "📦", desc: "Any other parcel" },
+  { id: "other",       label: "Other",          emoji: "📦", desc: "Any other parcel" },
 ];
 
-const steps = ["Sender", "Receiver", T("parcel"), T("payment")];
+const steps = ["Sender", "Receiver", "Parcel", "Payment"];
 
 function Steps({ current, labels }: { current: number; labels: string[] }) {
   const { colors: C } = useTheme();

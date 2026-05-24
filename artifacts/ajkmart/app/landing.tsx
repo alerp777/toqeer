@@ -21,55 +21,55 @@ const WHITE = "#FFFFFF";
 const LANG_CYCLE: Language[] = ["en", "ur", "roman"];
 const LANG_LABELS: Record<string, string> = { en: "EN", ur: "اردو", roman: "RM" };
 
-const SERVICES = [
-  { icon: "🛒", label: { en: T("martTitle"), ur: "مارٹ", roman: T("martTitle") }, color: "#00C48C" },
-  { icon: "🍔", label: { en: T("food"), ur: "کھانا", roman: "Khana" }, color: "#FF9500" },
-  { icon: "🚗", label: { en: T("ride"), ur: "سواری", roman: "Sawari" }, color: PRIMARY },
-  { icon: "💊", label: { en: T("navPharmacy"), ur: "فارمیسی", roman: T("navPharmacy") }, color: "#AF52DE" },
-  { icon: "📦", label: { en: T("parcel"), ur: "پارسل", roman: T("parcel") }, color: "#FF6B35" },
-  { icon: "🚐", label: { en: T("vanVehicle"), ur: "وین", roman: T("vanVehicle") }, color: "#5856D6" },
-];
-
-const CONTENT = {
-  en: {
-    appName: T("appName"),
-    tagline: "Shop. Eat. Ride. Repeat.",
-    heroTitle: "Your All-in-One\nSuper App",
-    heroSub: "Order food, hail a ride, shop for groceries, and send parcels — all in one place.",
-    login: T("loginBtn"),
-    register: T("register"),
-    servicesTitle: "Explore Services",
-    browseGuest: "Browse as Guest",
-    footer: "© 2026 AJKMart",
-  },
-  ur: {
-    appName: "اے جے کے مارٹ",
-    tagline: "خریداری۔ کھانا۔ سواری۔",
-    heroTitle: "آپ کی ہر ضرورت\nایک ایپ میں",
-    heroSub: "کھانا آرڈر کریں، سواری بلائیں، گروسری خریدیں اور پارسل بھیجیں — سب ایک جگہ۔",
-    login: "لاگ ان",
-    register: "رجسٹر",
-    servicesTitle: "سروسز دیکھیں",
-    browseGuest: "مہمان کے طور پر دیکھیں",
-    footer: "© 2026 اے جے کے مارٹ",
-  },
-  roman: {
-    appName: T("appName"),
-    tagline: "Shopping. Khana. Sawari.",
-    heroTitle: "Aapki Har Zaroorat\nEk App Mein",
-    heroSub: "Khana order karein, sawari bulayein, grocery khareedein aur parcel bhejein — sab ek jagah.",
-    login: T("loginBtn"),
-    register: T("register"),
-    servicesTitle: "Services Dekhein",
-    browseGuest: "Guest Ke Tor Par Dekhein",
-    footer: "© 2026 AJKMart",
-  },
-};
-
 export default function LandingScreen() {
   const insets = useSafeAreaInsets();
   const { language, setLanguage } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
+
+  const SERVICES = [
+    { icon: "🛒", label: { en: T("martTitle"),    ur: "مارٹ",   roman: T("martTitle") },    color: "#00C48C" },
+    { icon: "🍔", label: { en: T("food"),          ur: "کھانا",  roman: "Khana" },           color: "#FF9500" },
+    { icon: "🚗", label: { en: T("ride"),          ur: "سواری",  roman: "Sawari" },          color: PRIMARY },
+    { icon: "💊", label: { en: T("navPharmacy"),   ur: "فارمیسی", roman: T("navPharmacy") }, color: "#AF52DE" },
+    { icon: "📦", label: { en: T("parcel"),        ur: "پارسل",  roman: T("parcel") },       color: "#FF6B35" },
+    { icon: "🚐", label: { en: T("vanVehicle"),    ur: "وین",    roman: T("vanVehicle") },   color: "#5856D6" },
+  ];
+
+  const CONTENT = {
+    en: {
+      appName: T("appName"),
+      tagline: "Shop. Eat. Ride. Repeat.",
+      heroTitle: "Your All-in-One\nSuper App",
+      heroSub: "Order food, hail a ride, shop for groceries, and send parcels — all in one place.",
+      login: T("loginBtn"),
+      register: T("register"),
+      servicesTitle: "Explore Services",
+      browseGuest: "Browse as Guest",
+      footer: "© 2026 AJKMart",
+    },
+    ur: {
+      appName: "اے جے کے مارٹ",
+      tagline: "خریداری۔ کھانا۔ سواری۔",
+      heroTitle: "آپ کی ہر ضرورت\nایک ایپ میں",
+      heroSub: "کھانا آرڈر کریں، سواری بلائیں، گروسری خریدیں اور پارسل بھیجیں — سب ایک جگہ۔",
+      login: "لاگ ان",
+      register: "رجسٹر",
+      servicesTitle: "سروسز دیکھیں",
+      browseGuest: "مہمان کے طور پر دیکھیں",
+      footer: "© 2026 اے جے کے مارٹ",
+    },
+    roman: {
+      appName: T("appName"),
+      tagline: "Shopping. Khana. Sawari.",
+      heroTitle: "Aapki Har Zaroorat\nEk App Mein",
+      heroSub: "Khana order karein, sawari bulayein, grocery khareedein aur parcel bhejein — sab ek jagah.",
+      login: T("loginBtn"),
+      register: T("register"),
+      servicesTitle: "Services Dekhein",
+      browseGuest: "Guest Ke Tor Par Dekhein",
+      footer: "© 2026 AJKMart",
+    },
+  };
 
   const C = CONTENT[language as keyof typeof CONTENT] ?? CONTENT.en;
   const isRTL = language === "ur";

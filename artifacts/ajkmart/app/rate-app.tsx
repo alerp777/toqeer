@@ -30,7 +30,7 @@ const ASPECTS = [
   { id: "delivery", label: "Delivery Speed", icon: "bicycle-outline" },
   { id: "prices", label: "Prices & Deals", icon: "pricetag-outline" },
   { id: "ui", label: "App Experience", icon: "phone-portrait-outline" },
-  { id: "support", label: T("navCustomerSupport"), icon: "headset-outline" },
+  { id: "support", label: "Customer Support", icon: "headset-outline" },
   { id: "variety", label: "Product Variety", icon: "grid-outline" },
 ];
 

@@ -1,3 +1,4 @@
+import { withServiceGuard } from "@/components/ServiceGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -40,6 +41,8 @@ interface PharmacyStore {
 }
 
 function StoreCard({ store, styles, C }: { store: PharmacyStore, styles: any, C: any }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const name = store.storeName || store.name;
   return (
     <TouchableOpacity
@@ -99,7 +102,7 @@ function StoreCard({ store, styles, C }: { store: PharmacyStore, styles: any, C:
   );
 }
 
-export default function PharmacyStoresScreen() {
+function PharmacyStoresScreen() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -271,3 +274,5 @@ function makeStyles(C: typeof Colors.light) {
   emptySub: { fontFamily: Font.regular, fontSize: 13, color: C.textMuted, textAlign: "center", lineHeight: 20 },
   });
 }
+
+export default withServiceGuard("pharmacy", PharmacyStoresScreen);

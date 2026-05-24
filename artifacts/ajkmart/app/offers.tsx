@@ -93,7 +93,7 @@ const TYPE_CONFIG: Record<
     colors: ["#7C3AED", "#6D28D9"],
   },
   category: {
-    label: T("categoryLabel"),
+    label: "Category",
     icon: "grid-outline",
     colors: ["#DC2626", "#B91C1C"],
   },
@@ -102,7 +102,7 @@ const TYPE_CONFIG: Record<
 function discountLabel(o: OfferType): string {
   if (o.type === "bogo" && o.buyQty && o.getQty)
     return `Buy ${o.buyQty} Get ${o.getQty} Free`;
-  if (o.type === "free_delivery") return T("freeDelivery");
+  if (o.type === "free_delivery") return "Free Delivery";
   if (o.type === "cashback" && o.cashbackPct)
     return `${o.cashbackPct}% Cashback`;
   if (o.discountPct) return `${o.discountPct}% Off`;
@@ -362,8 +362,8 @@ type GroupKey =
   | "bogoDeals"
   | "bundles";
 const GROUP_LABELS: Record<GroupKey, { label: string; emoji: string }> = {
-  flashDeals: { label: T("navFlashDeals"), emoji: "⚡" },
-  freeDelivery: { label: T("freeDelivery"), emoji: "🚚" },
+  flashDeals:   { label: "Flash Deals",    emoji: "⚡" },
+  freeDelivery: { label: "Free Delivery",  emoji: "🚚" },
   categoryOffers: { label: "Category Offers", emoji: "🏷️" },
   newUserSpecials: { label: "New User Specials", emoji: "⭐" },
   cashback: { label: "Cashback Offers", emoji: "💰" },

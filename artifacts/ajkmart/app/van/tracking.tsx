@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { withServiceGuard } from "@/components/ServiceGuard";
 import { createLogger } from "@/utils/logger";
 import {
   TouchableOpacity,
@@ -253,7 +254,7 @@ function getStatusMessage(
   };
 }
 
-export default function VanTrackingScreen() {
+function VanTrackingScreen() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
@@ -624,3 +625,5 @@ const ss = StyleSheet.create({
   },
   btnPrimaryText: { fontFamily: Font.bold, fontSize: 15, color: "#fff" },
 });
+
+export default withServiceGuard("van", VanTrackingScreen);

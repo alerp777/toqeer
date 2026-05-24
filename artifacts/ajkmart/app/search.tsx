@@ -30,13 +30,6 @@ const HISTORY_KEY = "@ajkmart_search_history";
 const MAX_HISTORY = 10;
 
 type SortOption = "relevance" | "price_asc" | "price_desc" | "rating" | "newest";
-const SORT_OPTIONS: { key: SortOption; label: string }[] = [
-  { key: "relevance", label: T("sortRelevance") },
-  { key: "price_asc", label: T("sortPriceLow") },
-  { key: "price_desc", label: T("sortPriceHigh") },
-  { key: "rating", label: T("sortTopRated") },
-  { key: "newest", label: T("newest") },
-];
 
 type ServiceKey = "mart" | "food" | "pharmacy";
 
@@ -52,12 +45,6 @@ interface SearchResult {
   vendorName?: string;
 }
 
-const SERVICE_META: Record<ServiceKey, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  mart:     { label: T("martTitle"),     icon: "basket-outline",   color: "#7C3AED", bg: "#F3E8FF" },
-  food:     { label: T("food"),     icon: "restaurant-outline", color: "#D97706", bg: "#FEF3C7" },
-  pharmacy: { label: T("navPharmacy"), icon: "medical-outline",  color: "#059669", bg: "#D1FAE5" },
-};
-
 const SERVICE_ROUTES: Record<ServiceKey, "/mart" | "/food" | "/pharmacy"> = {
   mart: "/mart",
   food: "/food",
@@ -65,6 +52,13 @@ const SERVICE_ROUTES: Record<ServiceKey, "/mart" | "/food" | "/pharmacy"> = {
 };
 
 function ServiceBadge({ type }: { type: ServiceKey }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
+  const SERVICE_META: Record<ServiceKey, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+    mart:     { label: T("martTitle"),     icon: "basket-outline",   color: "#7C3AED", bg: "#F3E8FF" },
+    food:     { label: T("food"),          icon: "restaurant-outline", color: "#D97706", bg: "#FEF3C7" },
+    pharmacy: { label: T("navPharmacy"),   icon: "medical-outline",  color: "#059669", bg: "#D1FAE5" },
+  };
   const m = SERVICE_META[type];
   return (
     <View style={[s.badge, { backgroundColor: m.bg }]}>
@@ -78,6 +72,14 @@ export default function UniversalSearchScreen() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
+
+  const SORT_OPTIONS: { key: SortOption; label: string }[] = [
+    { key: "relevance", label: T("sortRelevance") },
+    { key: "price_asc", label: T("sortPriceLow") },
+    { key: "price_desc", label: T("sortPriceHigh") },
+    { key: "rating",    label: T("sortTopRated") },
+    { key: "newest",    label: T("newest") },
+  ];
 
 const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;

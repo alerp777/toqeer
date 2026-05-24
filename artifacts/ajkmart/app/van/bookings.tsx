@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { withServiceGuard } from "@/components/ServiceGuard";
 import {
   ActivityIndicator, Alert, TouchableOpacity, RefreshControl,
   ScrollView, StyleSheet, Text, View, Platform,
@@ -48,17 +49,17 @@ interface VanBooking {
   createdAt: string;
 }
 
-const STATUS_INFO: Record<string, { color: string; bg: string; icon: any; label: string }> = {
-  confirmed: { color: "#2563EB", bg: "#DBEAFE", icon: "checkmark-circle-outline", label: T("confirmed") },
-  boarded:   { color: "#D97706", bg: "#FEF3C7", icon: "bus-outline",               label: "Boarded" },
-  completed: { color: "#16A34A", bg: "#DCFCE7", icon: "checkmark-done-circle",     label: T("stepCompleted") },
-  cancelled: { color: "#DC2626", bg: "#FEE2E2", icon: "close-circle-outline",      label: T("ridesCancelled") },
-};
-
-export default function VanBookingsScreen() {
+function VanBookingsScreen() {
   
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
+
+  const STATUS_INFO: Record<string, { color: string; bg: string; icon: any; label: string }> = {
+    confirmed: { color: "#2563EB", bg: "#DBEAFE", icon: "checkmark-circle-outline", label: T("confirmed") },
+    boarded:   { color: "#D97706", bg: "#FEF3C7", icon: "bus-outline",               label: "Boarded" },
+    completed: { color: "#16A34A", bg: "#DCFCE7", icon: "checkmark-done-circle",     label: T("stepCompleted") },
+    cancelled: { color: "#DC2626", bg: "#FEE2E2", icon: "close-circle-outline",      label: T("ridesCancelled") },
+  };
 
 const { colors: C } = useTheme();
   const ss = useMemo(() => makeStyles(C), [C]);
@@ -286,3 +287,5 @@ function makeStyles(C: typeof Colors.light) {
   btnPrimaryText: { fontFamily: Font.bold, fontSize: 15, color: "#fff" },
 });
 }
+
+export default withServiceGuard("van", VanBookingsScreen);

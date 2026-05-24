@@ -149,7 +149,21 @@ export const communicationAI = {
 
 export async function generateRoleTemplate(role: string, prompt: string): Promise<string> {
   logger.info({ role }, "[communicationAI] generateRoleTemplate called");
-  return `Template for ${role}: ${prompt.substring(0, 50)}...`;
+  const geminiPrompt = [
+    `You are a customer-support template generator for AJKMart, a super-app in Azad Jammu & Kashmir.`,
+    `Generate a concise, professional message template for a "${role}" support agent.`,
+    `Context / instructions: ${prompt}`,
+    `Return only the message template text, no explanation.`,
+  ].join("\n");
+  try {
+    return await callGemini(geminiPrompt);
+  } catch (err) {
+    logger.warn(
+      { err: (err as Error).message, role },
+      "[communicationAI] generateRoleTemplate Gemini failed — AI not configured"
+    );
+    throw new Error("AI service not configured. Set GEMINI_API_KEY to enable template generation.");
+  }
 }
 
 export async function translateMessage(
@@ -158,7 +172,21 @@ export async function translateMessage(
   _userId?: string
 ): Promise<string> {
   logger.info({ targetLang }, "[communicationAI] translateMessage called");
-  return `${text} [translated to ${targetLang} - mock]`;
+  const geminiPrompt = [
+    `Translate the following text to ${targetLang}.`,
+    `Return only the translated text, no explanation or quotes.`,
+    ``,
+    `Text: ${text}`,
+  ].join("\n");
+  try {
+    return await callGemini(geminiPrompt);
+  } catch (err) {
+    logger.warn(
+      { err: (err as Error).message, targetLang },
+      "[communicationAI] translateMessage Gemini failed — AI not configured"
+    );
+    throw new Error("AI translation service not configured. Set GEMINI_API_KEY to enable translation.");
+  }
 }
 
 export async function composeMessage(
@@ -167,10 +195,27 @@ export async function composeMessage(
   _userId?: string
 ): Promise<string> {
   logger.info({ type }, "[communicationAI] composeMessage called");
-  return `Composed message for ${type}: ${JSON.stringify(context).substring(0, 100)}`;
+  const contextSummary =
+    typeof context === "string" ? context : JSON.stringify(context).substring(0, 300);
+  const geminiPrompt = [
+    `You are a helpful assistant for AJKMart, a delivery and ride-sharing super-app.`,
+    `Compose a short, friendly, professional reply message for the following situation.`,
+    `Message type: ${type}`,
+    `Context: ${contextSummary}`,
+    `Return only the composed message text, no explanation.`,
+  ].join("\n");
+  try {
+    return await callGemini(geminiPrompt);
+  } catch (err) {
+    logger.warn(
+      { err: (err as Error).message, type },
+      "[communicationAI] composeMessage Gemini failed — falling back to local template"
+    );
+    return generateLocalResponse(contextSummary);
+  }
 }
 
 export async function transcribeAudio(_audioBuffer: Buffer, _ext?: string): Promise<string> {
-  logger.info("[communicationAI] transcribeAudio called");
-  return "Transcription not available (stub)";
+  logger.info("[communicationAI] transcribeAudio called — no transcription service configured");
+  return "";
 }
