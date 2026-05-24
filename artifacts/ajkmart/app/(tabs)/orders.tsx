@@ -35,38 +35,13 @@ import {
   EmptyState,
   FilterChip,
 } from "@/components/user-shared";
+import {
+  ORDER_STATUS_MAP,
+  RIDE_STATUS_MAP,
+  PARCEL_STATUS_MAP,
+} from "@/lib/orderUtils";
 
 const C = Colors.light;
-
-const ORDER_STATUS: Record<string, { color: string; bg: string; icon: string; labelKey: TranslationKey }> = {
-  pending:          { color: C.amber, bg: C.amberSoft, icon: "time-outline",            labelKey: "pending" },
-  confirmed:        { color: C.brandBlue, bg: C.brandBlueSoft, icon: "checkmark-circle-outline", labelKey: "confirmed" },
-  preparing:        { color: C.purple, bg: C.purpleSoft, icon: "flame-outline",            labelKey: "preparing" },
-  ready:            { color: C.indigo, bg: C.indigoSoft, icon: "bag-check-outline",       labelKey: "readyForPickup" },
-  picked_up:        { color: C.cyan, bg: C.cyanSoft, icon: "cube-outline",            labelKey: "onTheWay" },
-  out_for_delivery: { color: C.emerald, bg: C.emeraldSoft, icon: "bicycle-outline",          labelKey: "onTheWay" },
-  delivered:        { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",   labelKey: "delivered" },
-  cancelled:        { color: C.red, bg: C.redSoft, icon: "close-circle-outline",     labelKey: "cancelled" },
-};
-
-const RIDE_STATUS: Record<string, { color: string; bg: string; icon: string; labelKey: TranslationKey }> = {
-  searching:   { color: C.amber, bg: C.amberSoft, icon: "search-outline",            labelKey: "searching" },
-  bargaining:  { color: C.amber, bg: C.amberSoft, icon: "swap-horizontal-outline",   labelKey: "bargaining" },
-  accepted:    { color: C.brandBlue, bg: C.brandBlueSoft, icon: "person-outline",            labelKey: "statusAccepted" },
-  arrived:    { color: C.purple, bg: C.purpleSoft, icon: "location-outline",          labelKey: "arrived" },
-  in_transit: { color: C.emerald, bg: C.emeraldSoft, icon: "car-outline",               labelKey: "inTransit" },
-  ongoing:    { color: C.emerald, bg: C.emeraldSoft, icon: "car-outline",               labelKey: "inTransit" },
-  completed:  { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",    labelKey: "completedLabel" },
-  cancelled:  { color: C.red, bg: C.redSoft, icon: "close-circle-outline",      labelKey: "cancelled" },
-};
-
-const PARCEL_STATUS: Record<string, { color: string; bg: string; icon: string; labelKey: TranslationKey }> = {
-  pending:    { color: C.amber, bg: C.amberSoft, icon: "time-outline",              labelKey: "pending" },
-  accepted:   { color: C.brandBlue, bg: C.brandBlueSoft, icon: "person-outline",            labelKey: "statusAccepted" },
-  in_transit: { color: C.emerald, bg: C.emeraldSoft, icon: "cube-outline",              labelKey: "inTransit" },
-  completed:  { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",    labelKey: "delivered" },
-  cancelled:  { color: C.red, bg: C.redSoft, icon: "close-circle-outline",      labelKey: "cancelled" },
-};
 
 const TABS = [
   { key: "all",      labelKey: "all" as TranslationKey,       icon: "layers-outline" },
@@ -94,7 +69,7 @@ function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, 
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
   const [itemsExpanded, setItemsExpanded] = useState(false);
-  const cfg = ORDER_STATUS[order.status] || ORDER_STATUS["pending"]!;
+  const cfg = ORDER_STATUS_MAP[order.status] || ORDER_STATUS_MAP["pending"]!;
   const isFood = order.type === "food";
   const isDelivered = order.status === "delivered";
   const isCancelled = order.status === "cancelled";
@@ -264,7 +239,7 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
 }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
-  const cfg = RIDE_STATUS[ride.status] || RIDE_STATUS["searching"]!;
+  const cfg = RIDE_STATUS_MAP[ride.status] || RIDE_STATUS_MAP["searching"]!;
   const isActive    = !["completed", "cancelled"].includes(ride.status);
   const isCompleted = ride.status === "completed";
   const canCancel   = ["searching", "bargaining", "accepted", "arrived"].includes(ride.status);
@@ -483,7 +458,7 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
   const [itemsExpanded, setItemsExpanded] = useState(false);
-  const cfg = ORDER_STATUS[order.status] || ORDER_STATUS["pending"]!;
+  const cfg = ORDER_STATUS_MAP[order.status] || ORDER_STATUS_MAP["pending"]!;
   const isDelivered = order.status === "delivered";
 
   const nowMs = serverNow ?? Date.now();
@@ -575,7 +550,7 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
 function ParcelCard({ booking }: { booking: any }) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
-  const cfg = PARCEL_STATUS[booking.status] || PARCEL_STATUS["pending"]!;
+  const cfg = PARCEL_STATUS_MAP[booking.status] || PARCEL_STATUS_MAP["pending"]!;
   const isActive = !["completed", "cancelled"].includes(booking.status);
   const parcelLabel = booking.parcelType
     ? booking.parcelType.charAt(0).toUpperCase() + booking.parcelType.slice(1)

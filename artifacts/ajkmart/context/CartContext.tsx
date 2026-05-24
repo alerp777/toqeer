@@ -66,6 +66,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const pendingOrderDataRef = useRef<AckSuccessData | null>(null);
   const ackStuckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ackFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ackFallbackIvRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     authTokenRef.current = token;
@@ -301,8 +302,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     pendingOrderIdRef.current = id;
     pendingOrderDataRef.current = data ?? null;
   };
-
-  const ackFallbackIvRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const resolveOrderAck = (oid: string) => {
     const data = pendingOrderDataRef.current;

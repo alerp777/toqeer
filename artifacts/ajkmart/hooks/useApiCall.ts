@@ -19,6 +19,32 @@ function delay(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+function extractError(e: unknown): string {
+  if (e instanceof Error) return e.message || "Something went wrong. Please try again.";
+  if (typeof e === "object" && e !== null) {
+    const obj = e as Record<string, unknown>;
+    const response = obj["response"];
+    if (typeof response === "object" && response !== null) {
+      const data = (response as Record<string, unknown>)["data"];
+      if (typeof data === "object" && data !== null) {
+        const apiErr = (data as Record<string, unknown>)["error"];
+        if (typeof apiErr === "string" && apiErr) return apiErr;
+      }
+    }
+    const data = obj["data"];
+    if (typeof data === "object" && data !== null) {
+      const apiErr = (data as Record<string, unknown>)["error"];
+      if (typeof apiErr === "string" && apiErr) return apiErr;
+    }
+    const msg = obj["message"];
+    if (typeof msg === "string" && msg) return msg;
+    const err = obj["error"];
+    if (typeof err === "string" && err) return err;
+  }
+  if (typeof e === "string" && e) return e;
+  return "Something went wrong. Please try again.";
+}
+
 export function useApiCall<T>(
   apiFn: (...args: any[]) => Promise<T>,
   options?: {
@@ -38,18 +64,12 @@ export function useApiCall<T>(
   const abortControllerRef = useRef<AbortController | null>(null);
   const { showToast } = useToast();
 
-  const showErr = options?.showErrorToast !== false;
-  const maxRetries = options?.maxRetries ?? MAX_RETRIES;
-
-  const extractError = (e: any): string => {
-    if (e instanceof Error) return e.message || "Something went wrong. Please try again.";
-    return (
-      e?.response?.data?.error ||
-      e?.data?.error ||
-      e?.message ||
-      "Something went wrong. Please try again."
-    );
-  };
+  // Keep latest options and apiFn in refs so callbacks never go stale without
+  // needing to be recreated on every render (avoids infinite re-render loops).
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const apiFnRef = useRef(apiFn);
+  apiFnRef.current = apiFn;
 
   const callWithRetry = useCallback(
     async (args: any[], isRetry = false): Promise<T | null> => {
@@ -58,6 +78,10 @@ export function useApiCall<T>(
       }
       const controller = new AbortController();
       abortControllerRef.current = controller;
+
+      const curOptions   = optionsRef.current;
+      const showErr      = curOptions?.showErrorToast !== false;
+      const maxRetries   = curOptions?.maxRetries ?? MAX_RETRIES;
 
       if (!isRetry) {
         setLoading(true);
@@ -73,7 +97,7 @@ export function useApiCall<T>(
           setRetryCount(attempt);
           if (showErr) {
             showToast(
-              options?.retryMessage || `Retrying... (${attempt}/${maxRetries})`,
+              optionsRef.current?.retryMessage || `Retrying... (${attempt}/${maxRetries})`,
               "warning",
             );
           }
@@ -81,16 +105,16 @@ export function useApiCall<T>(
         }
 
         try {
-          const result = await apiFn(...args);
+          const result = await apiFnRef.current(...args);
           if (controller.signal.aborted) return null;
           setData(result);
           setLoading(false);
           setRetrying(false);
           setError(null);
           setRetryCount(0);
-          options?.onSuccess?.(result);
+          optionsRef.current?.onSuccess?.(result);
           return result;
-        } catch (e: any) {
+        } catch (e: unknown) {
           if (controller.signal.aborted) return null;
           const msg = extractError(e);
           if (attempt === maxRetries) {
@@ -100,14 +124,14 @@ export function useApiCall<T>(
             if (showErr) {
               showToast(msg, "error");
             }
-            options?.onError?.(msg);
+            optionsRef.current?.onError?.(msg);
             return null;
           }
         }
       }
       return null;
     },
-    [apiFn, maxRetries, showErr, showToast, options?.retryMessage],
+    [showToast],
   );
 
   const execute = useCallback(
