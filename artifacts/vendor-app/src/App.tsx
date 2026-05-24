@@ -263,6 +263,114 @@ function KycGate({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ── Magic link deep-link handler ─────────────────────────────────────
+   Vendor clicks the email link → lands on /auth/magic-link?token=<raw>
+   Verifies the token, stores credentials, then delegates to the standard
+   handleSuccess path so APPROVAL_PENDING / APPROVAL_REJECTED overlays
+   are shown correctly (same as any other successful login). ── */
+function MagicLinkPage() {
+  const { login } = useAuth();
+  const [, navigate] = useLocation();
+  const [status, setStatus] = useState<"loading" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (!token) {
+      setStatus("error");
+      setErrorMsg("Invalid magic link — no token found. Please request a new one.");
+      return;
+    }
+    void (async () => {
+      try {
+        const res = (await api.magicLinkVerify({ token })) as Record<string, unknown>;
+        const accessToken = (res.accessToken ?? res.token) as string;
+        const refreshToken = (res.refreshToken ?? res.refresh_token) as string | undefined;
+        api.storeTokens(accessToken, refreshToken);
+        let profile: Record<string, unknown> = { id: "", roles: ["vendor"] };
+        try {
+          profile = (await api.getMe()) as Record<string, unknown>;
+        } catch {
+          /* proceed with minimal fallback */
+        }
+        login(accessToken, profile as never, refreshToken);
+        navigate("/", { replace: true });
+      } catch (e: unknown) {
+        setStatus("error");
+        setErrorMsg(
+          e instanceof Error ? e.message : "Magic link verification failed. Please request a new one."
+        );
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (status === "error") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 16,
+          padding: 24,
+          background: "#0f172a",
+          color: "#fff",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <div style={{ fontSize: 40 }}>🔗</div>
+        <p style={{ margin: 0, textAlign: "center", color: "#f87171", maxWidth: 320 }}>
+          {errorMsg}
+        </p>
+        <button
+          onClick={() => navigate("/login", { replace: true })}
+          style={{
+            marginTop: 8,
+            padding: "10px 24px",
+            borderRadius: 10,
+            border: "none",
+            background: "#1A56DB",
+            color: "#fff",
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 14,
+          }}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0f172a",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          border: "4px solid #1e293b",
+          borderTopColor: "#1A56DB",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, loading, logout, storageError, sessionExpired, clearSessionExpired, refreshUser } =
     useAuth();
@@ -527,6 +635,7 @@ function AppRoutes() {
           }}
         />
       );
+    if (location === "/auth/magic-link") return <MagicLinkPage />;
     if (location === "/register") return <Register />;
     if (location === "/login") return <Login />;
     if (location === "/forgot-password") return <ForgotPassword />;

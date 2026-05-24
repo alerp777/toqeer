@@ -198,6 +198,114 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
+/* ── Magic link deep-link handler ─────────────────────────────────────
+   Rider clicks the email link → lands on /auth/magic-link?token=<raw>
+   We verify the token, store JWT credentials, fetch the real profile,
+   and navigate to the home screen. Pending approval / banned states are
+   surfaced as an inline error message so the rider is never stuck. ── */
+function MagicLinkPage() {
+  const { login } = useAuth();
+  const [, navigate] = useLocation();
+  const [status, setStatus] = useState<"loading" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (!token) {
+      setStatus("error");
+      setErrorMsg("Invalid magic link — no token found. Please request a new one.");
+      return;
+    }
+    void (async () => {
+      try {
+        const res = (await api.magicLinkVerify({ token })) as Record<string, unknown>;
+        const accessToken = (res.accessToken ?? res.token) as string;
+        const refreshToken = (res.refreshToken ?? res.refresh_token) as string | undefined;
+        api.storeTokens(accessToken, refreshToken);
+        let profile: Record<string, unknown> = { id: "", roles: ["rider"] };
+        try {
+          profile = (await api.getMe()) as Record<string, unknown>;
+        } catch {
+          /* proceed with minimal fallback — login must not be blocked */
+        }
+        login(accessToken, profile as never, refreshToken);
+        navigate("/", { replace: true });
+      } catch (e: unknown) {
+        setStatus("error");
+        setErrorMsg(
+          e instanceof Error ? e.message : "Magic link verification failed. Please request a new one."
+        );
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (status === "error") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 16,
+          padding: 24,
+          background: "#0b0e11",
+          color: "#fff",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <div style={{ fontSize: 40 }}>🔗</div>
+        <p style={{ margin: 0, textAlign: "center", color: "#f87171", maxWidth: 320 }}>
+          {errorMsg}
+        </p>
+        <button
+          onClick={() => navigate("/login", { replace: true })}
+          style={{
+            marginTop: 8,
+            padding: "10px 24px",
+            borderRadius: 10,
+            border: "none",
+            background: "#F0B90B",
+            color: "#0b0e11",
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 14,
+          }}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0b0e11",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          border: "4px solid #252836",
+          borderTopColor: "#F0B90B",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, loading, storageError, logout, sessionExpired, clearSessionExpired } = useAuth();
   const { config } = usePlatformConfig();
