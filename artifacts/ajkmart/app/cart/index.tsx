@@ -29,6 +29,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { createOrder } from "@workspace/api-client-react";
 import { API_BASE } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 const C = Colors.light;
 type PayMethod = "cash" | "wallet" | "jazzcash" | "easypaisa";
@@ -108,8 +109,8 @@ function AddressPickerModal({
       onAddressCreated(created);
       resetForm();
       onClose();
-    } catch (e: any) {
-      setFormError(e.message || "Could not save address");
+    } catch (e: unknown) {
+      setFormError(getErrorMessage(e, "Could not save address"));
     }
     setSaving(false);
   };
@@ -367,22 +368,24 @@ export default function CartScreen() {
   const freeDeliveryAbove = platformConfig.deliveryFee.freeDeliveryAbove;
   const freeDeliveryEnabled = platformConfig.deliveryFee.freeEnabled;
 
+  // Derive available payment methods from PlatformConfigContext (which already
+  // fetched /platform-config). Cast to unknown first since `payment` is not
+  // part of the typed PlatformConfig fields exposed by the context (it is present
+  // in the raw API response but handled separately per-screen).
   useEffect(() => {
-    fetch(`${API_BASE}/platform-config`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.payment?.methods) {
-          const methods: PaymentMethod[] = d.payment.methods.map((m: any) => ({
+    const rawMethods = (platformConfig as unknown as Record<string, unknown>)["payment"];
+    if (typeof rawMethods === "object" && rawMethods !== null) {
+      const methods = (rawMethods as Record<string, unknown>)["methods"];
+      if (Array.isArray(methods) && methods.length > 0) {
+        setAllPayMethods(
+          methods.map((m: any) => ({
             id: m.id, label: m.label, logo: m.logo,
             available: m.available, description: m.description, mode: m.mode,
-          }));
-          setAllPayMethods(methods);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Cart] Failed to refresh platform config:", err instanceof Error ? err.message : String(err));
-      });
-  }, []);
+          })),
+        );
+      }
+    }
+  }, [platformConfig]);
 
   const deliveryFeeByType: Record<string, number> = {
     mart:     deliveryFeeConfig.mart,
@@ -666,7 +669,7 @@ export default function CartScreen() {
       }
       setLoading(true);
       try { await placeOrder("wallet"); }
-      catch (e: any) { showToast(e.message || T("couldNotPlaceOrder"), "error"); }
+      catch (e: unknown) { showToast(getErrorMessage(e, T("couldNotPlaceOrder")), "error"); }
       setLoading(false);
       return;
     }
@@ -680,7 +683,7 @@ export default function CartScreen() {
 
     setLoading(true);
     try { await placeOrder("cash"); }
-    catch (e: any) { showToast(e.message || T("couldNotPlaceOrderRetry"), "error"); }
+    catch (e: unknown) { showToast(getErrorMessage(e, T("couldNotPlaceOrderRetry")), "error"); }
     setLoading(false);
   };
 
@@ -747,8 +750,8 @@ export default function CartScreen() {
 
       gwOrderId.current = realOrderId;
       gwTxnRef.current = data.txnRef || data.transactionRef || realOrderId;
-    } catch (e: any) {
-      showToast(e.message || T("paymentFailed"), "error");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, T("paymentFailed")), "error");
       setGwStep("input");
     }
     setGwPaying(false);

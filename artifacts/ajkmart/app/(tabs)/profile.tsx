@@ -34,6 +34,7 @@ import { tDual, type TranslationKey, type Language, LANGUAGE_OPTIONS } from "@wo
 import { SmartRefresh } from "@/components/ui/SmartRefresh";
 import Accordion from "@/components/Accordion";
 import { API_BASE as API } from "@/utils/api";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 const C = Colors.light;
 
@@ -122,9 +123,9 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
       setPendingAsset(null);
       setAvatarError(false);
       showToast("Avatar updated!", "success");
-    } catch (e: any) {
+    } catch (e: unknown) {
       setAvatarError(true);
-      showToast(e.message || "Avatar upload failed — tap Retry", "error");
+      showToast(getErrorMessage(e, "Avatar upload failed — tap Retry"), "error");
     } finally {
       setAvatarUploading(false);
     }
@@ -482,8 +483,8 @@ function DeleteAccountRow({ token }: { token?: string }) {
       }
       showToast("Account deleted successfully", "success");
       await logout();
-    } catch (e: any) {
-      showToast(e.message || "Could not delete account. Please try again.", "error");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Could not delete account. Please try again."), "error");
     }
     setDeleting(false);
     setConfirmVisible(false);
@@ -657,7 +658,7 @@ function PrivacyModal({ visible, userId, token, onClose }: { visible: boolean; u
       if (!res.ok) throw new Error(data.error);
       setTwoFASecret(data.secret); setTwoFAUri(data.uri); setTwoFAQR(data.qrDataUrl ?? "");
       setShow2FASetup(true);
-    } catch (e: any) { showToast(e.message || "2FA setup failed", "error"); }
+    } catch (e: unknown) { showToast(getErrorMessage(e, "2FA setup failed"), "error"); }
     setTwoFALoading(false);
   };
 
@@ -674,7 +675,7 @@ function PrivacyModal({ visible, userId, token, onClose }: { visible: boolean; u
       setBackupCodes(data.backupCodes || []);
       updateUser({ totpEnabled: true });
       showToast("2FA enabled successfully!", "success");
-    } catch (e: any) { setTwoFAError(e.message || T("verificationFailed")); }
+    } catch (e: unknown) { setTwoFAError(getErrorMessage(e, T("verificationFailed"))); }
     setTwoFALoading(false);
   };
 
@@ -691,7 +692,7 @@ function PrivacyModal({ visible, userId, token, onClose }: { visible: boolean; u
       updateUser({ totpEnabled: false });
       setShowDisable2FA(false); setDisableCode(""); setDisableTwoFAError("");
       showToast("2FA disabled", "success");
-    } catch (e: any) { setDisableTwoFAError(e.message || "Failed to disable 2FA"); }
+    } catch (e: unknown) { setDisableTwoFAError(getErrorMessage(e, "Failed to disable 2FA")); }
     setTwoFALoading(false);
   };
 

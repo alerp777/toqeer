@@ -21,6 +21,7 @@ import {
   acceptRideBid as acceptRideBidApi,
   customerCounterOffer as customerCounterOfferApi,
 } from "@workspace/api-client-react";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 type NegotiationScreenProps = {
   rideId: string;
@@ -184,12 +185,8 @@ export function NegotiationScreen({
     try {
       const d = await acceptRideBidApi(rideId, { bidId });
       setRide(() => d as any);
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.error ||
-        e?.message ||
-        "Could not accept bid. Please try again.";
-      showToast(msg, "error");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Could not accept bid. Please try again."), "error");
     }
     setAcceptBidId(null);
   };
@@ -209,12 +206,8 @@ export function NegotiationScreen({
       setRide(() => d as any);
       setUpdateOfferInput("");
       setShowUpdateOffer(false);
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.error ||
-        e?.message ||
-        "Could not update offer. Please try again.";
-      showToast(msg, "error");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Could not update offer. Please try again."), "error");
     }
     setUpdateOfferLoading(false);
   };

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "@/context/ToastContext";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 type ApiCallState<T> = {
   data: T | null;
@@ -17,32 +18,6 @@ const MAX_RETRIES = 3;
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-function extractError(e: unknown): string {
-  if (e instanceof Error) return e.message || "Something went wrong. Please try again.";
-  if (typeof e === "object" && e !== null) {
-    const obj = e as Record<string, unknown>;
-    const response = obj["response"];
-    if (typeof response === "object" && response !== null) {
-      const data = (response as Record<string, unknown>)["data"];
-      if (typeof data === "object" && data !== null) {
-        const apiErr = (data as Record<string, unknown>)["error"];
-        if (typeof apiErr === "string" && apiErr) return apiErr;
-      }
-    }
-    const data = obj["data"];
-    if (typeof data === "object" && data !== null) {
-      const apiErr = (data as Record<string, unknown>)["error"];
-      if (typeof apiErr === "string" && apiErr) return apiErr;
-    }
-    const msg = obj["message"];
-    if (typeof msg === "string" && msg) return msg;
-    const err = obj["error"];
-    if (typeof err === "string" && err) return err;
-  }
-  if (typeof e === "string" && e) return e;
-  return "Something went wrong. Please try again.";
 }
 
 export function useApiCall<T>(
@@ -116,7 +91,7 @@ export function useApiCall<T>(
           return result;
         } catch (e: unknown) {
           if (controller.signal.aborted) return null;
-          const msg = extractError(e);
+          const msg = getErrorMessage(e);
           if (attempt === maxRetries) {
             setError(msg);
             setLoading(false);

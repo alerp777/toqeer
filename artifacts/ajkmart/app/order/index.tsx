@@ -27,6 +27,7 @@ import type { CancelTarget } from "@/components/CancelModal";
 import { API_BASE } from "@/utils/api";
 import { staticMapUrl } from "@/hooks/useMaps";
 import type { Socket } from "socket.io-client";
+import { ORDER_STATUS_MAP, RIDE_STATUS_MAP, PARCEL_STATUS_MAP } from "@/lib/orderUtils";
 
 const C = Colors.light;
 
@@ -47,25 +48,27 @@ export default function OrderDetailScreen() {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
 
-  const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: string; label: string }> = {
-    pending:          { color: C.amber, bg: C.amberSoft, icon: "time-outline",             label: T("pending") },
-    confirmed:        { color: C.brandBlue, bg: C.brandBlueSoft, icon: "checkmark-circle-outline", label: T("confirmed") },
-    preparing:        { color: C.purple, bg: C.purpleSoft, icon: "flame-outline",             label: T("preparing") },
-    ready:            { color: C.indigo, bg: C.indigoSoft, icon: "bag-check-outline",        label: T("statusReady") },
-    picked_up:        { color: C.cyan, bg: C.cyanSoft, icon: "cube-outline",             label: T("pickedUp") },
-    out_for_delivery: { color: C.emerald, bg: C.emeraldSoft, icon: "bicycle-outline",          label: T("onTheWay") },
-    delivered:        { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",   label: T("delivered") },
-    cancelled:        { color: C.red, bg: C.redSoft, icon: "close-circle-outline",     label: T("cancelled") },
-    accepted:         { color: C.emerald, bg: C.emeraldSoft, icon: "checkmark-circle-outline", label: T("statusAccepted") },
-    arrived:          { color: C.cyan, bg: C.cyanSoft, icon: "location-outline",         label: T("arrived") },
-    in_transit:       { color: C.purple, bg: C.purpleSoft, icon: "car-outline",              label: T("inTransit") },
-    completed:        { color: C.gray, bg: C.graySoft, icon: "checkmark-done-outline",   label: T("completed") },
-    searching:        { color: C.amber, bg: C.amberSoft, icon: "search-outline",           label: T("searching") },
-    bargaining:       { color: C.brandBlue, bg: C.brandBlueSoft, icon: "chatbubbles-outline",      label: T("bargaining") },
-    no_riders:        { color: C.red, bg: C.redSoft, icon: "person-remove-outline",       label: "No Riders Available" },
-    payment_failed:   { color: C.red, bg: C.redSoft, icon: "card-outline",                label: "Payment Failed" },
-    failed:           { color: C.red, bg: C.redSoft, icon: "alert-circle-outline",        label: "Failed" },
-  };
+  // Build STATUS_CONFIG from the canonical shared maps so labels stay in sync
+  // with the rest of the app. Memoised on `language` so translated labels are
+  // re-derived whenever the user switches locale (previously re-created every
+  // render with no memoisation — this is a correctness + performance fix).
+  const STATUS_CONFIG = useMemo(() => {
+    const merged: Record<string, { color: string; bg: string; icon: string; label: string }> = {};
+    for (const [k, v] of Object.entries({
+      ...ORDER_STATUS_MAP,
+      ...PARCEL_STATUS_MAP,
+      ...RIDE_STATUS_MAP,
+    })) {
+      merged[k] = { color: v.color, bg: v.bg, icon: v.icon, label: T(v.labelKey) };
+    }
+    // Terminal edge-case statuses that only appear in the order detail view
+    // and are not part of the normal state machine tracked by the shared maps.
+    merged.no_riders      = { color: C.red, bg: C.redSoft, icon: "person-remove-outline",  label: "No Riders Available" };
+    merged.payment_failed = { color: C.red, bg: C.redSoft, icon: "card-outline",           label: "Payment Failed" };
+    merged.failed         = { color: C.red, bg: C.redSoft, icon: "alert-circle-outline",   label: "Failed" };
+    return merged;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   const STEP_LABELS = [T("statusPlaced"), T("confirmed"), T("preparing"), T("statusOnWay"), T("delivered")];
   const PARCEL_STEP_LABELS = [T("statusPlaced"), T("statusAccepted"), T("inTransit"), T("delivered")];

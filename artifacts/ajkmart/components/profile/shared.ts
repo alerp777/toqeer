@@ -7,11 +7,9 @@ export { API_BASE as API, unwrapApiResponse } from "@/utils/api";
 
 export const stripPkCode = (phone: string) => phone.replace(/^\+?92/, "");
 
-export function getErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof Error) return err.message || fallback;
-  if (typeof err === "string") return err;
-  return fallback;
-}
+// Re-export the canonical implementation so profile sub-components get the same
+// full API-error-shape handling as the rest of the app (response.data.error, etc.).
+export { getErrorMessage } from "@/utils/errorUtils";
 
 export function extractApiError(body: unknown, fallback: string): string {
   if (body && typeof body === "object") {
