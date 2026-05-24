@@ -7,13 +7,13 @@ function resolveSecret(envVar: string, _name: string): string {
     const msg = !val
       ? `[ADMIN JWT] FATAL: ${envVar} is not set. Minimum 32 characters required.`
       : `[ADMIN JWT] FATAL: ${envVar} too short (${val.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
       logger.fatal(msg);
       process.exit(1);
     }
     logger.warn(
       `[ADMIN JWT] WARNING: ${envVar} is not set or too short. ` +
-        `Using unsafe dev fallback — set a strong secret before deploying to production.`
+        `Using unsafe dev fallback — set a strong secret before deploying.`
     );
     return (val ?? "") + "dev_fallback_pad_to_32_chars_min!!";
   }

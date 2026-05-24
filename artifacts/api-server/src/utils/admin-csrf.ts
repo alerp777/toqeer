@@ -8,13 +8,13 @@ function resolveCsrfSecret(): string {
     const msg = !val
       ? "[ADMIN CSRF] FATAL: ADMIN_CSRF_SECRET is not set. Minimum 32 characters required."
       : `[ADMIN CSRF] FATAL: ADMIN_CSRF_SECRET too short (${val.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
       logger.fatal(msg);
       process.exit(1);
     }
     logger.warn(
       "[ADMIN CSRF] WARNING: ADMIN_CSRF_SECRET is not set or too short. " +
-        "Using unsafe dev fallback — set a strong secret before deploying to production."
+        "Using unsafe dev fallback — set a strong secret before deploying."
     );
     return (val ?? "") + "dev_csrf_fallback_pad_to_32_chars!!";
   }

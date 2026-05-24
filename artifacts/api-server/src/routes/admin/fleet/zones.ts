@@ -201,7 +201,7 @@ router.put("/:id", requirePermission("fleet.zones.manage"), async (req, res) => 
 });
 
 /* ── DELETE /admin/service-zones/:id ── */
-router.delete("/:id", requirePermission("service.zones.manage"), async (req, res) => {
+router.delete("/:id", requirePermission("fleet.zones.manage"), async (req, res) => {
   const adminReq = req as AdminRequest;
   try {
     const id = parseInt(req.params["id"] as string, 10);

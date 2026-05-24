@@ -1,0 +1,2 @@
+- [Permission catalog rules](permission-catalog-rules.md) — new permission strings crash server at startup if not registered in lib/auth-utils/src/permissions.ts first.
+- [Staging env guard pattern](staging-env-guard.md) — security.ts guards staging correctly; admin-shared.ts/admin-jwt.ts/admin-csrf.ts needed manual fix to include staging.

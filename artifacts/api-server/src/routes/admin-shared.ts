@@ -4,7 +4,7 @@ import {
   type TranslationKey as I18nTranslationKey,
   type Language,
 } from "@workspace/i18n";
-import { randomBytes } from "crypto";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { generateId as _generateId } from "../lib/id.js";
@@ -28,7 +28,7 @@ function resolveAdminSecret(envVar: string): string {
     const msg = !val
       ? `[admin-shared] FATAL: ${envVar} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${envVar} is too short (${val.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
       pinoLogger.fatal(msg);
       process.exit(1);
     }
@@ -414,7 +414,7 @@ const _ADMIN_REFRESH_SECRET = (() => {
     const msg = !v
       ? `[admin-shared] FATAL: ${key} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${key} is too short (${v.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
       pinoLogger.fatal(msg);
       process.exit(1);
     }
@@ -507,7 +507,14 @@ export async function getAdminSecret(): Promise<string | null> {
 export async function verifyAdminSecret(input: string): Promise<boolean> {
   const actual = await getAdminSecret();
   if (!actual) return false;
-  return input === actual;
+  try {
+    const a = Buffer.from(input);
+    const b = Buffer.from(actual);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 /* ── MIDDLEWARE ────────────────────────────────────────────────────────── */
