@@ -416,7 +416,8 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["vendor-orders", tab],
     queryFn: () => api.getOrders(apiStatus),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    staleTime: 20000,
     retry: 2,
   });
   const rawOrders = data?.orders || [];
@@ -447,7 +448,8 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
   const countQ = useQuery({
     queryKey: ["vendor-orders-count"],
     queryFn: () => api.getOrders("pending"),
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    staleTime: 20000,
     enabled: tab !== "new",
   });
   const newCount = tab === "new" ? rawOrders.length : countQ.data?.orders?.length || 0;

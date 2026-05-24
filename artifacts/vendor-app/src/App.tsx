@@ -291,8 +291,11 @@ function MagicLinkPage() {
         let profile: Record<string, unknown> = { id: "", roles: ["vendor"] };
         try {
           profile = (await api.getMe()) as Record<string, unknown>;
-        } catch {
-          /* proceed with minimal fallback */
+        } catch (profileErr) {
+          /* getMe() failed — token may be valid but profile fetch failed (network blip).
+             Log a warning so this is visible in Sentry/dev tools.
+             The app will re-fetch the profile on first authenticated request. */
+          console.warn("[magic-link] getMe() failed after token exchange; proceeding with empty fallback", profileErr);
         }
         login(accessToken, profile as never, refreshToken);
         navigate("/", { replace: true });

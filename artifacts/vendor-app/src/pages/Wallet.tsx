@@ -27,6 +27,19 @@ import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
 
+interface WalletTransaction {
+  id: string;
+  type: "credit" | "debit" | "bonus";
+  amount: string | number;
+  description: string;
+  createdAt: string;
+  grossAmount?: number;
+  commissionDeducted?: number;
+  netPayout?: number;
+  reference?: string;
+  note?: string;
+}
+
 const ALL_BANKS = [
   "EasyPaisa",
   "JazzCash",
@@ -42,8 +55,10 @@ const ALL_BANKS = [
   "Other",
 ];
 
-function safeBalance(v: any): number {
-  return v ? Number(v) : 0;
+function safeBalance(v: unknown): number {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function WithdrawModal({
@@ -98,9 +113,9 @@ function WithdrawModal({
         accountTitle: acName,
         note,
       }),
-    onSuccess: (data: any) => {
+    onSuccess: (data: unknown) => {
       void qc.invalidateQueries({ queryKey: ["vendor-wallet"] });
-      setTxId(data?.transactionId || "");
+      setTxId((data as Record<string, unknown>)?.transactionId as string || "");
       setStep("done");
     },
     onError: (e: Error) => setErr(errMsg(e)),
@@ -611,7 +626,7 @@ export default function Wallet() {
     retry: 2,
   });
 
-  const transactions: any[] = data?.transactions || [];
+  const transactions: WalletTransaction[] = (data as { transactions?: WalletTransaction[] } | undefined)?.transactions || [];
   const balance = data?.balance ?? safeBalance(user?.walletBalance);
 
   const credits = transactions
@@ -954,7 +969,7 @@ export default function Wallet() {
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
-                {transactions.map((t: any) => (
+                {transactions.map((t) => (
                   <div key={t.id} className="px-4 py-3.5">
                     <div className="flex items-start gap-3">
                       <div
@@ -979,21 +994,21 @@ export default function Wallet() {
                       </div>
                     </div>
                     {/* Fee breakdown for order credit transactions */}
-                    {t.commissionDeducted > 0 && (
+                    {(t.commissionDeducted ?? 0) > 0 && (
                       <div className="mt-1.5 ml-13 space-y-0.5 pl-12">
                         <div className="flex justify-between text-[10px] text-gray-400">
                           <span>Gross order value</span>
                           <span>
-                            {fc(t.grossAmount ?? t.amount + t.commissionDeducted, currencySymbol)}
+                            {fc(t.grossAmount ?? (Number(t.amount) + (t.commissionDeducted ?? 0)), currencySymbol)}
                           </span>
                         </div>
                         <div className="flex justify-between text-[10px] text-red-400">
                           <span>Platform fee ({data?.commissionPct ?? commissionPct}%)</span>
-                          <span>−{fc(t.commissionDeducted, currencySymbol)}</span>
+                          <span>−{fc(t.commissionDeducted ?? 0, currencySymbol)}</span>
                         </div>
                         <div className="flex justify-between text-[10px] font-semibold text-green-600">
                           <span>Your share</span>
-                          <span>{fc(t.netPayout, currencySymbol)}</span>
+                          <span>{fc(t.netPayout ?? Number(t.amount), currencySymbol)}</span>
                         </div>
                       </div>
                     )}

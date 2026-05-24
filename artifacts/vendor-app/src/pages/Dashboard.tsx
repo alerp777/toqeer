@@ -70,8 +70,8 @@ function NotificationsSection() {
   const { data, isLoading } = useQuery({
     queryKey: ["vendor-notifications"],
     queryFn: () => api.getNotifications(),
-    refetchInterval: 30000,
-    staleTime: 15000,
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
   const markAllMut = useMutation({
     mutationFn: () => api.markAllRead(),
@@ -393,7 +393,8 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["vendor-stats"],
     queryFn: () => api.getStats(),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
   const { data: ordersData } = useQuery({
     queryKey: ["vendor-orders", "all"],

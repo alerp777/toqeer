@@ -617,7 +617,14 @@ export const api = {
   }) => apiFetch("/kyc/vendor/submit-base64", { method: "POST", body: JSON.stringify(data) }),
 
   /* Wallet */
+  /**
+   * @deprecated Returns all wallet transactions in a single unbounded payload.
+   * Use `getWalletPage(page, limit)` for paginated access once the Wallet page
+   * is updated to render paginated results.
+   */
   getWallet: () => apiFetch("/vendors/wallet/transactions"),
+  getWalletPage: (page = 1, limit = 50) =>
+    apiFetch(`/vendors/wallet/transactions?page=${page}&limit=${limit}`),
   withdrawWallet: (data: {
     amount: number;
     bankName: string;
