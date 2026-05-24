@@ -294,7 +294,7 @@ function PharmacyScreenInner() {
       showToast(T("addToCart"), "error");
       return;
     }
-    const needsRx = cartItems.some(m => (m as any).requires_prescription);
+    const needsRx = cartItems.some(m => m.requires_prescription);
     if (needsRx && !prescription.trim() && !prescriptionPhotoUri) {
       showToast("One or more items require a prescription. Please add a prescription note or attach a photo.", "error");
       return;
@@ -338,7 +338,7 @@ function PharmacyScreenInner() {
       }
 
       const data = await createPharmacyOrder({
-        items: cartItems.map(m => ({ id: m.id, name: m.name, price: m.price, quantity: m.qty, requires_prescription: (m as any).requires_prescription ?? false })),
+        items: cartItems.map(m => ({ id: m.id, name: m.name, price: m.price, quantity: m.qty, requires_prescription: m.requires_prescription ?? false })),
         prescriptionNote: prescription || null,
         deliveryAddress: address,
         contactPhone: phone,

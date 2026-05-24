@@ -765,7 +765,7 @@ const insets = useSafeAreaInsets();
   const activeServices = getActiveServices(features);
   const noServicesActive = activeServices.length === 0;
   const isGuest = !user?.id;
-  const walletBalance = (user as any)?.walletBalance ?? 0;
+  const walletBalance = user?.walletBalance ?? 0;
 
   return (
     <View style={s.root}>
@@ -797,7 +797,12 @@ const insets = useSafeAreaInsets();
           style={[s.header, { paddingTop: (announcement && !announceDismissed) ? 8 : topPad + 8 }]}
         >
           <View style={s.hdrRow}>
-            <Pressable style={s.locBtn} onPress={() => {}}>
+            <Pressable
+              style={s.locBtn}
+              onPress={() => router.push("/(tabs)/profile" as Href)}
+              accessibilityRole="button"
+              accessibilityLabel="Manage delivery address"
+            >
               <Ionicons name="location" size={14} color="#fff" />
               <Text style={s.locTxt} numberOfLines={1}>{platformConfig.platform.businessAddress || "AJK, Pakistan"}</Text>
               <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.6)" />

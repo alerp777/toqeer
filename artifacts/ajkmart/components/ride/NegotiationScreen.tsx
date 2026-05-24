@@ -20,13 +20,14 @@ import type { CancelTarget } from "@/components/CancelModal";
 import {
   acceptRideBid as acceptRideBidApi,
   customerCounterOffer as customerCounterOfferApi,
+  type Ride,
 } from "@workspace/api-client-react";
 import { getErrorMessage } from "@/utils/errorUtils";
 
 type NegotiationScreenProps = {
   rideId: string;
-  ride: any;
-  setRide: (updater: (r: any) => any) => void;
+  ride: Ride | null;
+  setRide: React.Dispatch<React.SetStateAction<Ride | null>>;
   elapsed: number;
   cancellationFee: number;
   token: string | null;
@@ -184,7 +185,7 @@ export function NegotiationScreen({
     setAcceptBidId(bidId);
     try {
       const d = await acceptRideBidApi(rideId, { bidId });
-      setRide(() => d as any);
+      setRide(d);
     } catch (e: unknown) {
       showToast(getErrorMessage(e, "Could not accept bid. Please try again."), "error");
     }
@@ -203,7 +204,7 @@ export function NegotiationScreen({
     setOfferError("");
     try {
       const d = await customerCounterOfferApi(rideId, { offeredFare: String(amt) });
-      setRide(() => d as any);
+      setRide(d);
       setUpdateOfferInput("");
       setShowUpdateOffer(false);
     } catch (e: unknown) {
@@ -892,10 +893,8 @@ export function NegotiationScreen({
           apiBase={rideApiBase}
           token={token}
           onClose={() => setCancelModalTarget(null)}
-          onDone={(result) => {
-            setRide((r: any) =>
-              r ? { ...r, status: "cancelled" } : r,
-            );
+          onDone={() => {
+            setRide((r) => r ? { ...r, status: "cancelled" } : r);
           }}
         />
       )}

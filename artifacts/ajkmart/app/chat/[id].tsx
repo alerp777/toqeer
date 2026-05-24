@@ -211,8 +211,14 @@ const { colors: C } = useTheme();
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => setCallTimer(t => t + 1), 1000);
     });
-    socket.on("comm:request:cancelled", () => {});
-    socket.on("comm:request:rejected", () => {});
+    socket.on("comm:request:cancelled", () => {
+      showToast(T("requestCancelled"), "info");
+      if (router.canGoBack()) router.back();
+    });
+    socket.on("comm:request:rejected", () => {
+      showToast(T("requestRejected"), "info");
+      if (router.canGoBack()) router.back();
+    });
     socket.on("comm:message:sent", (data: { id: string }) => {
       setMessages(prev => prev.map(m => m.id === data.id ? { ...m, deliveryStatus: "sent" } : m));
     });

@@ -169,13 +169,13 @@ export function RideTracker({
 
   /* ── Populate OTP from polling data (fallback if socket event missed) ── */
   useEffect(() => {
-    if (ride?.status === "arrived" && (ride as any)?.tripOtp && !tripOtp) {
-      setTripOtp((ride as any).tripOtp);
+    if (ride?.status === "arrived" && ride?.tripOtp && !tripOtp) {
+      setTripOtp(ride.tripOtp);
     }
     if (ride?.status === "in_transit") {
       setTripOtp(null); // clear once trip starts
     }
-  }, [ride?.status, (ride as any)?.tripOtp]);
+  }, [ride?.status, ride?.tripOtp]);
 
   useEffect(() => {
     const st = ride?.status;
@@ -228,7 +228,7 @@ export function RideTracker({
     setRetrying(true);
     try {
       await retryRideDispatch(rideId);
-      setRide((r: any) => (r ? { ...r, status: "searching" } : r));
+      setRide((r) => (r ? { ...r, status: "searching" } : r));
       setDispatchInfo(null);
     } catch {
       showToast("Could not retry. Please try again.", "error");
@@ -528,9 +528,7 @@ export function RideTracker({
                 cancellationFee: result?.cancellationFee,
                 cancelReason: result?.cancelReason,
               });
-              setRide((r: any) =>
-                r ? { ...r, status: "cancelled" } : r,
-              );
+              setRide((r) => r ? { ...r, status: "cancelled" } : r);
             }}
           />
         )}
@@ -770,9 +768,7 @@ export function RideTracker({
                 cancellationFee: result?.cancellationFee,
                 cancelReason: result?.cancelReason,
               });
-              setRide((r: any) =>
-                r ? { ...r, status: "cancelled" } : r,
-              );
+              setRide((r) => r ? { ...r, status: "cancelled" } : r);
             }}
           />
         )}
@@ -2453,9 +2449,7 @@ export function RideTracker({
               cancellationFee: result?.cancellationFee,
               cancelReason: result?.cancelReason,
             });
-            setRide((r: any) =>
-              r ? { ...r, status: "cancelled" } : r,
-            );
+            setRide((r) => r ? { ...r, status: "cancelled" } : r);
           }}
         />
       )}

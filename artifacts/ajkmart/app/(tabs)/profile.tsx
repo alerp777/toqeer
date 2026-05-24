@@ -1715,14 +1715,14 @@ export default function ProfileScreen() {
               <Row icon="share-social-outline"
                    label={T("followUsLabel")}
                    sub={[platformCfg.socialFacebook && "Facebook", platformCfg.socialInstagram && "Instagram"].filter(Boolean).join(" • ")}
-                   onPress={() => Linking.openURL(platformCfg.socialFacebook || platformCfg.socialInstagram).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.socialFacebook || platformCfg.socialInstagram).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.facebookBlue} iconBg={C.primarySoft} />
             )}
             {platformCfg.tncUrl ? (
               <Row icon="document-text-outline"
                    label={T("termsOfService")}
                    sub={T("termsSubLabel")}
-                   onPress={() => Linking.openURL(platformCfg.tncUrl).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.tncUrl).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.textSecondary} iconBg={C.surfaceSecondary} />
             ) : (
               <Row icon="document-text-outline"
@@ -1735,28 +1735,28 @@ export default function ProfileScreen() {
               <Row icon="shield-checkmark-outline"
                    label={T("privacyPolicy")}
                    sub={T("privacySubLabel")}
-                   onPress={() => Linking.openURL(platformCfg.privacyUrl).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.privacyUrl).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.primary} iconBg={C.primarySoft} />
             )}
             {platformCfg.refundPolicyUrl && (
               <Row icon="return-down-back-outline"
                    label={T("refundPolicy")}
                    sub={T("refundSubLabel")}
-                   onPress={() => Linking.openURL(platformCfg.refundPolicyUrl).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.refundPolicyUrl).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.success} iconBg={C.successSoft} />
             )}
             {platformCfg.faqUrl && (
               <Row icon="help-circle-outline"
                    label={T("helpFaqsLabel")}
                    sub={T("faqSubLabel")}
-                   onPress={() => Linking.openURL(platformCfg.faqUrl).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.faqUrl).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.info} iconBg={C.infoSoft} />
             )}
             {platformCfg.aboutUrl && (
               <Row icon="information-circle-outline"
                    label={T("aboutUsLabel")}
                    sub={`${platformCfg.appName} ${T("aboutSubLabel")}`}
-                   onPress={() => Linking.openURL(platformCfg.aboutUrl).catch(() => {})}
+                   onPress={() => Linking.openURL(platformCfg.aboutUrl).catch(() => showToast(T("couldNotOpenLink"), "error"))}
                    iconColor={C.parcel} iconBg={C.parcelLight} />
             )}
           </Accordion>
