@@ -1865,6 +1865,7 @@ const translations = {
     navCommunications: "Communications",
     navAccountRestrictions: "Account Restrictions",
     navRestrictionRuleConfig: "Restriction Rule Config",
+    navBrandGuidelines: "Brand Guidelines",
 
     riderRegistration: "Rider Registration",
     enterDetailsToGetStarted: "Enter your details to get started",
@@ -3739,6 +3740,7 @@ const translations = {
     navCommunications: "مواصلت",
     navAccountRestrictions: "اکاؤنٹ پابندیاں",
     navRestrictionRuleConfig: "پابندی قاعدہ کنفیگ",
+    navBrandGuidelines: "برانڈ گائیڈ لائنز",
 
     riderRegistration: "رائڈر رجسٹریشن",
     enterDetailsToGetStarted: "شروع کرنے کے لیے اپنی تفصیلات درج کریں",
@@ -5611,6 +5613,7 @@ const translations = {
     navCommunications: "Communications",
     navAccountRestrictions: "Account Restrictions",
     navRestrictionRuleConfig: "Restriction Rule Config",
+    navBrandGuidelines: "Brand Guidelines",
 
     riderRegistration: "Rider Registration",
     enterDetailsToGetStarted: "Shuru karne ke liye apni details darj karein",

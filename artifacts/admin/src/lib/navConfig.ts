@@ -49,6 +49,7 @@ import {
   MessageSquare,
   Package,
   PackageSearch,
+  Palette,
   PhoneCall,
   Pill,
   QrCode,
@@ -490,6 +491,12 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         icon: CheckCheck,
         requirePermission: "system.settings.view",
       },
+      {
+        nameKey: "navBrandGuidelines" as TranslationKey,
+        href: "/brand",
+        icon: Palette,
+        requirePermission: "system.settings.view",
+      },
     ],
   },
 ];
@@ -555,6 +562,7 @@ export const NAV_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "/webhooks": "Outgoing webhook endpoints",
   "/business-rules": "Account conditions and automation rules",
   "/whatsapp-delivery-log": "WhatsApp message delivery status (sent/delivered/read/failed)",
+  "/brand": "Logo variants and service color tokens",
   "/sms-gateways": "SMS provider routing (now under Communications → SMS Gateways)",
   "/revenue-analytics": "Revenue analytics (now under Analytics)",
   "/search-analytics": "Search analytics (now under Analytics)",

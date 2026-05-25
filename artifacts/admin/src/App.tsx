@@ -92,6 +92,7 @@ const AccountConditions = lazy(() => import("@/pages/account-conditions"));
 const ConditionRules = lazy(() => import("@/pages/condition-rules"));
 const RevenueAnalytics = lazy(() => import("@/pages/revenue-analytics"));
 const AccessibilityPage = lazy(() => import("@/pages/accessibility"));
+const BrandGuidelines = lazy(() => import("@/pages/brand-guidelines"));
 
 const QUERY_RETRY_COUNT = 1;
 const QUERY_RETRY_DELAY_MS = 1_000;
@@ -462,6 +463,9 @@ function AppRoutes() {
         </Route>
         <Route path="/accessibility">
           <ProtectedRoute component={AccessibilityPage} requirePermission="system.settings.view" />
+        </Route>
+        <Route path="/brand">
+          <ProtectedRoute component={BrandGuidelines} requirePermission="system.settings.view" />
         </Route>
 
         {/* Error pages */}

@@ -1794,6 +1794,7 @@ export const en = {
   navCommunications: "Communications",
   navAccountRestrictions: "Account Restrictions",
   navRestrictionRuleConfig: "Restriction Rule Config",
+  navBrandGuidelines: "Brand Guidelines",
 
   riderRegistration: "Rider Registration",
   enterDetailsToGetStarted: "Enter your details to get started",
