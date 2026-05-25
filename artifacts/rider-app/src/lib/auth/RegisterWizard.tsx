@@ -305,24 +305,39 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
   return (
     <div style={{ minHeight: "100vh", background: theme.background, padding: 16 }}>
       <div style={{ maxWidth: 430, margin: "0 auto" }}>
-        <button
-          onClick={() => navigate("/login")}
-          style={{
-            background: "none",
-            border: "none",
-            color: theme.textMuted,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            padding: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            marginBottom: 14,
-          }}
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              background: "none",
+              border: "none",
+              color: theme.textMuted,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <ArrowLeft size={14} /> Home
+          </button>
+          <button
+            onClick={() => navigate("/login")}
+            style={{
+              background: "none",
+              border: "none",
+              color: theme.primary,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Sign In
+          </button>
+        </div>
 
         {/* Progress bar — always visible including step 5 */}
         <div style={{ marginBottom: 14 }}>

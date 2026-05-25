@@ -42,16 +42,16 @@ const STORE_CATS = [
   "Other",
 ];
 
-/* ── Inline styles for dark-theme inputs ── */
-function darkInput(extra?: React.CSSProperties): React.CSSProperties {
+/* ── Inline styles for inputs — uses theme tokens so they work in any theme ── */
+function themedInput(theme: ReturnType<typeof useTheme>, extra?: React.CSSProperties): React.CSSProperties {
   return {
     width: "100%",
     height: 48,
     padding: "0 14px",
     borderRadius: 12,
-    background: "#0F1117",
-    border: "1.5px solid #252D3A",
-    color: "#E2E8F0",
+    background: theme.background,
+    border: `1.5px solid ${theme.border}`,
+    color: theme.text,
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
@@ -60,12 +60,12 @@ function darkInput(extra?: React.CSSProperties): React.CSSProperties {
   };
 }
 
-function darkSelect(): React.CSSProperties {
+function themedSelect(theme: ReturnType<typeof useTheme>): React.CSSProperties {
   return {
-    ...darkInput(),
+    ...themedInput(theme),
     appearance: "none",
     WebkitAppearance: "none",
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C%2Fsvg%3E")`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "right 12px center",
     paddingRight: 36,
@@ -94,17 +94,17 @@ function StoreInfoStep({ data, onChange, onError }: StepComponentProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <p style={{ color: "#E2E8F0", fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
+        <p style={{ color: theme.text, fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
           {T("storeDetails")}
         </p>
-        <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 12px" }}>
+        <p style={{ color: theme.textMuted, fontSize: 13, margin: "0 0 12px" }}>
           {T("tellUsAboutYourBusiness")}
         </p>
       </div>
       <div>
         <label style={labelStyle(pr)}>{T("storeName")} *</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.storeName as string) ?? ""}
           onChange={(e) => {
             onChange("storeName", e.target.value);
@@ -116,7 +116,7 @@ function StoreInfoStep({ data, onChange, onError }: StepComponentProps) {
       <div>
         <label style={labelStyle(pr)}>{T("category")} *</label>
         <select
-          style={darkSelect()}
+          style={themedSelect(theme)}
           value={(data.storeCategory as string) ?? ""}
           onChange={(e) => {
             onChange("storeCategory", e.target.value);
@@ -134,7 +134,7 @@ function StoreInfoStep({ data, onChange, onError }: StepComponentProps) {
       <div>
         <label style={labelStyle(pr)}>{T("ownerName")} *</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.ownerName as string) ?? ""}
           onChange={(e) => {
             onChange("ownerName", e.target.value);
@@ -146,7 +146,7 @@ function StoreInfoStep({ data, onChange, onError }: StepComponentProps) {
       <div>
         <label style={labelStyle(pr)}>{T("city")} *</label>
         <select
-          style={darkSelect()}
+          style={themedSelect(theme)}
           value={(data.city as string) ?? ""}
           onChange={(e) => {
             onChange("city", e.target.value);
@@ -182,17 +182,17 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <p style={{ color: "#E2E8F0", fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
+        <p style={{ color: theme.text, fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
           Contact Details
         </p>
-        <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 12px" }}>
+        <p style={{ color: theme.textMuted, fontSize: 13, margin: "0 0 12px" }}>
           Your mobile number for OTP verification
         </p>
       </div>
       <div>
         <label style={labelStyle(pr)}>{T("cnicNumber")}</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.cnic as string) ?? ""}
           onChange={(e) => {
             onChange("cnic", formatCnic(e.target.value));
@@ -202,7 +202,7 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
           maxLength={15}
           inputMode="numeric"
         />
-        <p style={{ color: "#6B7280", fontSize: 11, margin: "4px 0 0" }}>
+        <p style={{ color: theme.textMuted, fontSize: 11, margin: "4px 0 0" }}>
           Format: 12345-1234567-1 (auto-formatted) · Optional
         </p>
         {(data.cnic as string)?.length > 0 && !isValidCnic((data.cnic as string) ?? "") && (
@@ -221,21 +221,21 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
             style={{
               height: 48,
               padding: "0 12px",
-              background: "#0F1117",
-              border: "1.5px solid #252D3A",
+              background: theme.background,
+              border: `1.5px solid ${theme.border}`,
               borderRadius: 12,
               display: "flex",
               alignItems: "center",
               fontSize: 13,
               fontWeight: 600,
-              color: "#6B7280",
+              color: theme.textMuted,
               flexShrink: 0,
             }}
           >
             +92
           </div>
           <input
-            style={darkInput({ flex: 1 } as React.CSSProperties)}
+            style={themedInput(theme, { flex: 1 } as React.CSSProperties)}
             value={(data.phone as string) ?? ""}
             onChange={(e) => {
               let v = e.target.value.replace(/\D/g, "");
@@ -254,7 +254,7 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
             maxLength={11}
           />
         </div>
-        <p style={{ color: "#6B7280", fontSize: 11, margin: "4px 0 0" }}>
+        <p style={{ color: theme.textMuted, fontSize: 11, margin: "4px 0 0" }}>
           Format: 03XX-XXXXXXX or +923XX-XXXXXXX (auto-cleaned)
         </p>
         {(data.phone as string)?.length > 0 && !isValidPhone(String(data.phone ?? "")) && (
@@ -277,7 +277,7 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
         <p style={{ color: pr, fontSize: 11, fontWeight: 700, margin: "0 0 4px" }}>
           📋 KYC Verification (After Approval)
         </p>
-        <p style={{ color: "#6B7280", fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: theme.textMuted, fontSize: 12, margin: 0, lineHeight: 1.5 }}>
           Once your vendor account is approved, you can complete full KYC identity verification from
           your Profile to unlock wallet withdrawals and advanced features.
         </p>
@@ -296,17 +296,17 @@ function BankStep({ data, onChange, onError }: StepComponentProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <p style={{ color: "#E2E8F0", fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
+        <p style={{ color: theme.text, fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
           {T("bankDetails")}
         </p>
-        <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 12px" }}>
+        <p style={{ color: theme.textMuted, fontSize: 13, margin: "0 0 12px" }}>
           {T("addPaymentDetails")}
         </p>
       </div>
       <div>
         <label style={labelStyle(pr)}>{T("bankName")}</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.bankName as string) ?? ""}
           onChange={(e) => {
             onChange("bankName", e.target.value);
@@ -318,7 +318,7 @@ function BankStep({ data, onChange, onError }: StepComponentProps) {
       <div>
         <label style={labelStyle(pr)}>{T("accountTitle")}</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.bankAccountTitle as string) ?? ""}
           onChange={(e) => {
             onChange("bankAccountTitle", e.target.value);
@@ -330,7 +330,7 @@ function BankStep({ data, onChange, onError }: StepComponentProps) {
       <div>
         <label style={labelStyle(pr)}>{T("accountNumber")}</label>
         <input
-          style={darkInput()}
+          style={themedInput(theme)}
           value={(data.bankAccount as string) ?? ""}
           onChange={(e) => {
             onChange("bankAccount", e.target.value);
@@ -530,23 +530,23 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
   const otpBoxBorder = (i: number) => {
     if (isVerified) return "1.5px solid #10b981";
     if (isFailed && otp[i]) return "1.5px solid #ef4444";
-    return `1.5px solid ${otp[i] ? pr : "#252D3A"}`;
+    return `1.5px solid ${otp[i] ? pr : theme.border}`;
   };
   const otpBoxBg = (i: number) => {
     if (isVerified) return "#10b98118";
     if (isFailed && otp[i]) return "#ef444418";
-    return otp[i] ? `${pr}18` : "#0F1117";
+    return otp[i] ? `${pr}18` : theme.background;
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <p style={{ color: "#E2E8F0", fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
+        <p style={{ color: theme.text, fontWeight: 800, fontSize: 17, margin: "0 0 2px" }}>
           {T("verifyAndSecure")}
         </p>
-        <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 12px" }}>
+        <p style={{ color: theme.textMuted, fontSize: 13, margin: "0 0 12px" }}>
           A verification code was sent to{" "}
-          <strong style={{ color: "#E2E8F0" }}>{(data.phone as string) ?? "your phone"}</strong>
+          <strong style={{ color: theme.text }}>{(data.phone as string) ?? "your phone"}</strong>
         </p>
       </div>
 
@@ -577,7 +577,7 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
                 outline: "none",
                 background: otpBoxBg(i),
                 border: otpBoxBorder(i),
-                color: "#E2E8F0",
+                color: theme.text,
                 transition: "all 0.15s",
                 boxSizing: "border-box",
                 opacity: isVerifying ? 0.7 : 1,
@@ -597,8 +597,8 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
               marginTop: 10,
             }}
           >
-            <Spinner color="#6B7280" />
-            <span style={{ color: "#6B7280", fontSize: 12 }}>Verifying code…</span>
+            <Spinner color={theme.textMuted} />
+            <span style={{ color: theme.textMuted, fontSize: 12 }}>Verifying code…</span>
           </div>
         )}
         {isVerified && (
@@ -666,10 +666,10 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
           </div>
         )}
 
-        <p style={{ textAlign: "center", color: "#6B7280", fontSize: 12, marginTop: 10 }}>
+        <p style={{ textAlign: "center", color: theme.textMuted, fontSize: 12, marginTop: 10 }}>
           {T("didntReceiveOtp")}{" "}
           {resendCooldown > 0 ? (
-            <span style={{ color: "#3D4452" }}>Resend in {resendCooldown}s</span>
+            <span style={{ color: theme.border }}>Resend in {resendCooldown}s</span>
           ) : (
             <button
               type="button"
@@ -695,13 +695,13 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
       {/* Only show password fields after OTP is verified */}
       {isVerified && (
         <>
-          <div style={{ height: 1, background: "#252D3A", margin: "2px 0" }} />
+          <div style={{ height: 1, background: theme.border, margin: "2px 0" }} />
           <div>
             <label style={labelStyle(pr)}>{T("password")} *</label>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
-                style={darkInput({ paddingRight: 44 })}
+                style={themedInput(theme, { paddingRight: 44 })}
                 value={pw}
                 onChange={(e) => {
                   onChange("password", e.target.value);
@@ -720,7 +720,7 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
                   transform: "translateY(-50%)",
                   background: "none",
                   border: "none",
-                  color: "#6B7280",
+                  color: theme.textMuted,
                   cursor: "pointer",
                   padding: 0,
                 }}
@@ -736,7 +736,7 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
                       flex: 1,
                       height: 4,
                       borderRadius: 4,
-                      background: "#252D3A",
+                      background: theme.border,
                       overflow: "hidden",
                     }}
                   >
@@ -762,7 +762,7 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
                     {strength.label}
                   </span>
                 </div>
-                <p style={{ fontSize: 10, color: "#6B7280", marginTop: 4 }}>
+                <p style={{ fontSize: 10, color: theme.textMuted, marginTop: 4 }}>
                   {strength.level < 3
                     ? "Add uppercase, numbers, or special characters to strengthen"
                     : "Great password!"}
@@ -776,9 +776,9 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
             <div style={{ position: "relative" }}>
               <input
                 type={showConfirm ? "text" : "password"}
-                style={darkInput({
+                style={themedInput(theme, {
                   paddingRight: 44,
-                  border: `1.5px solid ${passwordsMismatch ? "#ef4444" : passwordsMatch ? "#10b981" : "#252D3A"}`,
+                  border: `1.5px solid ${passwordsMismatch ? "#ef4444" : passwordsMatch ? "#10b981" : theme.border}`,
                 })}
                 value={confirmPw}
                 onChange={(e) => {
@@ -798,7 +798,7 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
                   transform: "translateY(-50%)",
                   background: "none",
                   border: "none",
-                  color: "#6B7280",
+                  color: theme.textMuted,
                   cursor: "pointer",
                   padding: 0,
                 }}
@@ -820,13 +820,13 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
       {!isVerified && !isVerifying && (
         <div
           style={{
-            background: "#161B22",
-            border: "1px solid #252D3A",
+            background: theme.surface,
+            border: `1px solid ${theme.border}`,
             borderRadius: 12,
             padding: "10px 14px",
           }}
         >
-          <p style={{ color: "#6B7280", fontSize: 12, margin: 0 }}>
+          <p style={{ color: theme.textMuted, fontSize: 12, margin: 0 }}>
             Enter the 6-digit code above to verify your number, then set your password.
           </p>
         </div>
@@ -863,17 +863,17 @@ function SuccessView({
       >
         <Shield size={36} style={{ color: theme.primary }} />
       </div>
-      <h3 style={{ color: "#E2E8F0", fontWeight: 800, fontSize: 22, margin: "0 0 10px" }}>
+      <h3 style={{ color: theme.text, fontWeight: 800, fontSize: 22, margin: "0 0 10px" }}>
         {T("registrationComplete")}
       </h3>
-      <p style={{ color: "#6B7280", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>
+      <p style={{ color: theme.textMuted, fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>
         {T("vendorApprovalMsg")}
       </p>
 
       <div
         style={{
-          background: "#161B22",
-          border: "1px solid #252D3A",
+          background: theme.surface,
+          border: `1px solid ${theme.border}`,
           borderRadius: 14,
           padding: "14px 16px",
           textAlign: "left",
@@ -904,7 +904,7 @@ function SuccessView({
             {item.done ? (
               <CheckCircle2 size={15} style={{ color: "#10b981", flexShrink: 0 }} />
             ) : item.locked ? (
-              <Lock size={15} style={{ color: "#6B7280", flexShrink: 0 }} />
+              <Lock size={15} style={{ color: theme.textMuted, flexShrink: 0 }} />
             ) : (
               <Clock
                 size={15}
@@ -918,7 +918,7 @@ function SuccessView({
             <span
               style={{
                 fontSize: 13,
-                color: item.done ? "#10b981" : item.locked ? "#6B7280" : "#E2E8F0",
+                color: item.done ? "#10b981" : item.locked ? theme.textMuted : theme.text,
               }}
             >
               {item.label}
@@ -927,7 +927,7 @@ function SuccessView({
         ))}
       </div>
 
-      <p style={{ color: "#6B7280", fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 }}>
+      <p style={{ color: theme.textMuted, fontSize: 13, margin: "0 0 20px", lineHeight: 1.5 }}>
         {T("vendorReviewMsg")}
       </p>
 
@@ -1171,11 +1171,33 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>
+      {/* ── Top nav: back to landing page ── */}
+      <div style={{ maxWidth: 448, margin: "0 auto", padding: "12px 16px 0" }}>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          style={{
+            background: "none",
+            border: "none",
+            color: theme.textMuted,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          ← Home
+        </button>
+      </div>
+
       {/* ── Branded header ── */}
       <div
         style={{
           textAlign: "center",
-          paddingTop: 32,
+          paddingTop: 20,
           paddingBottom: 8,
           paddingLeft: 16,
           paddingRight: 16,
