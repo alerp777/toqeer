@@ -9,7 +9,10 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const databaseUrl = process.env.DATABASE_URL!;
+/* Replit sometimes injects env vars with a leading "=" character.
+   Strip it so pg-connection-string / URL() parse the URL correctly. */
+const rawDatabaseUrl = process.env.DATABASE_URL!;
+const databaseUrl = rawDatabaseUrl?.startsWith("=") ? rawDatabaseUrl.slice(1) : rawDatabaseUrl;
 
 export { databaseUrl };
 

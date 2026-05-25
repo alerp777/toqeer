@@ -8,6 +8,11 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
 }
 
+/* Replit sometimes injects env vars with a leading "=" character.
+   Strip it so pg-connection-string parses the URL correctly. */
+const rawDbUrl = process.env.DATABASE_URL;
+const DATABASE_URL = rawDbUrl.startsWith("=") ? rawDbUrl.slice(1) : rawDbUrl;
+
 /**
  * Shared PostgreSQL connection pool.
  *
@@ -24,7 +29,7 @@ if (!process.env.DATABASE_URL) {
  *    would otherwise hold a connection and a transaction lock forever.
  */
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: DATABASE_URL,
   max: 20,
   min: 2,
   idleTimeoutMillis: 30_000,

@@ -26,11 +26,13 @@ const __dirname = path.dirname(__filename);
  * version order. Files already recorded in their tracking table are skipped.
  */
 export async function runSqlMigrations() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
+  const rawUrl = process.env.DATABASE_URL;
+  if (!rawUrl) {
     logger.error("[migrations] DATABASE_URL not set, skipping migrations");
     return;
   }
+  /* Replit sometimes injects env vars with a leading "=" — strip it */
+  const databaseUrl = rawUrl.startsWith("=") ? rawUrl.slice(1) : rawUrl;
   const pool = new Pool(buildPgPoolConfig(databaseUrl));
   try {
     await pool.query("SELECT 1");
