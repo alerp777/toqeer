@@ -151,7 +151,7 @@ export function PhoneInput({
   }
 
   return (
-    <div style={s.wrapper} className={className}>
+    <div style={s.wrapper} className={`auth-input-wrapper${className ? ` ${className}` : ""}`}>
       <select
         value={selectedCode}
         onChange={handleCountryChange}

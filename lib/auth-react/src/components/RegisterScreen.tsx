@@ -1,4 +1,5 @@
 import React, { useEffect, useState, type FormEvent } from "react";
+import { useAuthTheme } from "../context/ThemeContext";
 import { OtpInput } from "./OtpInput";
 import { PasswordInput } from "./PasswordInput";
 import { PhoneInput } from "./PhoneInput";
@@ -498,7 +499,7 @@ export function RegisterScreen({
     const completedContent = (
       <div style={s.header}>
         <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" />
           </svg>
         </div>
@@ -602,6 +603,7 @@ export function RegisterScreen({
                   <>
                     {field.label && <label style={s.label}>{field.label}</label>}
                     <select
+                      className="auth-input"
                       style={s.select}
                       value={(formData[field.id] as string) ?? ""}
                       onChange={(e) => {
@@ -632,6 +634,7 @@ export function RegisterScreen({
                   <>
                     {field.label && <label style={s.label}>{field.label}</label>}
                     <input
+                      className="auth-input"
                       style={s.input}
                       type={field.type === "email" ? "email" : "text"}
                       value={(formData[field.id] as string) ?? ""}

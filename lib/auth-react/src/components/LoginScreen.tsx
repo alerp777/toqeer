@@ -725,6 +725,7 @@ export function LoginScreen({
           <div key={field}>
             <label style={s.label}>Vehicle Type</label>
             <select
+              className="auth-input"
               style={s.select}
               value={customValues["vehicleType"] ?? ""}
               onChange={(e) => setCustomValues({ ...customValues, vehicleType: e.target.value })}
@@ -743,6 +744,7 @@ export function LoginScreen({
           <div key={field}>
             <label style={s.label}>License Number</label>
             <input
+              className="auth-input"
               style={s.input}
               type="text"
               placeholder="e.g. LHR-12345"
@@ -757,6 +759,7 @@ export function LoginScreen({
           <div key={field}>
             <label style={s.label}>Store Name</label>
             <input
+              className="auth-input"
               style={s.input}
               type="text"
               placeholder="Your business name"
@@ -771,6 +774,7 @@ export function LoginScreen({
           <div key={field}>
             <label style={s.label}>CNIC</label>
             <input
+              className="auth-input"
               style={s.input}
               type="text"
               placeholder="12345-1234567-1"
@@ -785,6 +789,7 @@ export function LoginScreen({
           <div key={field}>
             <label style={s.label}>Business Type</label>
             <select
+              className="auth-input"
               style={s.select}
               value={customValues["businessType"] ?? ""}
               onChange={(e) => setCustomValues({ ...customValues, businessType: e.target.value })}
@@ -912,6 +917,7 @@ export function LoginScreen({
                   <div>
                     <label style={s.label}>Email address</label>
                     <input
+                      className="auth-input"
                       style={s.input}
                       type="email"
                       placeholder="you@example.com"
@@ -1072,6 +1078,7 @@ export function LoginScreen({
                       ) : (
                         <>
                           <input
+                            className="auth-input"
                             style={s.input}
                             type="email"
                             placeholder="you@example.com"

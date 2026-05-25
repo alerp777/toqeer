@@ -375,9 +375,15 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
           onChange={(e) => { onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 11)); onError(""); }}
         />
         {!!data.phone && !isValidPhone(String(data.phone)) &&
-          <p style={{ color: t.error, fontSize: 11, margin: "4px 0 0" }}>✗ Valid Pakistani number required (03XXXXXXXXX)</p>}
+          <p style={{ color: t.error, fontSize: 11, margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Valid Pakistani number required (03XXXXXXXXX)
+          </p>}
         {!!data.phone && isValidPhone(String(data.phone)) &&
-          <p style={{ color: t.primary, fontSize: 11, margin: "4px 0 0" }}>✓ Valid number</p>}
+          <p style={{ color: t.primary, fontSize: 11, margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Valid number
+          </p>}
       </div>
       <div>
         <label style={lbl}>CNIC Number</label>
@@ -391,7 +397,10 @@ function DocumentsStep({ data, onChange, onError }: StepComponentProps) {
           onChange={(e) => { onChange("cnic", fmtCnic(e.target.value)); onError(""); }}
         />
         {!!data.cnic && isValidCnic(String(data.cnic)) &&
-          <p style={{ color: t.primary, fontSize: 11, margin: "4px 0 0" }}>✓ Valid CNIC</p>}
+          <p style={{ color: t.primary, fontSize: 11, margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Valid CNIC
+          </p>}
       </div>
       <FileField label="CNIC Front" fieldId="cnicFrontPhoto" value={(data.cnicFrontPhoto as File) ?? null} onChange={(f) => onChange("cnicFrontPhoto", f)} />
       <FileField label="CNIC Back" fieldId="cnicBackPhoto" value={(data.cnicBackPhoto as File) ?? null} onChange={(f) => onChange("cnicBackPhoto", f)} />
@@ -485,8 +494,9 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {!!data.otpSent && (
-        <p style={{ color: t.primary, fontSize: 13, margin: "0 0 4px" }}>
-          ✓ OTP sent to {(data.phone as string) ?? "your phone"}. Enter the code below.
+        <p style={{ color: t.primary, fontSize: 13, margin: "0 0 4px", display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          OTP sent to {(data.phone as string) ?? "your phone"}. Enter the code below.
         </p>
       )}
       <div>
@@ -542,7 +552,10 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
           onChange={(e) => { onChange("confirmPassword", e.target.value); onError(""); }}
         />
         {!!data.password && !!data.confirmPassword && data.password !== data.confirmPassword &&
-          <p style={{ color: t.error, fontSize: 11, margin: "4px 0 0" }}>✗ Passwords do not match</p>}
+          <p style={{ color: t.error, fontSize: 11, margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Passwords do not match
+          </p>}
       </div>
       <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
         <input

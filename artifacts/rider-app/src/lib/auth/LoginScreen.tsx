@@ -1,4 +1,4 @@
-import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen } from "@workspace/auth-react";
+import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, useAuthTheme } from "@workspace/auth-react";
 import { tDual } from "@workspace/i18n";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -6,7 +6,6 @@ import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
 import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
 import { useLanguage } from "../useLanguage";
-import { riderTheme } from "./theme";
 import { facebookLogin, googleOneTap } from "./social-oauth";
 
 
@@ -19,6 +18,7 @@ export interface LoginScreenProps {
 export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const { login } = useRiderAuth();
   const [, navigate] = useLocation();
+  const theme = useAuthTheme();
   const authConfig = useRiderAuthConfig();
   const { language } = useLanguage();
   const [roleError, setRoleError] = useState<string | null>(null);
@@ -109,11 +109,11 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   if (roleError) {
     return (
       <div style={{
-        minHeight: "100vh", background: riderTheme.background, color: riderTheme.text,
+        minHeight: "100vh", background: theme.background, color: theme.text,
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, color: riderTheme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5, justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, color: theme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5, justifyContent: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
@@ -124,7 +124,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         <button
           onClick={() => setRoleError(null)}
           style={{
-            marginTop: 20, background: riderTheme.primary, color: riderTheme.background,
+            marginTop: 20, background: theme.primary, color: theme.background,
             border: "none", borderRadius: 8, padding: "10px 24px",
             fontWeight: 600, cursor: "pointer", fontSize: 14,
           }}

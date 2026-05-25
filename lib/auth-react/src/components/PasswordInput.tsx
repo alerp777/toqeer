@@ -90,7 +90,7 @@ export function PasswordInput({
   return (
     <div style={s.wrapper} className={className}>
       {label && <label style={s.label}>{label}</label>}
-      <div style={s.inputRow}>
+      <div style={s.inputRow} className="auth-input-wrapper">
         <input
           type={visible ? "text" : "password"}
           value={value}

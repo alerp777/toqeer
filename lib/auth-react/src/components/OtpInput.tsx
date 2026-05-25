@@ -7,6 +7,7 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
 } from "react";
+import { useAuthTheme } from "../context/ThemeContext";
 
 export interface OtpInputProps {
   length?: number;
@@ -22,6 +23,12 @@ export interface OtpInputProps {
   className?: string;
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = hex.replace("#", "").match(/^([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i);
+  if (!m) return null;
+  return { r: parseInt(m[1]!, 16), g: parseInt(m[2]!, 16), b: parseInt(m[3]!, 16) };
+}
+
 // ─── Channel icon SVGs ───────────────────────────────────────────────────────
 
 function SmsIcon() {
@@ -31,7 +38,7 @@ function SmsIcon() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#3b82f6"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -58,7 +65,7 @@ function EmailIcon() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#6b7280"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -122,9 +129,10 @@ export function OtpTimer({ seconds, onExpire, prefix = "Resend in ", className }
   const m = Math.floor(remaining / 60);
   const s = remaining % 60;
   const display = m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`;
+  const timerTheme = useAuthTheme();
 
   return (
-    <span className={className} style={{ fontSize: "13px", color: "#9ca3af" }}>
+    <span className={className} style={{ fontSize: "13px", color: timerTheme.textMuted }}>
       {prefix}
       {display}
     </span>
@@ -305,8 +313,10 @@ export function OtpInput({
 
   const allFilled = values.every((v) => v !== "");
   const errorColor = "#ef4444";
-  /* Theme-aware accent — falls back to amber if no CSS variable is set */
-  const accentColor = "var(--otp-accent, #f59e0b)";
+  const theme = useAuthTheme();
+  const accentColor = theme.primary;
+  const accentRgb = hexToRgb(accentColor) ?? { r: 245, g: 158, b: 11 };
+  const accentGlow = `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.16)`;
   const successColor = "#10b981";
 
   return (
@@ -329,7 +339,7 @@ export function OtpInput({
               style={{
                 margin: 0,
                 fontSize: "14px",
-                color: "#374151",
+                color: theme.text,
                 textAlign: "center",
                 fontWeight: 500,
               }}
@@ -344,7 +354,7 @@ export function OtpInput({
                 alignItems: "center",
                 gap: "5px",
                 fontSize: "12px",
-                color: "#6b7280",
+                color: theme.textMuted,
               }}
             >
               {channel === "sms" && <SmsIcon />}
@@ -394,7 +404,7 @@ export function OtpInput({
                     ? accentColor
                     : val
                       ? successColor
-                      : "#d1d5db"
+                      : theme.border
               }`,
               borderRadius: "10px",
               outline: "none",
@@ -402,9 +412,9 @@ export function OtpInput({
               caretColor: "transparent",
               cursor: disabled || isLoading ? "not-allowed" : "text",
               opacity: disabled ? 0.6 : 1,
-              background: error ? "#fef2f2" : val ? "#f0fdf4" : "#fff",
-              boxShadow: focusedIdx === idx && !error ? `0 0 0 3px ${accentColor}28` : undefined,
-              color: "#111827",
+              background: error ? theme.errorBackground : val ? (theme.success || "#f0fdf4") : theme.surface,
+              boxShadow: focusedIdx === idx && !error ? `0 0 0 3px ${accentGlow}` : undefined,
+              color: theme.text,
               fontFamily: "monospace",
             }}
             onFocus={(e) => {
@@ -427,7 +437,7 @@ export function OtpInput({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(255,255,255,0.7)",
+              background: theme.surface === "#ffffff" ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.4)",
               borderRadius: "10px",
               color: accentColor,
             }}
@@ -465,8 +475,8 @@ export function OtpInput({
             padding: "10px 28px",
             borderRadius: "8px",
             border: "none",
-            background: allFilled && !disabled ? accentColor : "#e5e7eb",
-            color: allFilled && !disabled ? "#fff" : "#9ca3af",
+            background: allFilled && !disabled ? accentColor : theme.border,
+            color: allFilled && !disabled ? theme.onPrimary : theme.textMuted,
             fontWeight: 700,
             fontSize: "14px",
             cursor: allFilled && !disabled && !isLoading ? "pointer" : "not-allowed",
@@ -492,7 +502,7 @@ export function OtpInput({
                 border: "none",
                 cursor: isResending ? "default" : "pointer",
                 fontSize: "13px",
-                color: isResending ? "#9ca3af" : accentColor,
+                color: isResending ? theme.textMuted : accentColor,
                 fontWeight: 600,
                 padding: "4px 0",
                 display: "flex",
@@ -501,7 +511,7 @@ export function OtpInput({
               }}
             >
               {isResending && (
-                <span style={{ display: "inline-flex", color: "#9ca3af" }}>
+                <span style={{ display: "inline-flex", color: theme.textMuted }}>
                   <SpinnerIcon />
                 </span>
               )}
