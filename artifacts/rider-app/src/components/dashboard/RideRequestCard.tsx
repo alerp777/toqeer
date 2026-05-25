@@ -304,7 +304,7 @@ export const RideRequestCard = memo(function RideRequestCard({
             <button
               onClick={() => onIgnore(r.id)}
               disabled={ignorePending || acceptPending || anyAcceptPending}
-              className="flex min-h-[44px] items-center gap-1 rounded-xl border border-amber-300 px-3 py-2.5 text-sm font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-60"
+              className="flex min-h-[44px] items-center gap-1 rounded-xl border border-amber-300 px-3 py-2.5 text-sm font-bold text-amber-600 transition-colors hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
               aria-label="Ignore dispatched ride"
             >
               <SkipForward size={14} /> Ignore
@@ -312,7 +312,7 @@ export const RideRequestCard = memo(function RideRequestCard({
           ) : (
             <button
               onClick={() => onDismiss(r.id)}
-              className="flex min-h-[44px] items-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-50"
+              className="flex min-h-[44px] items-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Dismiss ride request"
             >
               <X size={16} />
@@ -323,7 +323,7 @@ export const RideRequestCard = memo(function RideRequestCard({
             disabled={
               rideExpired || acceptPending || anyAcceptPending || ignorePending || !!isRestricted
             }
-            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
             aria-label="Accept ride"
           >
             <CheckCircle size={15} />
@@ -380,7 +380,7 @@ export const RideRequestCard = memo(function RideRequestCard({
                 <button
                   onClick={validateAndSubmitCounter}
                   disabled={counterPending || rideExpired || !!isRestricted}
-                  className="min-h-[44px] rounded-xl bg-orange-500 px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+                  className="min-h-[44px] rounded-xl bg-orange-500 px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
                   aria-label="Update counter bid"
                 >
                   Update
@@ -388,7 +388,7 @@ export const RideRequestCard = memo(function RideRequestCard({
                 <button
                   onClick={() => onAccept(r.id)}
                   disabled={rideExpired || acceptPending || anyAcceptPending || !!isRestricted}
-                  className="flex min-h-[44px] items-center gap-1 rounded-xl bg-brand px-3.5 py-2 text-sm font-bold text-gray-900 shadow-sm shadow-brand/20 transition-colors hover:bg-brand-hover disabled:opacity-60"
+                  className="flex min-h-[44px] items-center gap-1 rounded-xl bg-brand px-3.5 py-2 text-sm font-bold text-gray-900 shadow-sm shadow-brand/20 transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
                   aria-label="Accept ride at current fare"
                 >
                   <CheckCircle size={13} /> Accept
@@ -414,7 +414,7 @@ export const RideRequestCard = memo(function RideRequestCard({
                 <button
                   onClick={validateAndSubmitCounter}
                   disabled={counterPending || rideExpired || !!isRestricted}
-                  className="min-h-[44px] rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-extrabold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+                  className="min-h-[44px] rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-extrabold text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
                   aria-label="Submit counter offer"
                 >
                   {counterPending ? "..." : "Submit"}
@@ -424,7 +424,7 @@ export const RideRequestCard = memo(function RideRequestCard({
                     setShowCounterForm(false);
                     setCounterError("");
                   }}
-                  className="flex min-h-[44px] items-center rounded-xl bg-gray-100 px-3 py-2.5 text-gray-400 transition-colors hover:bg-gray-200"
+                  className="flex min-h-[44px] items-center rounded-xl bg-gray-100 px-3 py-2.5 text-gray-400 transition-colors hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                   aria-label="Cancel counter offer"
                 >
                   <X size={15} />
@@ -448,14 +448,14 @@ export const RideRequestCard = memo(function RideRequestCard({
               <button
                 onClick={() => onRejectOffer(r.id)}
                 disabled={rejectOfferPending}
-                className="flex min-h-[44px] items-center rounded-xl bg-gray-100 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-200 disabled:opacity-50"
+                className="flex min-h-[44px] items-center rounded-xl bg-gray-100 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50"
                 aria-label="Reject ride offer"
               >
                 <X size={16} />
               </button>
               <button
                 onClick={() => setShowCounterForm(true)}
-                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-gradient-to-r from-orange-100 to-amber-100 py-2.5 text-sm font-extrabold text-orange-700 transition-all hover:from-orange-200 hover:to-amber-200 active:scale-[0.98]"
+                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-gradient-to-r from-orange-100 to-amber-100 py-2.5 text-sm font-extrabold text-orange-700 transition-all hover:from-orange-200 hover:to-amber-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 aria-label="Make counter offer"
               >
                 <MessageSquare size={14} /> Counter Offer
@@ -463,7 +463,7 @@ export const RideRequestCard = memo(function RideRequestCard({
               <button
                 onClick={() => onAccept(r.id)}
                 disabled={rideExpired || acceptPending || anyAcceptPending || !!isRestricted}
-                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
+                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
                 aria-label="Accept ride"
               >
                 <CheckCircle size={14} />

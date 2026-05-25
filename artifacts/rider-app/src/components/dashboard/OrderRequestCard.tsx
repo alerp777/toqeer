@@ -175,14 +175,14 @@ export const OrderRequestCard = memo(function OrderRequestCard({
         <button
           onClick={() => onReject(o.id)}
           disabled={rejectPending}
-          className="flex min-h-[44px] items-center gap-1 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-50 disabled:opacity-60"
+          className="flex min-h-[44px] items-center gap-1 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-bold text-red-400 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
           aria-label="Reject order"
         >
           <XCircle size={14} /> Reject
         </button>
         <button
           onClick={() => onDismiss(o.id)}
-          className="flex min-h-[44px] items-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-50"
+          className="flex min-h-[44px] items-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold text-gray-400 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           aria-label="Dismiss order request"
         >
           <X size={16} />
@@ -190,7 +190,7 @@ export const OrderRequestCard = memo(function OrderRequestCard({
         <button
           onClick={() => onAccept(o.id)}
           disabled={isExpired || acceptPending || anyAcceptPending || isRestricted}
-          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-60"
           aria-label="Accept order"
         >
           <CheckCircle size={15} />
