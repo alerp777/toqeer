@@ -18,6 +18,9 @@ export interface ForgotPasswordStrings {
   passwordsNoMatch: string;
   submit: string;
   success: string;
+  successSubtitle: string;
+  goToSignIn: string;
+  redirectingIn: string;
   twoFactorTitle: string;
 }
 
@@ -34,6 +37,9 @@ const DEFAULT_STRINGS: ForgotPasswordStrings = {
   passwordsNoMatch: "Passwords do not match",
   submit: "Reset Password",
   success: "Password reset successfully!",
+  successSubtitle: "You can now sign in with your new password.",
+  goToSignIn: "Go to Sign In",
+  redirectingIn: "Redirecting in",
   twoFactorTitle: "Two-Factor Verification",
 };
 
@@ -126,6 +132,25 @@ export function ForgotPasswordFlow({
   const [confirm, setConfirm] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
+
+  const REDIRECT_SECONDS = 5;
+  const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
+
+  useEffect(() => {
+    if (step !== "success") return;
+    setCountdown(REDIRECT_SECONDS);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          onSuccess?.();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
 
   const displayError = localError ?? error;
 
@@ -499,20 +524,33 @@ export function ForgotPasswordFlow({
   }
 
   /* ── Step: success ────────────────────────────────────────────────────── */
-  return (
-    <div style={pageStyle}>
-      <div style={{ ...cardStyle, textAlign: "center" }}>
-        {logoEl}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <CheckIcon color={theme.primary} />
+  if (step === "success") {
+    return (
+      <div style={pageStyle}>
+        <div style={{ ...cardStyle, textAlign: "center" }}>
+          {logoEl}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            <CheckIcon color={theme.primary} />
+          </div>
+          <h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "0 0 10px" }}>
+            {S.success}
+          </h2>
+          <p style={{ color: theme.textMuted, fontSize: 14, lineHeight: 1.6, margin: "0 0 24px" }}>
+            {S.successSubtitle}
+          </p>
+          <button
+            onClick={() => onSuccess?.()}
+            style={primaryBtn(false)}
+          >
+            {S.goToSignIn}
+          </button>
+          <p style={{ color: theme.textMuted, fontSize: 12, marginTop: 14 }}>
+            {S.redirectingIn} {countdown}s…
+          </p>
         </div>
-        <h2 style={{ color: theme.text, fontSize: 22, fontWeight: 800, margin: "0 0 10px" }}>
-          {S.success}
-        </h2>
-        <p style={{ color: theme.textMuted, fontSize: 14, lineHeight: 1.6, margin: 0 }}>
-          You can now sign in with your new password.
-        </p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
