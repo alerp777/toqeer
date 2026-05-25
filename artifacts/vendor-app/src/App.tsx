@@ -1,5 +1,5 @@
 import { useVersionCheck } from "@/hooks/useVersionCheck";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -34,6 +34,7 @@ import { PwaInstallBanner } from "./components/PwaInstallBanner";
 import { SideNav } from "./components/SideNav";
 import { vendorEnv } from "./lib/envValidation";
 import { BOTTOM_PADDING } from "./lib/ui";
+import { queryClient } from "./lib/queryClient";
 
 /* ── Auth screens: eagerly loaded (needed before user is known) ── */
 import ForgotPassword from "./pages/ForgotPassword";
@@ -68,10 +69,6 @@ function PageSkeleton() {
     </div>
   );
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 10000, refetchOnWindowFocus: true } },
-});
 
 const MAINTENANCE_GRACE_MS = 5 * 60 * 1000; /* 5-minute grace period */
 
