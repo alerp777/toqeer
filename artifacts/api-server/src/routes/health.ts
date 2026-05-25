@@ -7,7 +7,7 @@ import { getDiskStats, getMemoryPct, getP95Ms } from "../lib/metrics/responseTim
 import { redisClient } from "../lib/redis.js";
 import { getVpnCircuitBreakerStatus } from "../middleware/security.js";
 import { checkSchemaDrift, getLastDriftReport } from "../services/schemaDrift.service.js";
-import { publicLimiter } from "../middleware/rate-limit.js";
+import { healthCheckLimiter } from "../middleware/rate-limit.js";
 import { adminAuth } from "./admin-shared.js";
 
 const router = Router();
@@ -202,10 +202,12 @@ export async function handleHealthCheck(_req: Request, res: Response): Promise<v
 }
 
 /* ── GET /api/health ─────────────────────────────────────────────────────── */
-/* publicLimiter: 60 req / 15 min per IP.  The handler executes a DB ping and
-   a Redis ping on every call; without a rate limit an attacker could exhaust
-   connection pools cheaply via repeated health probes.                        */
-router.get("/", publicLimiter, handleHealthCheck);
+/* healthCheckLimiter: 300 req / 15 min / IP, skipOnSuccess=true.
+   Mobile apps poll this on startup and connectivity checks; successful pings
+   do not consume quota so normal polling never triggers 429.  The handler
+   executes a DB ping + Redis ping on every call, so a hard limit is still
+   required — only failed probes count toward it.                              */
+router.get("/", healthCheckLimiter, handleHealthCheck);
 
 /* ── GET /api/health/schema-drift (admin-only) ───────────────────────────── */
 router.get("/schema-drift", adminAuth, async (_req, res) => {

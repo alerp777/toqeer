@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { Router, type IRouter } from "express";
 
 import { checkSessionRevocation, verifyTokenFamily } from "../middleware/auth.js";
-import { publicLimiter, userApiLimiter } from "../middleware/rate-limit.js";
+import { homeFeedLimiter, publicLimiter, userApiLimiter } from "../middleware/rate-limit.js";
 import { adminAuth } from "./admin-shared.js";
 
 // ── Infrastructure / health ────────────────────────────────────────────────
@@ -93,6 +93,20 @@ function publicGetLimiter(req: Request, res: Response, next: NextFunction): void
     return;
   }
   publicLimiter(req, res, next);
+}
+
+/**
+ * homeFeedGetLimiter — higher-limit GET guard for home-screen polling endpoints.
+ * Uses homeFeedLimiter (300 req / 15 min, skipOnSuccess=true) instead of the
+ * standard publicLimiter (60 req / 15 min) so the mobile app can refresh
+ * trending products and flash deals without hitting 429 errors.
+ */
+function homeFeedGetLimiter(req: Request, res: Response, next: NextFunction): void {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    next();
+    return;
+  }
+  homeFeedLimiter(req, res, next);
 }
 
 const router: IRouter = Router();
@@ -242,10 +256,10 @@ router.use("/wishlist", checkSessionRevocation, verifyTokenFamily, userApiLimite
 router.use("/referrals", userApiLimiter, referralsRouter);
 
 // ── 7. Public / lightly-gated customer routes ─────────────────────────────
-router.use("/products", publicGetLimiter, productsRouter);
+router.use("/products", homeFeedGetLimiter, productsRouter);
 router.use("/categories", publicGetLimiter, categoriesRouter);
 router.use("/banners", publicGetLimiter, bannersRouter);
-router.use("/recommendations", publicGetLimiter, userApiLimiter, recommendationsRouter);
+router.use("/recommendations", homeFeedGetLimiter, userApiLimiter, recommendationsRouter);
 router.use("/locations", locationsRouter);
 router.use("/settings", settingsRouter);
 router.use("/payments", paymentsRouter);

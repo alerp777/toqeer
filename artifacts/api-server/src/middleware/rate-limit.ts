@@ -585,3 +585,36 @@ export const adminActionLimiter = createRateLimiter({
   keyGenerator: (req) => (req as Request & { adminId?: string }).adminId ?? ipKey(req),
   message: { success: false, error: "Admin action rate limit exceeded." },
 });
+
+/**
+ * healthCheckLimiter — 300 req / 15 min / IP with skipOnSuccess.
+ * Applied to GET /api/health. Mobile apps poll this endpoint on startup
+ * and during connectivity checks; successful pings do not consume quota so
+ * normal polling never triggers a 429. Only repeated failures (e.g. a
+ * misconfigured client flooding the endpoint) count toward the limit.
+ */
+export const healthCheckLimiter = createRateLimiter({
+  prefix: "health-check",
+  max: process.env.NODE_ENV !== "production" ? 3000 : 300,
+  windowMs: WINDOW_15_MIN,
+  skipOnSuccess: true,
+  tier: "lenient",
+});
+
+/**
+ * homeFeedLimiter — 300 req / 15 min / IP with skipOnSuccess.
+ * Applied to high-frequency home-screen polling endpoints:
+ *   GET /api/recommendations/trending
+ *   GET /api/products/flash-deals
+ * Successful feed loads do not consume quota so the mobile app can refresh
+ * its home screen without hitting rate limits. Scraping/abuse (which tends
+ * to generate errors or target these endpoints in tight loops) is still
+ * throttled because only failed requests count.
+ */
+export const homeFeedLimiter = createRateLimiter({
+  prefix: "home-feed",
+  max: process.env.NODE_ENV !== "production" ? 3000 : 300,
+  windowMs: WINDOW_15_MIN,
+  skipOnSuccess: true,
+  tier: "lenient",
+});
