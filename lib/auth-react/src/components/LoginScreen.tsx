@@ -80,6 +80,24 @@ export interface LoginScreenProps {
   strings?: Partial<LoginScreenStrings>;
   /** Translate raw API error messages into the active language */
   translateError?: (raw: string) => string;
+
+  /* ── New optional props (all undefined/false by default) ── */
+  /** Logo image URL — shown above the form when provided */
+  logoSrc?: string;
+  /** Alt text for the logo image (default: "App Logo") */
+  logoAlt?: string;
+  /** Show Email OTP tab in the method switcher */
+  enableEmailOtp?: boolean;
+  /** Show inline magic link panel (email input + send button) */
+  enableMagicLinkModal?: boolean;
+  /** Dev OTP to display in a banner (only rendered when import.meta.env.DEV is true) */
+  devOtp?: string;
+  /** Controls tab order and visibility — default: ["otp", "password"] */
+  loginMethodTabs?: Array<"otp" | "password" | "email">;
+  /** Called when user declines biometric enrollment prompt */
+  onBiometricEnrollDecline?: () => void;
+  /** Which social provider is currently loading — maps to per-provider loading state in SocialButtons */
+  socialLoadingProvider?: "google" | "facebook" | null;
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
@@ -90,6 +108,10 @@ const ROLE_LABELS: Record<AppRole, string> = {
 };
 
 type Step = "identifier" | "otp" | "password" | "twoFactor";
+type LoginMode = "otp" | "password" | "email";
+
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 export function LoginScreen({
   role,
@@ -108,17 +130,48 @@ export function LoginScreen({
   title,
   strings: stringOverrides,
   translateError,
+  logoSrc,
+  logoAlt,
+  enableEmailOtp = false,
+  enableMagicLinkModal = false,
+  devOtp,
+  loginMethodTabs,
+  onBiometricEnrollDecline,
+  socialLoadingProvider,
 }: LoginScreenProps) {
   const theme = useAuthTheme();
   const displayTitle = title ?? ROLE_LABELS[role];
   const str: LoginScreenStrings = { ...DEFAULT_STRINGS, ...stringOverrides };
 
+  /* ── Resolve active tab list ── */
+  const resolvedTabs: LoginMode[] = (() => {
+    const base: LoginMode[] = loginMethodTabs ? [...loginMethodTabs] : ["otp", "password"];
+    if (enableEmailOtp && !base.includes("email")) base.push("email");
+    return base;
+  })();
+  const showTabs = resolvedTabs.length > 1;
+
   const [step, setStep] = useState<Step>("identifier");
+  const [loginMode, setLoginMode] = useState<LoginMode>(resolvedTabs[0] ?? "otp");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+
+  /* ── Email OTP state ── */
+  const [emailAddress, setEmailAddress] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailVerifying, setEmailVerifying] = useState(false);
+  const [emailResendCooldown, setEmailResendCooldown] = useState(0);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  /* ── Inline magic link modal state ── */
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicSending, setMagicSending] = useState(false);
 
   /* Guard: window is not defined in React Native / Expo environments.
      Default to false (narrow layout) when window is unavailable. */
@@ -134,6 +187,12 @@ export function LoginScreen({
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (emailResendCooldown <= 0) return;
+    const timer = setTimeout(() => setEmailResendCooldown((v) => v - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [emailResendCooldown]);
 
   const {
     initiateLogin,
@@ -214,6 +273,91 @@ export function LoginScreen({
       /* caller handles errors */
     } finally {
       setMagicLinkLoading(false);
+    }
+  }
+
+  /* ── Email OTP handlers ── */
+  async function handleSendEmailOtp() {
+    if (!EMAIL_REGEX.test(emailAddress)) {
+      setEmailError("Enter a valid email address");
+      return;
+    }
+    setEmailError(null);
+    setEmailSending(true);
+    try {
+      const res = await fetch(`${baseURL}/api/auth/email-otp/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddress }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? "Failed to send email OTP");
+      }
+      setEmailOtp("");
+      setEmailOtpSent(true);
+      setEmailResendCooldown(60);
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : "Failed to send email OTP");
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
+  async function handleVerifyEmailOtp(otpValue?: string) {
+    const code = otpValue ?? emailOtp;
+    if (code.length !== 6) {
+      setEmailError("Enter the complete 6-digit OTP");
+      return;
+    }
+    setEmailError(null);
+    setEmailVerifying(true);
+    try {
+      const res = await fetch(`${baseURL}/api/auth/email-otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddress, otp: code }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? "OTP verification failed");
+      }
+      const data = (await res.json()) as { token?: string; accessToken?: string; refreshToken?: string };
+      const token = (data.accessToken ?? data.token ?? "") as string;
+      onSuccess?.({ id: "", email: emailAddress, roles: [role] } as unknown as AuthUser, token);
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : "OTP verification failed");
+      setEmailOtp("");
+    } finally {
+      setEmailVerifying(false);
+    }
+  }
+
+  /* ── Inline magic link modal handler ── */
+  async function handleSendMagicLink() {
+    if (!EMAIL_REGEX.test(magicEmail) || magicSending) return;
+    setMagicSending(true);
+    try {
+      await onMagicLink?.(magicEmail);
+      setMagicSent(true);
+    } catch (_e) {
+      /* caller handles errors */
+    } finally {
+      setMagicSending(false);
+    }
+  }
+
+  /* ── Tab switch: reset relevant step state ── */
+  function handleTabSwitch(mode: LoginMode) {
+    setLoginMode(mode);
+    clearError();
+    setEmailError(null);
+    if (mode !== "email") {
+      setEmailOtpSent(false);
+      setEmailOtp("");
+    }
+    if (step !== "identifier" && mode !== "email") {
+      setStep("identifier");
     }
   }
 
@@ -338,6 +482,49 @@ export function LoginScreen({
       color: theme.textMuted,
       marginTop: "-8px",
     },
+    tabRow: {
+      display: "flex",
+      gap: "6px",
+      background: theme.background,
+      borderRadius: "10px",
+      padding: "4px",
+    },
+    tabBtn: (active: boolean): React.CSSProperties => ({
+      flex: 1,
+      padding: "8px 0",
+      borderRadius: "7px",
+      border: "none",
+      background: active ? theme.primary : "transparent",
+      color: active ? theme.onPrimary : theme.textMuted,
+      fontWeight: active ? 700 : 500,
+      fontSize: "13px",
+      cursor: "pointer",
+      transition: "background 0.15s, color 0.15s",
+    }),
+    devOtpBanner: {
+      background: theme.primaryLight,
+      border: `1px solid ${theme.primary}`,
+      borderRadius: "8px",
+      padding: "8px 12px",
+      marginBottom: "0",
+      fontSize: "13px",
+      color: theme.primary,
+    },
+    magicLinkPanel: {
+      background: theme.background,
+      border: `1px solid ${theme.border}`,
+      borderRadius: "10px",
+      padding: "14px",
+      display: "flex",
+      flexDirection: "column" as const,
+      gap: "10px",
+    },
+    magicLinkPanelLabel: {
+      fontSize: "13px",
+      fontWeight: 600,
+      color: theme.text,
+      margin: 0,
+    },
   } as const;
 
   function renderCustomFields() {
@@ -426,6 +613,12 @@ export function LoginScreen({
     });
   }
 
+  const TAB_LABELS: Record<LoginMode, string> = {
+    otp: "Phone OTP",
+    password: "Password",
+    email: "Email OTP",
+  };
+
   return (
     <div style={s.outer} className={className}>
       {/* Left brand panel — visible only on wide screens */}
@@ -442,16 +635,56 @@ export function LoginScreen({
       {/* Right panel — form */}
       <div style={s.rightPanel}>
         <div style={s.card}>
+          {/* Logo */}
+          {logoSrc && (
+            <div style={{ textAlign: "center" }}>
+              <img
+                src={logoSrc}
+                alt={logoAlt ?? "App Logo"}
+                style={{ height: 48, objectFit: "contain", marginBottom: 16 }}
+              />
+            </div>
+          )}
+
           {/* Header */}
           <div style={s.header}>
             <h1 style={s.title}>{displayTitle}</h1>
             <p style={s.subtitle}>
-              {step === "identifier" && str.subtitleIdentifier}
-              {step === "otp" && str.subtitleOtp}
+              {loginMode === "email"
+                ? emailOtpSent
+                  ? "Enter the OTP sent to your email"
+                  : "Sign in with your email address"
+                : step === "identifier" && str.subtitleIdentifier}
+              {step === "otp" && loginMode !== "email" && str.subtitleOtp}
               {step === "password" && str.subtitlePassword}
               {step === "twoFactor" && str.subtitleTwoFactor}
             </p>
           </div>
+
+          {/* Dev OTP banner */}
+          {devOtp && import.meta.env.DEV && (
+            <div style={s.devOtpBanner}>
+              🔑 Dev OTP: <strong>{devOtp}</strong>
+            </div>
+          )}
+
+          {/* Tab switcher */}
+          {showTabs && step === "identifier" && (
+            <div style={s.tabRow} role="tablist">
+              {resolvedTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={loginMode === tab}
+                  style={s.tabBtn(loginMode === tab)}
+                  onClick={() => handleTabSwitch(tab)}
+                >
+                  {TAB_LABELS[tab]}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -460,134 +693,247 @@ export function LoginScreen({
             </div>
           )}
 
-          {/* Step: Identifier */}
-          {step === "identifier" && (
-            <form
-              onSubmit={(e) => void handleIdentifierSubmit(e)}
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <div>
-                <label style={s.label}>{str.phoneLabel}</label>
-                <PhoneInput
-                  value={identifier}
-                  onChange={(e164) => {
-                    setIdentifier(e164);
-                  }}
-                />
-              </div>
-              {renderCustomFields()}
-              <button
-                type="submit"
-                style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
-                disabled={loading}
-              >
-                {loading ? str.checkingBtn : str.continueBtn}
-              </button>
-              {enableMagicLink && onMagicLink && (
-                <p style={s.magicLinkRow}>
-                  {magicLinkSent ? (
-                    <span>{str.magicLinkSent}</span>
-                  ) : (
-                    <button
-                      type="button"
-                      style={s.link}
-                      disabled={magicLinkLoading}
-                      onClick={() => void handleMagicLink()}
-                    >
-                      {magicLinkLoading ? str.magicLinkSending : str.sendMagicLink}
-                    </button>
-                  )}
-                </p>
-              )}
-              {enableBiometric && (
-                <BiometricPrompt
-                  onSuccess={(token) => {
-                    onBiometricSuccess?.(token);
-                  }}
-                  onDismiss={undefined}
-                  label="Sign in with biometrics"
-                />
-              )}
-              {enableSocial && (
-                <SocialButtons
-                  onGoogle={onGoogle ?? (() => {})}
-                  onFacebook={onFacebook ?? (() => {})}
-                />
-              )}
-              {onRegisterPress && (
-                <p style={s.footerRow}>
-                  {str.newHere}{" "}
-                  <button type="button" style={s.link} onClick={onRegisterPress}>
-                    {str.createAccount}
+          {/* Email OTP error */}
+          {loginMode === "email" && emailError && (
+            <div style={s.errorBox} role="alert" aria-live="assertive">
+              {emailError}
+            </div>
+          )}
+
+          {/* ── Email OTP flow ── */}
+          {loginMode === "email" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {!emailOtpSent ? (
+                <>
+                  <div>
+                    <label style={s.label}>Email address</label>
+                    <input
+                      style={s.input}
+                      type="email"
+                      placeholder="you@example.com"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      autoComplete="email"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    style={{ ...s.btnPrimary, ...(emailSending ? s.btnDisabled : {}) }}
+                    disabled={emailSending}
+                    onClick={() => void handleSendEmailOtp()}
+                  >
+                    {emailSending ? "Sending…" : "Send OTP"}
                   </button>
-                </p>
+                </>
+              ) : (
+                <>
+                  <OtpInput
+                    label="Enter the 6-digit code sent to your email"
+                    onComplete={(code) => void handleVerifyEmailOtp(code)}
+                    autoSubmit
+                  />
+                  {emailVerifying && (
+                    <p style={{ textAlign: "center", fontSize: "13px", color: theme.textMuted }}>
+                      Verifying…
+                    </p>
+                  )}
+                  <p style={{ textAlign: "center", fontSize: "13px", color: theme.textMuted }}>
+                    {emailResendCooldown > 0 ? (
+                      <span>Resend in {emailResendCooldown}s</span>
+                    ) : (
+                      <button
+                        type="button"
+                        style={s.link}
+                        onClick={() => {
+                          setEmailOtpSent(false);
+                          setEmailOtp("");
+                          setEmailError(null);
+                        }}
+                      >
+                        ← Change email
+                      </button>
+                    )}
+                  </p>
+                </>
               )}
-            </form>
-          )}
-
-          {/* Step: OTP */}
-          {step === "otp" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <OtpInput
-                onComplete={(otp) => void handleOtpComplete(otp)}
-                onResend={() => void initiateLogin(identifier)}
-                autoSubmit
-              />
-              <button
-                type="button"
-                style={s.link}
-                onClick={() => {
-                  clearError();
-                  setStep("identifier");
-                }}
-              >
-                {str.changeNumber}
-              </button>
+              {showTabs && (
+                <button
+                  type="button"
+                  style={s.link}
+                  onClick={() => handleTabSwitch(resolvedTabs[0] ?? "otp")}
+                >
+                  ← Back
+                </button>
+              )}
             </div>
           )}
 
-          {/* Step: Password */}
-          {step === "password" && (
-            <form
-              onSubmit={(e) => void handlePasswordSubmit(e)}
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <PasswordInput
-                value={password}
-                onChange={setPassword}
-                label={str.passwordLabel}
-                showStrength={false}
-                autoComplete="current-password"
-              />
-              <button
-                type="submit"
-                style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
-                disabled={loading}
-              >
-                {loading ? str.signingInBtn : str.signInBtn}
-              </button>
-              <button
-                type="button"
-                style={s.link}
-                onClick={() => {
-                  clearError();
-                  setStep("identifier");
-                }}
-              >
-                {str.back}
-              </button>
-            </form>
-          )}
+          {/* ── Standard OTP / Password flows (unchanged when loginMode !== "email") ── */}
+          {loginMode !== "email" && (
+            <>
+              {/* Step: Identifier */}
+              {step === "identifier" && (
+                <form
+                  onSubmit={(e) => void handleIdentifierSubmit(e)}
+                  style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+                >
+                  <div>
+                    <label style={s.label}>{str.phoneLabel}</label>
+                    <PhoneInput
+                      value={identifier}
+                      onChange={(e164) => {
+                        setIdentifier(e164);
+                      }}
+                    />
+                  </div>
+                  {renderCustomFields()}
+                  <button
+                    type="submit"
+                    style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
+                    disabled={loading}
+                  >
+                    {loading ? str.checkingBtn : str.continueBtn}
+                  </button>
+                  {enableMagicLink && onMagicLink && (
+                    <p style={s.magicLinkRow}>
+                      {magicLinkSent ? (
+                        <span>{str.magicLinkSent}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          style={s.link}
+                          disabled={magicLinkLoading}
+                          onClick={() => void handleMagicLink()}
+                        >
+                          {magicLinkLoading ? str.magicLinkSending : str.sendMagicLink}
+                        </button>
+                      )}
+                    </p>
+                  )}
+                  {enableBiometric && (
+                    <BiometricPrompt
+                      onSuccess={(token) => {
+                        onBiometricSuccess?.(token);
+                      }}
+                      onDismiss={onBiometricEnrollDecline}
+                      label="Sign in with biometrics"
+                    />
+                  )}
+                  {enableSocial && (
+                    <SocialButtons
+                      onGoogle={onGoogle ?? (() => {})}
+                      onFacebook={onFacebook ?? (() => {})}
+                      googleLoading={socialLoadingProvider === "google"}
+                      facebookLoading={socialLoadingProvider === "facebook"}
+                    />
+                  )}
+                  {onRegisterPress && (
+                    <p style={s.footerRow}>
+                      {str.newHere}{" "}
+                      <button type="button" style={s.link} onClick={onRegisterPress}>
+                        {str.createAccount}
+                      </button>
+                    </p>
+                  )}
 
-          {/* Step: 2FA */}
-          {step === "twoFactor" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <OtpInput
-                label={str.twoFactorLabel}
-                onComplete={(code) => void handleTwoFactor(code)}
-                autoSubmit
-              />
-            </div>
+                  {/* Inline magic link panel */}
+                  {enableMagicLinkModal && (
+                    <div style={s.magicLinkPanel}>
+                      <p style={s.magicLinkPanelLabel}>Sign in with magic link</p>
+                      {magicSent ? (
+                        <p style={{ fontSize: "13px", color: theme.primary, margin: 0 }}>
+                          ✓ Magic link sent — check your inbox.
+                        </p>
+                      ) : (
+                        <>
+                          <input
+                            style={s.input}
+                            type="email"
+                            placeholder="you@example.com"
+                            value={magicEmail}
+                            onChange={(e) => setMagicEmail(e.target.value)}
+                            autoComplete="email"
+                          />
+                          <button
+                            type="button"
+                            style={{ ...s.btnPrimary, ...(magicSending ? s.btnDisabled : {}) }}
+                            disabled={magicSending}
+                            onClick={() => void handleSendMagicLink()}
+                          >
+                            {magicSending ? str.magicLinkSending : str.sendMagicLink}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </form>
+              )}
+
+              {/* Step: OTP */}
+              {step === "otp" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <OtpInput
+                    onComplete={(otp) => void handleOtpComplete(otp)}
+                    onResend={() => void initiateLogin(identifier)}
+                    autoSubmit
+                  />
+                  <button
+                    type="button"
+                    style={s.link}
+                    onClick={() => {
+                      clearError();
+                      setStep("identifier");
+                    }}
+                  >
+                    {str.changeNumber}
+                  </button>
+                </div>
+              )}
+
+              {/* Step: Password */}
+              {step === "password" && (
+                <form
+                  onSubmit={(e) => void handlePasswordSubmit(e)}
+                  style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+                >
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    label={str.passwordLabel}
+                    showStrength={false}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="submit"
+                    style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
+                    disabled={loading}
+                  >
+                    {loading ? str.signingInBtn : str.signInBtn}
+                  </button>
+                  <button
+                    type="button"
+                    style={s.link}
+                    onClick={() => {
+                      clearError();
+                      setStep("identifier");
+                    }}
+                  >
+                    {str.back}
+                  </button>
+                </form>
+              )}
+
+              {/* Step: 2FA */}
+              {step === "twoFactor" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <OtpInput
+                    label={str.twoFactorLabel}
+                    onComplete={(code) => void handleTwoFactor(code)}
+                    autoSubmit
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
