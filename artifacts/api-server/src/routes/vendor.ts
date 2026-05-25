@@ -348,7 +348,13 @@ router.get("/me", async (req, res, next) => {
     today.setHours(0, 0, 0, 0);
 
     const s = await getCachedSettings();
-    const vendorShare = 1 - parseFloat(s["vendor_commission_pct"] ?? "15") / 100;
+    const commissionPctStr = s["vendor_commission_pct"];
+    if (!commissionPctStr) {
+      logger.warn("[vendor] vendor_commission_pct not found in config, order commission cannot be computed");
+      sendError(res, "Platform configuration error: commission rate not set", 500);
+      return;
+    }
+    const vendorShare = 1 - parseFloat(commissionPctStr) / 100;
 
     const [todayOrders, todayRev, totalOrders, totalRev] = await Promise.all([
       db
@@ -618,7 +624,11 @@ router.get("/stats", async (req, res, next) => {
           )
         ),
       getCachedSettings().then((cfg) => {
-        const threshold = parseInt(cfg["low_stock_threshold"] ?? "10", 10) || 10;
+        const stockThreshStr = cfg["low_stock_threshold"];
+        if (!stockThreshStr) {
+          logger.warn("[vendor] low_stock_threshold not found in config — using default of 10");
+        }
+        const threshold = parseInt(stockThreshStr ?? "10", 10) || 10;
         return db
           .select({ c: count() })
           .from(productsTable)

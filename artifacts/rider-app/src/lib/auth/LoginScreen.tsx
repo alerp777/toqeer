@@ -21,7 +21,6 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [, navigate] = useLocation();
   const authConfig = useRiderAuthConfig();
   const { language } = useLanguage();
-  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [enrollData, setEnrollData] = useState<{
     token: string; refreshToken: string; profile: unknown;
@@ -146,8 +145,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       enableEmailOtp
       enableMagicLinkModal
       loginMethodTabs={["otp", "password", "email"]}
-      devOtp={import.meta.env.VITE_ALLOW_DEV_OTP === "true" ? devOtp : undefined}
-      onOtpSent={(otp) => setDevOtp(otp)}
+      captureDevOtp
       onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
       onGoogle={() => { void handleGoogle(); }}
       onFacebook={() => { void handleFacebook(); }}

@@ -19,6 +19,8 @@ import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
 import { useProductForm } from "./useProductForm";
 
+import { CATS_FALLBACK, TYPES } from "../lib/constants";
+
 // ── Constants ──
 const EMPTY_ROW = {
   name: "",
@@ -30,17 +32,6 @@ const EMPTY_ROW = {
   stock: "",
   type: "mart",
 };
-const CATS_FALLBACK = [
-  "food",
-  "grocery",
-  "bakery",
-  "pharmacy",
-  "electronics",
-  "clothing",
-  "mart",
-  "general",
-];
-const TYPES = ["mart", "food", "pharmacy", "parcel"];
 
 export default function Products() {
   const qc = useQueryClient();

@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
 import {
+  idempotencyKeysTable,
   liveLocationsTable,
   locationLogsTable,
   notificationsTable,
@@ -242,14 +243,13 @@ const safeNum = (v: unknown, def = 0) => {
    Stores responses for X-Idempotency-Key for 5 minutes so retried requests
    (offline queue replays, network retries) return the same response instead of
    executing the action a second time.
-   When Redis is available the store is cluster-safe; when it is not, an
-   in-memory Map is used as a fallback (entries are lost on restart/scale-out).  */
+   Primary store: Redis (when available). Fallback: PostgreSQL idempotency_keys
+   table — cluster-safe and durable across restarts/scale-out.                  */
 interface IdempotencyEntry {
   status: number;
   body: unknown;
   ts: number;
 }
-const idempotencyCache = new Map<string, IdempotencyEntry>();
 const IDEM_TTL_MS = 5 * 60_000;
 const IDEM_TTL_SEC = Math.ceil(IDEM_TTL_MS / 1000);
 
@@ -304,15 +304,34 @@ async function checkIdempotency(req: Request, res: Response): Promise<boolean> {
       logger.warn({ err }, "[rider] Redis idempotency check failed — falling back to memory");
     }
   }
-  const now = Date.now();
-  /* Sweep stale entries on each call (amortised cleanup) */
-  idempotencyCache.forEach((v, k) => {
-    if (now - v.ts > IDEM_TTL_MS) idempotencyCache.delete(k);
-  });
-  const existing = idempotencyCache.get(cacheKey);
-  if (existing) {
-    res.status(existing.status).json(existing.body);
-    return true;
+  /* DB fallback — cluster-safe, replaces in-memory Map */
+  const riderId = req.riderId ?? "";
+  if (riderId) {
+    try {
+      const ttlCutoff = new Date(Date.now() - IDEM_TTL_MS);
+      const [dbRow] = await db
+        .select({ responseData: idempotencyKeysTable.responseData })
+        .from(idempotencyKeysTable)
+        .where(
+          and(
+            eq(idempotencyKeysTable.userId, riderId),
+            eq(idempotencyKeysTable.idempotencyKey, cacheKey),
+            gte(idempotencyKeysTable.createdAt, ttlCutoff)
+          )
+        )
+        .limit(1);
+      if (dbRow) {
+        try {
+          const entry = JSON.parse(dbRow.responseData) as IdempotencyEntry;
+          if (entry.status && entry.body !== undefined) {
+            res.status(entry.status).json(entry.body);
+            return true;
+          }
+        } catch { /* corrupt DB entry — treat as miss */ }
+      }
+    } catch (dbErr) {
+      logger.warn({ err: dbErr }, "[rider] DB idempotency check failed — treating as miss");
+    }
   }
   return false;
 }
@@ -330,7 +349,26 @@ async function storeIdempotency(req: Request, status: number, body: unknown): Pr
       logger.warn({ err }, "[rider] Redis idempotency store failed — falling back to memory");
     }
   }
-  idempotencyCache.set(cacheKey, entry);
+  /* DB fallback — cluster-safe, replaces in-memory Map */
+  const riderId = req.riderId ?? "";
+  if (riderId) {
+    try {
+      await db
+        .insert(idempotencyKeysTable)
+        .values({
+          id: generateId(),
+          userId: riderId,
+          idempotencyKey: cacheKey,
+          responseData: JSON.stringify(entry),
+        })
+        .onConflictDoUpdate({
+          target: [idempotencyKeysTable.userId, idempotencyKeysTable.idempotencyKey],
+          set: { responseData: JSON.stringify(entry) },
+        });
+    } catch (dbErr) {
+      logger.warn({ err: dbErr }, "[rider] DB idempotency store failed");
+    }
+  }
 }
 
 /** Middleware: blocks ride acceptance when the rider's vehicle profile is incomplete,

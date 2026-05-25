@@ -27,6 +27,7 @@ import {
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
+import { ALL_BANKS, DEPOSIT_METHODS } from "../lib/constants";
 
 interface WalletTransaction {
   id: string;
@@ -40,21 +41,6 @@ interface WalletTransaction {
   reference?: string;
   note?: string;
 }
-
-const ALL_BANKS = [
-  "EasyPaisa",
-  "JazzCash",
-  "MCB",
-  "HBL",
-  "UBL",
-  "Meezan Bank",
-  "Bank Alfalah",
-  "Habib Bank",
-  "NBP",
-  "Faysal Bank",
-  "Allied Bank",
-  "Other",
-];
 
 function safeBalance(v: unknown): number {
   if (v === null || v === undefined || v === "") return 0;
@@ -362,8 +348,6 @@ function WithdrawModal({
     </div>
   );
 }
-
-const DEPOSIT_METHODS = ["JazzCash", "EasyPaisa", "Bank Transfer", "Other"];
 
 function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { symbol: currencySymbol } = useCurrency();

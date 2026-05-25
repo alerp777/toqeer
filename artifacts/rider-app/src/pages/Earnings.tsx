@@ -119,12 +119,12 @@ export default function Earnings() {
   const rating = user?.stats?.rating ?? 5;
   const ratingLabel =
     rating >= 4.8
-      ? "Excellent"
+      ? T("riderRatingExcellent")
       : rating >= 4.5
-        ? "Very Good"
+        ? T("riderRatingVeryGood")
         : rating >= 4.0
-          ? "Good"
-          : "Needs Work";
+          ? T("riderRatingGood")
+          : T("riderRatingNeedsWork");
 
   const PERIOD_TABS: { key: Period; label: string }[] = [
     { key: "today", label: T("today") },

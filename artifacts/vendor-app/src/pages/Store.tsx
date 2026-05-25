@@ -248,13 +248,17 @@ export default function Store() {
   /* ── Location tab state ── */
   const DEFAULT_LAT = 34.3697,
     DEFAULT_LNG = 73.4716; // Abbottabad default
-  const [locLat, setLocLat] = useState<number>(() => Number(user?.storeLat) || DEFAULT_LAT);
-  const [locLng, setLocLng] = useState<number>(() => Number(user?.storeLng) || DEFAULT_LNG);
-  const [locHasPin, setLocHasPin] = useState(() => Boolean(user?.storeLat && user?.storeLng));
+  const [locLat, setLocLat] = useState<number>(() =>
+    user?.storeLat != null ? Number(user.storeLat) : DEFAULT_LAT
+  );
+  const [locLng, setLocLng] = useState<number>(() =>
+    user?.storeLng != null ? Number(user.storeLng) : DEFAULT_LNG
+  );
+  const [locHasPin, setLocHasPin] = useState(() => user?.storeLat != null && user?.storeLng != null);
   const tile = useVendorTileConfig();
 
   useEffect(() => {
-    if (user?.storeLat && user?.storeLng) {
+    if (user?.storeLat != null && user?.storeLng != null) {
       setLocLat(Number(user.storeLat));
       setLocLng(Number(user.storeLng));
       setLocHasPin(true);
@@ -1113,6 +1117,12 @@ export default function Store() {
                   {tile.provider.toUpperCase()}
                 </span>
               </div>
+
+              {!locHasPin && (
+                <div className="mb-3 rounded-xl border border-yellow-300 bg-yellow-50 px-3 py-2.5 text-xs font-semibold text-yellow-800">
+                  ⚠️ Your store location is not set. Drag the pin to your actual location and save.
+                </div>
+              )}
 
               {/* Map */}
               <div

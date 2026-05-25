@@ -46,44 +46,13 @@ import { useAuth } from "../lib/rider-auth";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useTheme } from "../lib/useTheme";
+import { BANKS, CITIES_FALLBACK, VEHICLE_LABELS } from "../lib/constants";
 const log = createLogger("[Profile]");
 
 const fc = (n: string | number | null | undefined, currencySymbol = "Rs.") =>
   _sharedFcP(n != null ? String(n) : (n as null | undefined), currencySymbol);
 
-const CITIES_FALLBACK = [
-  "Muzaffarabad",
-  "Mirpur",
-  "Rawalakot",
-  "Bagh",
-  "Kotli",
-  "Bhimber",
-  "Jhelum",
-  "Rawalpindi",
-  "Islamabad",
-  "Other",
-];
-const BANKS = [
-  "EasyPaisa",
-  "JazzCash",
-  "MCB",
-  "HBL",
-  "UBL",
-  "Meezan Bank",
-  "Bank Alfalah",
-  "NBP",
-  "Allied Bank",
-  "Other",
-];
 const VEHICLES = ["bike", "car", "van", "rickshaw", "bicycle", "on_foot"];
-const VEHICLE_LABELS: Record<string, string> = {
-  bike: "Bike / Motorcycle",
-  car: "Car",
-  rickshaw: "Rickshaw / QingQi",
-  bicycle: "Bicycle",
-  on_foot: "On Foot",
-  van: "Van",
-};
 
 const INPUT =
   "w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all";
