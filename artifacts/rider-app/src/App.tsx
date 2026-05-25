@@ -136,8 +136,8 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
     >
       <div
         style={{
-          background: "#131720",
-          border: "1px solid #252836",
+          background: "var(--color-card-dark)",
+          border: "1px solid var(--color-border-dark)",
           borderRadius: 20,
           padding: "28px 24px",
           width: "100%",
@@ -297,7 +297,7 @@ function MagicLinkPage() {
         style={{
           width: 36,
           height: 36,
-          border: "4px solid #252836",
+          border: "4px solid var(--color-border-dark)",
           borderTopColor: "var(--color-brand)",
           borderRadius: "50%",
           animation: "spin 0.8s linear infinite",
@@ -759,8 +759,8 @@ function AppRoutes() {
       >
         <div
           style={{
-            background: "#131720",
-            border: "1px solid #252836",
+            background: "var(--color-card-dark)",
+            border: "1px solid var(--color-border-dark)",
             borderRadius: 20,
             padding: "32px 24px",
             maxWidth: 360,
@@ -871,7 +871,7 @@ function AppRoutes() {
               width: 32,
               height: 32,
               borderRadius: "50%",
-              border: "3px solid #252836",
+              border: "3px solid var(--color-border-dark)",
               borderTopColor: "var(--color-brand)",
               animation: "spin 0.8s linear infinite",
               margin: "0 auto",
@@ -889,7 +889,7 @@ function AppRoutes() {
                 padding: 16,
                 maxWidth: 280,
                 margin: "20px auto 0",
-                border: "1px solid #252836",
+                border: "1px solid var(--color-border-dark)",
               }}
             >
               <p style={{ color: "#6B7280", fontSize: 13, marginBottom: 12 }}>

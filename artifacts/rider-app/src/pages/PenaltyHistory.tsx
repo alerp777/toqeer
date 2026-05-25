@@ -87,7 +87,7 @@ export default function PenaltyHistory() {
   }, [qc]);
 
   return (
-    <PullToRefresh onRefresh={handlePullRefresh} accentColor="#10B981">
+    <PullToRefresh onRefresh={handlePullRefresh}>
       <div className="min-h-screen bg-gray-50 pb-20">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200 bg-white px-4 pt-4 pb-3">

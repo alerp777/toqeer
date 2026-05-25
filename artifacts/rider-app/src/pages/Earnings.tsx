@@ -35,23 +35,23 @@ function SkeletonEarnings() {
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-5 shadow-sm">
           <ShimmerBlock className="h-3 w-16 rounded-full" />
           <ShimmerBlock className="h-8 w-28 rounded-full" />
           <ShimmerBlock className="h-2.5 w-20 rounded-full" />
         </div>
-        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+        <div className="space-y-2 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-5 shadow-sm">
           <ShimmerBlock className="h-3 w-16 rounded-full" />
           <ShimmerBlock className="h-8 w-12 rounded-full" />
           <ShimmerBlock className="h-2.5 w-16 rounded-full" />
         </div>
       </div>
-      <div className="space-y-3 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+      <div className="space-y-3 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-5 shadow-sm">
         <ShimmerBlock className="h-3 w-24 rounded-full" />
         <ShimmerBlock className="h-3.5 w-full rounded-full" />
         <ShimmerBlock className="h-2.5 w-28 rounded-full" />
       </div>
-      <div className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-5 shadow-sm">
+      <div className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-5 shadow-sm">
         <ShimmerBlock className="mb-3 h-3 w-24 rounded-full" />
         <div className="grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (

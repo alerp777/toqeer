@@ -19,6 +19,10 @@ export const RIDER_TOKENS = {
   surface:    "#0b0e11",
   pageBg:     "#F5F6F8",
 
+  /* Dark elevation layer — raised cards sit above the surface */
+  cardDark:   "#131720",   /* bg-card-dark */
+  borderDark: "#252836",   /* use via var(--color-border-dark) in inline styles */
+
   /* Glass overlay rgba values — used inside dark gradient headers */
   glass:       "rgba(255,255,255,0.06)",
   glassRaised: "rgba(255,255,255,0.08)",
@@ -66,10 +70,12 @@ function readCssVar(name: string, fallback: string): string {
 export function useThemeTokens() {
   return useMemo(
     () => ({
-      brand:      readCssVar("--color-brand",      RIDER_TOKENS.brand),
+      brand:      readCssVar("--color-brand",       RIDER_TOKENS.brand),
       brandHover: readCssVar("--color-brand-hover", RIDER_TOKENS.brandHover),
       surface:    readCssVar("--color-surface",     RIDER_TOKENS.surface),
       pageBg:     readCssVar("--color-page-bg",     RIDER_TOKENS.pageBg),
+      cardDark:   readCssVar("--color-card-dark",   RIDER_TOKENS.cardDark),
+      borderDark: readCssVar("--color-border-dark", RIDER_TOKENS.borderDark),
 
       /* Glass values use rgba — no CSS var equivalent; use static constants. */
       glass:       RIDER_TOKENS.glass,

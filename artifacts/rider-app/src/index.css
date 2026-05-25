@@ -33,10 +33,14 @@
      Usage: bg-brand, text-brand, border-brand, from-brand, ring-brand …
             bg-surface, text-surface
             bg-page-bg, ring-offset-page-bg                                  */
-  --color-brand:      #F0B90B;
+  --color-brand:       #F0B90B;
   --color-brand-hover: #e0ac00;
-  --color-surface:    #0b0e11;
-  --color-page-bg:    #F5F6F8;
+  --color-surface:     #0b0e11;
+  --color-page-bg:     #F5F6F8;
+
+  /* Dark elevation layer — raised cards on the dark surface */
+  --color-card-dark:   #131720;   /* bg-card-dark  */
+  --color-border-dark: #252836;   /* border-[color-border-dark] via var() */
 }
 
 :root {

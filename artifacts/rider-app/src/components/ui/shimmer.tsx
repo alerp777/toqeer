@@ -36,7 +36,7 @@ export function ShimmerBlock({
 
 export function ShimmerRow() {
   return (
-    <div className="flex items-center gap-3 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-4">
+    <div className="flex items-center gap-3 rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-4">
       <ShimmerBlock className="h-10 w-10 flex-shrink-0 rounded-2xl" />
       <div className="flex-1 space-y-2">
         <ShimmerBlock className="h-3.5 w-32" />
@@ -71,7 +71,7 @@ export function PageShimmer() {
           style={{
             width: 36,
             height: 36,
-            border: "4px solid #252836",
+            border: "4px solid var(--color-border-dark)",
             borderTopColor: "var(--color-brand)",
             borderRadius: "50%",
             animation: "pgshimmer-spin 0.8s linear infinite",

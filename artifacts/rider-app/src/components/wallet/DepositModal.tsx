@@ -1,4 +1,5 @@
 import { createLogger } from "@/lib/logger";
+import { ShimmerBlock } from "@/components/ui/shimmer";
 import { useMutation } from "@tanstack/react-query";
 import { formatCurrency as _sharedFcD } from "@workspace/api-zod";
 import {
@@ -312,7 +313,7 @@ export default function DepositModal({
               {loadingMethods ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
+                    <ShimmerBlock key={i} className="h-20 rounded-2xl" />
                   ))}
                 </div>
               ) : methodsError ? (

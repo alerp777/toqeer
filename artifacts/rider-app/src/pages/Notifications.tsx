@@ -51,7 +51,7 @@ function SkeletonNotifications() {
           ))}
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-[#131720] p-4">
+          <div key={i} className="rounded-3xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-card-dark p-4">
             <div className="flex gap-3">
               <ShimmerBlock className="h-12 w-12 flex-shrink-0 rounded-xl" />
               <div className="flex-1 space-y-2">

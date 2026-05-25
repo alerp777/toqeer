@@ -1,4 +1,5 @@
 import { createLogger } from "@/lib/logger";
+import { ShimmerBlock } from "@/components/ui/shimmer";
 import { useMutation } from "@tanstack/react-query";
 import { formatCurrency as _sharedFcW2 } from "@workspace/api-zod";
 import { tDual, type TranslationKey } from "@workspace/i18n";
@@ -628,7 +629,7 @@ export default function WithdrawModal({
               {loadingMethods ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
+                    <ShimmerBlock key={i} className="h-20 rounded-2xl" />
                   ))}
                 </div>
               ) : methodsError ? (

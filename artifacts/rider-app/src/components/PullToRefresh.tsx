@@ -29,7 +29,7 @@ function isAtTop(): boolean {
 export function PullToRefresh({
   onRefresh,
   children,
-  accentColor = "#10B981",
+  accentColor = "var(--color-brand)",
   className = "",
   onRefreshError,
 }: PullToRefreshProps) {

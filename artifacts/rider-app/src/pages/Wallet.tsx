@@ -231,7 +231,7 @@ function EarningsChart({ transactions }: { transactions: WalletTx[] }) {
           <BarChart3 size={15} className="text-gray-400" />
           <p className="text-sm font-bold text-gray-800">{T("sevenDayEarnings")}</p>
         </div>
-        <p className="text-base font-black text-green-600">{fc(weekTotal, chartCurrency, chartCurrencyCode)}</p>
+        <p className="text-base font-black text-brand">{fc(weekTotal, chartCurrency, chartCurrencyCode)}</p>
       </div>
       <div className="flex h-20 items-end gap-3">
         {days.map((d, i) => (
@@ -239,14 +239,14 @@ function EarningsChart({ transactions }: { transactions: WalletTx[] }) {
             <div className="flex w-full items-end justify-center" style={{ height: 56 }}>
               <div
                 className={`w-full max-w-[20px] rounded-md transition-all duration-500 ${
-                  i === bestIdx ? "bg-green-500" : "bg-gray-100"
+                  i === bestIdx ? "bg-brand" : "bg-gray-100 dark:bg-white/[0.06]"
                 }`}
                 style={{ height: Math.max((d.amount / maxVal) * 56, d.amount > 0 ? 4 : 2) }}
                 title={`${d.date}: ${fc(d.amount, chartCurrency, chartCurrencyCode)}`}
               />
             </div>
             <p
-              className={`text-[9px] font-semibold ${i === bestIdx ? "text-green-600" : "text-gray-300"}`}
+              className={`text-[9px] font-semibold ${i === bestIdx ? "text-brand" : "text-gray-300"}`}
             >
               {d.label}
             </p>

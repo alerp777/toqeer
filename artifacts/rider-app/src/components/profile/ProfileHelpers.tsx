@@ -11,7 +11,7 @@ export function SkeletonProfile() {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
       />
       <div className="-mt-20 space-y-4 px-4">
-        <div className="rounded-3xl bg-white dark:bg-[#131720] p-5 shadow-lg">
+        <div className="rounded-3xl bg-white dark:bg-card-dark p-5 shadow-lg">
           <div className="flex items-start gap-4">
             <ShimmerBlock className="h-16 w-16 rounded-2xl" />
             <div className="flex-1 space-y-2">

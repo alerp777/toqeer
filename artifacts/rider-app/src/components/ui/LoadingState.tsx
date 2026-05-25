@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { ShimmerBlock } from "./shimmer";
 
 interface LoadingStateProps {
   message?: string;
@@ -23,16 +24,16 @@ export function LoadingRows({ rows = 3 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="flex animate-pulse items-center gap-3 rounded-3xl border border-gray-100 bg-white p-4"
+          className="flex items-center gap-3 rounded-3xl border border-gray-100 bg-white p-4"
         >
-          <div className="h-10 w-10 flex-shrink-0 rounded-2xl bg-gray-100" />
+          <ShimmerBlock className="h-10 w-10 flex-shrink-0 rounded-2xl" />
           <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-32 rounded-full bg-gray-200" />
-            <div className="h-2.5 w-24 rounded-full bg-gray-100" />
+            <ShimmerBlock className="h-3.5 w-32 rounded-full" />
+            <ShimmerBlock className="h-2.5 w-24 rounded-full" />
           </div>
           <div className="flex flex-col items-end space-y-1.5">
-            <div className="h-3.5 w-16 rounded-full bg-gray-200" />
-            <div className="h-5 w-14 rounded-full bg-gray-100" />
+            <ShimmerBlock className="h-3.5 w-16 rounded-full" />
+            <ShimmerBlock className="h-5 w-14 rounded-full" />
           </div>
         </div>
       ))}
