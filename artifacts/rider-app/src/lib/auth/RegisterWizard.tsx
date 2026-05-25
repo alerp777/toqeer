@@ -84,9 +84,20 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
     <RegisterScreen
       role="rider"
       steps={riderSteps}
-      onSubmit={async (data) => {
+      onSubmit={async (raw) => {
         try {
-          await api.registerRider(data as Parameters<typeof api.registerRider>[0]);
+          const d = raw as Record<string, unknown>;
+          /* Map wizard field IDs → API-expected keys */
+          const { fullName, plateNumber, licenseNumber, licensePhoto, cnicFrontPhoto, cnicBackPhoto, ...rest } = d;
+          await api.registerRider({
+            ...(rest as Omit<Parameters<typeof api.registerRider>[0],
+              "name" | "vehiclePlate" | "drivingLicense" | "vehiclePhoto" | "documents">),
+            name: String(fullName ?? "").trim(),
+            vehiclePlate: String(plateNumber ?? "").trim(),
+            drivingLicense: String(licenseNumber ?? "").trim(),
+            vehiclePhoto: String(d.vehiclePhoto ?? ""),
+            documents: JSON.stringify({ licensePhoto, cnicFrontPhoto, cnicBackPhoto }),
+          });
           localStorage.removeItem(DRAFT_KEY);
           onDone?.();
           navigate("/login");
