@@ -129,6 +129,30 @@ magic_link_tokens    — tokenHash (SHA-256), expiresAt, usedAt
 
 ---
 
+## Running the Apps
+
+Four dev workflows are configured — each starts automatically on workspace open.
+
+| Workflow | Command | Port | Preview Path |
+|---|---|---|---|
+| `API Server` | `cd artifacts/api-server && PORT=8080 pnpm dev` | 8080 | `/api` |
+| `Admin` | `cd artifacts/admin && PORT=3000 BASE_PATH=/admin pnpm dev` | 3000 | `/admin` |
+| `Rider App` | `cd artifacts/rider-app && PORT=3002 BASE_PATH=/rider pnpm dev` | 3002 | `/rider` |
+| `Vendor App` | `cd artifacts/vendor-app && PORT=3001 BASE_PATH=/vendor pnpm dev` | 3001 | `/vendor` |
+
+**API proxy wiring:** Each Vite frontend proxies `/api` → `http://127.0.0.1:8080` (the API Server port). This is controlled by `API_PORT` env var (defaults to `8080`) or `VITE_API_PROXY_TARGET`.
+
+**Required env vars before first run:**
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | JWT signing key (throws at startup if missing) |
+| `TOTP_ENCRYPTION_KEY` | AES key for TOTP secrets |
+| `TOKEN_HASH_SECRET` | HMAC key for magic link / email verify tokens |
+
+---
+
 ## TypeScript Status
 All three compiled artifacts are error-free:
 - `artifacts/rider-app` — `tsc --noEmit` ✅
