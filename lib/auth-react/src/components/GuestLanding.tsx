@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuthTheme } from "../context/ThemeContext";
+import { useAuthTheme, type AuthTheme } from "../context/ThemeContext";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    GUEST LANDING — World-Class B2B Branded Ecosystem Component
@@ -57,7 +57,7 @@ const LANG_CYCLE: Lang[] = ["en", "ur", "roman"];
 
 /* ── Inline SVG Icon System (zero dependencies) ─────────────────────────── */
 
-const ICONS: Record<string, JSX.Element> = {
+const ICONS: Record<string, React.ReactNode> = {
   store: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />

@@ -1,5 +1,4 @@
 import { GuestLanding as SharedGuestLanding } from "@workspace/auth-react";
-import { AjkmartLogo } from "@workspace/ui/components/AjkmartLogo";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "../lib/rider-auth";
@@ -14,18 +13,7 @@ export function GuestLanding() {
   }, [user, navigate]);
 
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{
-        position: "absolute",
-        top: 24,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 10,
-        pointerEvents: "none",
-      }}>
-        <AjkmartLogo variant="full" size={180} theme="dark" />
-      </div>
-      <SharedGuestLanding
+    <SharedGuestLanding
         role="rider"
         logoSrc=""
         logoAlt="AJKMart"
@@ -134,6 +122,7 @@ export function GuestLanding() {
             icon: "check",
             title: { en: "24/7 Support", ur: "24/7 سپورٹ", roman: "24/7 support" },
             desc: { en: "Our rider support team is always one tap away.", ur: "ہماری رائیڈر سپورٹ ٹیم ہمیشہ ایک ٹیپ کی دوری پر ہے۔", roman: "Hamari rider support team hamesha ek tap ki duri par hai." },
+          },
         ]}
         ctaLoginLabel={{ en: "Login", ur: "لاگ ان", roman: "Login Karein" }}
         ctaRegisterLabel={{ en: "Join as Rider", ur: "رائیڈر بنیں", roman: "Rider Banein" }}
@@ -147,7 +136,6 @@ export function GuestLanding() {
         onLogin={() => navigate("/login")}
         onRegister={() => navigate("/register")}
       />
-    </div>
   );
 }
 

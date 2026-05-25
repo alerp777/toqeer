@@ -78,7 +78,7 @@ void (async () => {
               wordBreak: "break-all",
             }}
           >
-            {url}
+            /api/health
           </p>
           <button
             onClick={handleRetry}

@@ -1,22 +1,10 @@
 import { GuestLanding as SharedGuestLanding } from "@workspace/auth-react";
-import { AjkmartLogo } from "@workspace/ui/components/AjkmartLogo";
 import { useLocation } from "wouter";
 
 export function GuestLanding() {
   const [, navigate] = useLocation();
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{
-        position: "absolute",
-        top: 24,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 10,
-        pointerEvents: "none",
-      }}>
-        <AjkmartLogo variant="full" size={180} theme="light" />
-      </div>
-      <SharedGuestLanding
+    <SharedGuestLanding
         role="vendor"
         logoSrc=""
         logoAlt="AJKMart"
@@ -139,7 +127,6 @@ export function GuestLanding() {
         onLogin={() => navigate("/login")}
         onRegister={() => navigate("/register")}
       />
-    </div>
   );
 }
 
