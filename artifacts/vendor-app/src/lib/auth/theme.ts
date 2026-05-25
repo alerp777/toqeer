@@ -14,10 +14,16 @@ export const vendorTheme: Partial<AuthTheme> = {
   primaryLight: "rgba(26,86,219,0.12)",
   background: "#060A14",
   text: "#E2E8F4",
-  textMuted: "#6B7280",
+  textMuted: "#8B95A9",
   border: "#1E2A3F",
   pendingOverlay: "#0A1220",
   rejectedOverlay: "#1A0B0B",
   maintenanceOverlay: "#0A0F1A",
   surface: "#0F1827",
+  error: "#EF4444",
+  errorBackground: "rgba(239,68,68,0.10)",
+  errorBorder: "rgba(239,68,68,0.28)",
 };
+
+export const VENDOR_SUCCESS = "#22C55E";
+export const VENDOR_WARNING = "#F59E0B";

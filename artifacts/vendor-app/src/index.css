@@ -430,3 +430,67 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Vendor RegisterScreen dark theme overrides ── */
+.vendor-register-screen {
+  background: #060A14 !important;
+  min-height: 100vh;
+  padding-top: 56px !important;
+}
+
+.vendor-register-screen > div {
+  background: #0F1827 !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid #1E2A3F !important;
+  border-radius: 20px !important;
+}
+
+.vendor-register-screen h1 {
+  color: #E2E8F4 !important;
+}
+
+.vendor-register-screen p {
+  color: #8B95A9 !important;
+}
+
+.vendor-register-screen label {
+  color: #374151;
+}
+
+.vendor-register-screen button[type="submit"],
+.vendor-register-screen form button[type="submit"] {
+  background: #1A56DB !important;
+  background-color: #1A56DB !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+}
+
+.vendor-register-screen button[type="submit"]:hover:not(:disabled),
+.vendor-register-screen form button[type="submit"]:hover:not(:disabled) {
+  background: #1348B5 !important;
+  background-color: #1348B5 !important;
+}
+
+.vendor-register-screen input[type="text"],
+.vendor-register-screen input[type="email"],
+.vendor-register-screen input[type="tel"],
+.vendor-register-screen input[type="password"],
+.vendor-register-screen select {
+  background: #060A14 !important;
+  border-color: #1E2A3F !important;
+  color: #E2E8F4 !important;
+  border-radius: 12px !important;
+}
+
+.vendor-register-screen input:focus-visible,
+.vendor-register-screen select:focus-visible {
+  border-color: #1A56DB !important;
+  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.3) !important;
+}
+
+.vendor-register-screen [role="alert"] {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  color: #EF4444 !important;
+}
+

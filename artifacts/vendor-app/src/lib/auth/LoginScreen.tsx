@@ -114,20 +114,31 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     );
 
   return (
-    <SharedLoginScreen
-      role="vendor"
-      logoSrc="/ajkmart-logo.png"
-      logoAlt="AJKMart"
-      enableBiometric
-      enableSocial
-      enableEmailOtp
-      enableMagicLinkModal
-      loginMethodTabs={["otp", "password", "email"]}
-      googleClientId={auth.googleClientId}
-      facebookAppId={auth.facebookAppId}
-      onSuccess={handleSuccess}
-      onRegisterPress={() => navigate("/register")}
-      captureDevOtp
-    />
+    <div style={{ position: "relative" }}>
+      <SharedLoginScreen
+        role="vendor"
+        logoSrc="/ajkmart-logo.png"
+        logoAlt="AJKMart"
+        enableBiometric={false}
+        enableSocial
+        enableEmailOtp
+        enableMagicLinkModal
+        loginMethodTabs={["otp", "password", "email"]}
+        googleClientId={auth.googleClientId}
+        facebookAppId={auth.facebookAppId}
+        onSuccess={handleSuccess}
+        onRegisterPress={() => navigate("/register")}
+        captureDevOtp
+      />
+      <p style={{
+        textAlign: "center",
+        fontSize: 12,
+        color: "#8B95A9",
+        margin: "-8px 0 16px",
+        padding: "0 16px",
+      }}>
+        Fingerprint login is not available on web — use the AJKMart mobile app for biometric sign-in.
+      </p>
+    </div>
   );
 }
