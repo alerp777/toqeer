@@ -9,7 +9,8 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
-import { BADGE_BLUE, BADGE_GREEN, BADGE_RED, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
+import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
+import { BADGE_BLUE, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import type { StoreHours } from "../lib/vendor-auth";
@@ -576,9 +577,7 @@ export default function Dashboard() {
                 className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${user?.storeIsOpen ? "left-7" : "left-1"}`}
               />
             </button>
-            <span className={user?.storeIsOpen ? BADGE_GREEN : BADGE_RED}>
-              {user?.storeIsOpen ? T("openLabel") : T("closedLabel")}
-            </span>
+            <StoreStatusBadge isOpen={!!user?.storeIsOpen} />
           </div>
         }
         mobileContent={

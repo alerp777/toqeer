@@ -3,6 +3,7 @@ import { tDual, type TranslationKey } from "@workspace/i18n";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { fc } from "../lib/ui";
+import { StoreStatusBadge } from "./ui/StoreStatusBadge";
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
@@ -87,24 +88,7 @@ export function SideNav() {
         </div>
 
         <div className="relative mt-3 flex items-center justify-between">
-          <span
-            className="rounded-full px-2.5 py-1 text-xs font-bold"
-            style={
-              user?.storeIsOpen
-                ? {
-                    background: "rgba(16,185,129,0.25)",
-                    color: "#6EE7B7",
-                    border: "1px solid rgba(16,185,129,0.30)",
-                  }
-                : {
-                    background: "rgba(239,68,68,0.22)",
-                    color: "#FCA5A5",
-                    border: "1px solid rgba(239,68,68,0.28)",
-                  }
-            }
-          >
-            {user?.storeIsOpen ? `🟢 ${T("openLabel")}` : `🔴 ${T("closedLabel")}`}
-          </span>
+          <StoreStatusBadge isOpen={!!user?.storeIsOpen} variant="glass" />
           <span className="text-xs font-semibold" style={{ color: "rgba(219,234,254,0.70)" }}>
             {Math.round(100 - (config.platform.vendorCommissionPct ?? 15))}% earnings
           </span>
