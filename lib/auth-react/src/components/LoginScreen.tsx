@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AuthUser } from "../AuthProvider";
 import { useAuthTheme } from "../context/ThemeContext";
 import { useLoginFlow } from "../hooks/useLoginFlow";
+import { BiometricEnrollOverlay } from "./AuthOverlay";
 import { BiometricPrompt } from "./BiometricPrompt";
 import { OtpInput } from "./OtpInput";
 import { PasswordInput } from "./PasswordInput";
@@ -100,6 +101,24 @@ export interface LoginScreenProps {
   onBiometricEnrollDecline?: () => void;
   /** Which social provider is currently loading — maps to per-provider loading state in SocialButtons */
   socialLoadingProvider?: "google" | "facebook" | null;
+
+  /* ── Post-auth orchestration (optional) ── */
+  /** Google Client ID — when provided the shared component loads GSI and handles social auth internally */
+  googleClientId?: string;
+  /** Facebook App ID — when provided the shared component loads the FB SDK and handles social auth internally */
+  facebookAppId?: string;
+  /** Fetch authoritative server profile after raw auth — receives the raw access token */
+  fetchProfile?: (token: string) => Promise<unknown>;
+  /** Validate the fetched profile; return an error string to reject, null to allow */
+  roleValidator?: (profile: unknown) => string | null;
+  /** Called when roleValidator rejects — use to clear any tokens already stored */
+  onRoleRejected?: () => void;
+  /** Check whether biometric is available and already enrolled */
+  checkBiometricStatus?: () => Promise<{ available: boolean; enrolled: boolean }>;
+  /** Enroll the device biometric — called with the refreshToken after successful login */
+  enrollBiometric?: (refreshToken: string) => Promise<void>;
+  /** When true the component captures devOtp internally (no need to manage devOtp state in the wrapper) */
+  captureDevOtp?: boolean;
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
@@ -141,6 +160,14 @@ export function LoginScreen({
   loginMethodTabs,
   onBiometricEnrollDecline,
   socialLoadingProvider,
+  googleClientId,
+  facebookAppId,
+  fetchProfile,
+  roleValidator,
+  onRoleRejected,
+  checkBiometricStatus,
+  enrollBiometric,
+  captureDevOtp = false,
 }: LoginScreenProps) {
   const theme = useAuthTheme();
   const displayTitle = title ?? ROLE_LABELS[role];
@@ -176,6 +203,14 @@ export function LoginScreen({
   const [magicSent, setMagicSent] = useState(false);
   const [magicSending, setMagicSending] = useState(false);
 
+  /* ── Post-auth orchestration state ── */
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [enrollPending, setEnrollPending] = useState<{
+    token: string; refreshToken: string; profile: unknown;
+  } | null>(null);
+  const [internalDevOtp, setInternalDevOtp] = useState<string | undefined>(undefined);
+  const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
+
   /* Guard: window is not defined in React Native / Expo environments.
      Default to false (narrow layout) when window is unavailable. */
   const [isWide, setIsWide] = useState(
@@ -197,6 +232,40 @@ export function LoginScreen({
     return () => clearTimeout(timer);
   }, [emailResendCooldown]);
 
+  /* ── Post-auth orchestration ─────────────────────────────────────────────
+     Called by every auth path (phone OTP, password, 2FA, email OTP, social).
+     Runs: fetchProfile → roleValidator → biometric enrollment → onSuccess.
+  ── */
+  const handleAuthCompleteRef = useRef<
+    (rawUser: AuthUser, token: string, refreshToken?: string) => Promise<void>
+  >(async () => {});
+
+  async function handleAuthComplete(rawUser: AuthUser, token: string, refreshToken?: string) {
+    let profile: unknown = rawUser;
+    if (fetchProfile) {
+      try { profile = await fetchProfile(token); } catch { /* use rawUser as fallback */ }
+    }
+    if (roleValidator) {
+      const msg = roleValidator(profile);
+      if (msg) {
+        onRoleRejected?.();
+        setRoleError(msg);
+        return;
+      }
+    }
+    if (checkBiometricStatus && enrollBiometric && refreshToken) {
+      try {
+        const { available, enrolled } = await checkBiometricStatus();
+        if (available && !enrolled) {
+          setEnrollPending({ token, refreshToken, profile });
+          return;
+        }
+      } catch { /* biometric unavailable — proceed normally */ }
+    }
+    onSuccess?.(profile as AuthUser, token, refreshToken);
+  }
+  handleAuthCompleteRef.current = handleAuthComplete;
+
   const {
     initiateLogin,
     verifyOtp,
@@ -210,9 +279,9 @@ export function LoginScreen({
   } = useLoginFlow({
     baseURL,
     role: role === "admin" ? undefined : role,
-    onSuccess,
+    onSuccess: (user, token, rt) => { void handleAuthCompleteRef.current(user, token, rt); },
     translateError,
-    onDevOtp: onOtpSent,
+    onDevOtp: captureDevOtp ? setInternalDevOtp : onOtpSent,
   });
 
   useEffect(() => {
@@ -257,6 +326,85 @@ export function LoginScreen({
     } catch (_e) {
       /* handled by hook */
     }
+  }
+
+  /* ── SDK type shims (scoped to avoid global namespace pollution) ─────── */
+  type GsiCb = (r: { credential: string }) => void;
+  type GsiNotif = { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean };
+  interface GsiAccounts { accounts: { id: { initialize(o: { client_id: string; callback: GsiCb }): void; prompt(fn: (n: GsiNotif) => void): void } } }
+  type FbLoginResp = { authResponse?: { accessToken: string } };
+  interface FbSDK { init(o: { appId: string; version: string }): void; login(cb: (r: FbLoginResp) => void): void }
+
+  /* ── Internal social auth handlers ─────────────────────────────────────
+     When googleClientId / facebookAppId are provided, the shared component
+     loads the SDK and calls the social endpoint — no rider-app custom code.
+     If neither prop is provided, falls through to the external callback.
+  ── */
+  async function handleGoogleClick() {
+    if (!googleClientId) { onGoogle?.(); return; }
+    setSocialLoading("google");
+    try {
+      const w = window as unknown as { google?: GsiAccounts };
+      if (!w.google) {
+        await new Promise<void>((res, rej) => {
+          const s = document.createElement("script");
+          s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+          s.onload = () => res(); s.onerror = () => rej(new Error("GSI load failed"));
+          document.head.appendChild(s);
+        });
+      }
+      const g = (window as unknown as { google: GsiAccounts }).google;
+      const idToken = await new Promise<string>((resolve, reject) => {
+        g.accounts.id.initialize({ client_id: googleClientId, callback: (r) => resolve(r.credential) });
+        g.accounts.id.prompt((n) => {
+          if (n.isNotDisplayed() || n.isSkippedMoment()) reject(new Error("Google sign-in cancelled"));
+        });
+      });
+      const res = await fetch(`${baseURL}/api/auth/social/google`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, role }),
+      });
+      if (!res.ok) throw new Error("Google sign-in failed");
+      const data = (await res.json()) as { data?: { user: AuthUser; accessToken: string; refreshToken?: string } };
+      await handleAuthCompleteRef.current(data.data!.user, data.data!.accessToken, data.data?.refreshToken);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Google sign-in failed");
+    } finally { setSocialLoading(null); }
+  }
+
+  async function handleFacebookClick() {
+    if (!facebookAppId) { onFacebook?.(); return; }
+    setSocialLoading("facebook");
+    try {
+      const w = window as unknown as { FB?: FbSDK };
+      if (!w.FB) {
+        await new Promise<void>((res, rej) => {
+          const s = document.createElement("script");
+          s.src = "https://connect.facebook.net/en_US/sdk.js"; s.async = true;
+          s.onload = () => res(); s.onerror = () => rej(new Error("FB load failed"));
+          document.head.appendChild(s);
+        });
+      }
+      const FB = (window as unknown as { FB: FbSDK }).FB;
+      FB.init({ appId: facebookAppId, version: "v18.0" });
+      const accessToken = await new Promise<string>((resolve, reject) => {
+        FB.login((r) => {
+          if (r.authResponse?.accessToken) resolve(r.authResponse.accessToken);
+          else reject(new Error("Facebook login cancelled"));
+        });
+      });
+      const res = await fetch(`${baseURL}/api/auth/social/facebook`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken, role }),
+      });
+      if (!res.ok) throw new Error("Facebook sign-in failed");
+      const data = (await res.json()) as { data?: { user: AuthUser; accessToken: string; refreshToken?: string } };
+      await handleAuthCompleteRef.current(data.data!.user, data.data!.accessToken, data.data?.refreshToken);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Facebook sign-in failed");
+    } finally { setSocialLoading(null); }
   }
 
   async function handleTwoFactor(otp: string) {
@@ -328,7 +476,7 @@ export function LoginScreen({
       }
       const data = (await res.json()) as { token?: string; accessToken?: string; refreshToken?: string };
       const token = (data.accessToken ?? data.token ?? "") as string;
-      onSuccess?.({ id: "", email: emailAddress, roles: [role] } as unknown as AuthUser, token, data.refreshToken);
+      void handleAuthCompleteRef.current({ id: "", email: emailAddress, roles: [role] } as unknown as AuthUser, token, data.refreshToken);
     } catch (e) {
       setEmailError(e instanceof Error ? e.message : "OTP verification failed");
       setEmailOtp("");
