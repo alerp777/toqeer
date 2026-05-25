@@ -137,7 +137,11 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   /* ── Biometric enrollment prompt ─────────────────────────────────────────── */
   if (enrollData) {
-    return <BiometricEnrollOverlay onEnroll={handleEnrollAccept} onSkip={handleEnrollDecline} />;
+    return (
+      <ThemeProvider role="rider">
+        <BiometricEnrollOverlay onEnroll={handleEnrollAccept} onSkip={handleEnrollDecline} />
+      </ThemeProvider>
+    );
   }
 
   return (
