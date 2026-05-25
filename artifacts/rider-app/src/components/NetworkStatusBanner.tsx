@@ -1,4 +1,5 @@
 import { useNetworkQuality } from "@/hooks/useNetworkQuality";
+import { RIDER_TOKENS } from "@/lib/useThemeTokens";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -103,10 +104,10 @@ export function NetworkStatusBanner() {
             : "linear-gradient(135deg,#130f00,#1e1700)",
           border: isOfflineBanner
             ? "1px solid rgba(239,68,68,0.35)"
-            : "1px solid rgba(240,185,11,0.35)" /* brand/35 */,
+            : `1px solid ${RIDER_TOKENS.brandAlpha(0.35)}`,
           boxShadow: isOfflineBanner
             ? "0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(239,68,68,0.1)"
-            : "0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(240,185,11,0.1)" /* brand/10 */,
+            : `0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px ${RIDER_TOKENS.brandAlpha(0.1)}`,
         }}
       >
         {/* Left accent bar */}
@@ -144,7 +145,7 @@ export function NetworkStatusBanner() {
               fontSize: 11,
               color: isOfflineBanner
                 ? "rgba(252,165,165,0.7)"
-                : "rgba(240,185,11,0.7)",
+                : RIDER_TOKENS.brandAlpha(0.7),
               lineHeight: 1.3,
               marginTop: 1,
             }}

@@ -1,5 +1,6 @@
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { createLogger } from "@/lib/logger";
+import { RIDER_TOKENS } from "@/lib/useThemeTokens";
 import { Capacitor } from "@capacitor/core";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
@@ -150,8 +151,8 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
             width: 64,
             height: 64,
             borderRadius: "50%",
-            background: "rgba(240,185,11,0.12)",
-            border: "1px solid rgba(240,185,11,0.3)",
+            background: RIDER_TOKENS.brandAlpha(0.12),
+            border: `1px solid ${RIDER_TOKENS.brandAlpha(0.3)}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -844,7 +845,7 @@ function AppRoutes() {
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 20px",
-              boxShadow: "0 8px 28px rgba(240,185,11,0.35)",
+              boxShadow: `0 8px 28px ${RIDER_TOKENS.brandAlpha(0.35)}`,
             }}
           >
             <svg

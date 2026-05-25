@@ -894,7 +894,7 @@ export default function Home() {
   return (
     <PullToRefresh
       onRefresh={handlePullRefresh}
-      accentColor="#F0B90B"
+      accentColor="var(--color-brand)"
       className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-page-bg"
     >
       <FixedBanners
