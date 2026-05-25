@@ -40,7 +40,7 @@ function DefaultFallback({ reset, error }: { reset: () => void; error: Error | n
       role="alert"
       aria-live="assertive"
       aria-describedby={errorDescId}
-      className="flex min-h-[60vh] flex-col items-center justify-center bg-[#0b0e11] px-6 py-8 text-center"
+      className="flex min-h-[60vh] flex-col items-center justify-center bg-surface px-6 py-8 text-center"
     >
       <div className="w-full max-w-sm">
         {/* Brand label */}
@@ -49,12 +49,12 @@ function DefaultFallback({ reset, error }: { reset: () => void; error: Error | n
         </p>
 
         {/* Gold icon ring — matches OnlineToggleCard / StatsGrid glass-card pattern */}
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[18px] border border-[#F0B90B]/25 bg-[#F0B90B]/10">
-          <AlertTriangle size={28} className="text-[#F0B90B]" />
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[18px] border border-brand/25 bg-brand/10">
+          <AlertTriangle size={28} className="text-brand" />
         </div>
 
         {/* Title */}
-        <h1 className="mb-2 text-lg font-bold tracking-tight text-[#E8E9EF]">
+        <h1 className="mb-2 text-lg font-bold tracking-tight text-white/90">
           Something went wrong
         </h1>
 
@@ -74,7 +74,7 @@ function DefaultFallback({ reset, error }: { reset: () => void; error: Error | n
           {/* Primary — gold branded retry */}
           <button
             onClick={handleRetry}
-            className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#F0B90B] to-amber-600 text-sm font-bold text-[#0B0E11] transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0B90B]/60"
+            className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-brand to-amber-600 text-sm font-bold text-surface transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
           >
             Try Again
           </button>

@@ -163,7 +163,7 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
             height="28"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#F0B90B"
+            stroke="var(--color-brand)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -185,8 +185,8 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
             height: 48,
             borderRadius: 12,
             border: "none",
-            background: "linear-gradient(135deg, #F0B90B, #D97706)",
-            color: "#0B0E11",
+            background: "linear-gradient(135deg, var(--color-brand), #D97706)",
+            color: "var(--color-surface)",
             fontSize: 15,
             fontWeight: 700,
             cursor: "pointer",
@@ -253,7 +253,7 @@ function MagicLinkPage() {
           flexDirection: "column",
           gap: 16,
           padding: 24,
-          background: "#0b0e11",
+          background: "var(--color-surface)",
           color: "#fff",
           fontFamily: "Inter, sans-serif",
         }}
@@ -269,8 +269,8 @@ function MagicLinkPage() {
             padding: "10px 24px",
             borderRadius: 10,
             border: "none",
-            background: "#F0B90B",
-            color: "#0b0e11",
+            background: "var(--color-brand)",
+            color: "var(--color-surface)",
             fontWeight: 700,
             cursor: "pointer",
             fontSize: 14,
@@ -289,7 +289,7 @@ function MagicLinkPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#0b0e11",
+        background: "var(--color-surface)",
       }}
     >
       <div
@@ -297,7 +297,7 @@ function MagicLinkPage() {
           width: 36,
           height: 36,
           border: "4px solid #252836",
-          borderTopColor: "#F0B90B",
+          borderTopColor: "var(--color-brand)",
           borderRadius: "50%",
           animation: "spin 0.8s linear infinite",
         }}
@@ -749,7 +749,7 @@ function AppRoutes() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#0B0E11",
+          background: "var(--color-surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -809,8 +809,8 @@ function AppRoutes() {
               height: 46,
               borderRadius: 12,
               border: "none",
-              background: "linear-gradient(135deg, #F0B90B, #D97706)",
-              color: "#0B0E11",
+              background: "linear-gradient(135deg, var(--color-brand), #D97706)",
+              color: "var(--color-surface)",
               fontSize: 15,
               fontWeight: 700,
               cursor: "pointer",
@@ -827,7 +827,7 @@ function AppRoutes() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#0B0E11",
+          background: "var(--color-surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -839,7 +839,7 @@ function AppRoutes() {
               width: 72,
               height: 72,
               borderRadius: 22,
-              background: "linear-gradient(135deg, #F0B90B, #D97706)",
+              background: "linear-gradient(135deg, var(--color-brand), #D97706)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -852,7 +852,7 @@ function AppRoutes() {
               height="36"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#0B0E11"
+              stroke="var(--color-surface)"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -871,7 +871,7 @@ function AppRoutes() {
               height: 32,
               borderRadius: "50%",
               border: "3px solid #252836",
-              borderTopColor: "#F0B90B",
+              borderTopColor: "var(--color-brand)",
               animation: "spin 0.8s linear infinite",
               margin: "0 auto",
             }}
@@ -901,8 +901,8 @@ function AppRoutes() {
                   height: 40,
                   borderRadius: 10,
                   border: "none",
-                  background: "#F0B90B",
-                  color: "#0B0E11",
+                  background: "var(--color-brand)",
+                  color: "var(--color-surface)",
                   fontWeight: 700,
                   fontSize: 13,
                   cursor: "pointer",

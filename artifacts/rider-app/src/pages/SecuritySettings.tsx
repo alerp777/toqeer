@@ -273,7 +273,7 @@ export default function SecuritySettings() {
   if (view === "setup" && setupData) {
     const hasBackupCodes = setupData.backupCodes && setupData.backupCodes.length > 0;
     return (
-      <div className="min-h-screen bg-[#F5F6F8]">
+      <div className="min-h-screen bg-page-bg">
         <div
           className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -337,7 +337,7 @@ export default function SecuritySettings() {
 
   if (view === "verify-disable") {
     return (
-      <div className="min-h-screen bg-[#F5F6F8]">
+      <div className="min-h-screen bg-page-bg">
         <div
           className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -369,7 +369,7 @@ export default function SecuritySettings() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8]">
+    <div className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}

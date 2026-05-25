@@ -190,7 +190,7 @@ export const OrderRequestCard = memo(function OrderRequestCard({
         <button
           onClick={() => onAccept(o.id)}
           disabled={isExpired || acceptPending || anyAcceptPending || isRestricted}
-          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#F0B90B] py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-amber-200/60 transition-all hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60"
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
           aria-label="Accept order"
         >
           <CheckCircle size={15} />

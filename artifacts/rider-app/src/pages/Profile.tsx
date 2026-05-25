@@ -598,7 +598,7 @@ export default function Profile() {
 
   return (
     <div
-      className={`min-h-screen bg-[#F5F6F8] transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}
+      className={`min-h-screen bg-page-bg transition-opacity duration-500 ${fadeIn ? "opacity-100" : "opacity-0"}`}
     >
       {toast && (
         <div

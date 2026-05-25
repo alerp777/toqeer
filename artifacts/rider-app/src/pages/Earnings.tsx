@@ -171,7 +171,7 @@ export default function Earnings() {
   };
 
   return (
-    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-[#F5F6F8]">
+    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -289,13 +289,13 @@ export default function Earnings() {
             <BarChart2 size={14} className="text-gray-900" /> {T("performance")}
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[#F5F6F8] p-4 text-center">
+            <div className="rounded-2xl bg-page-bg p-4 text-center">
               <p className="text-2xl font-extrabold text-gray-900">{totalDeliveries}</p>
               <p className="mt-1 flex items-center justify-center gap-1 text-xs font-semibold text-gray-500">
                 <ClipboardList size={11} /> {T("totalDeliveries")}
               </p>
             </div>
-            <div className="rounded-2xl bg-[#F5F6F8] p-4 text-center">
+            <div className="rounded-2xl bg-page-bg p-4 text-center">
               <p className="text-2xl font-extrabold text-gray-900">
                 {formatCurrency(avgPerDelivery)}
               </p>
@@ -303,7 +303,7 @@ export default function Earnings() {
                 <TrendingUp size={11} /> {T("avgPerDelivery")}
               </p>
             </div>
-            <div className="rounded-2xl bg-[#F5F6F8] p-4 text-center">
+            <div className="rounded-2xl bg-page-bg p-4 text-center">
               <p className="text-2xl font-extrabold text-gray-900">
                 {formatCurrency(totalEarnings)}
               </p>
@@ -311,7 +311,7 @@ export default function Earnings() {
                 <CreditCard size={11} /> {T("allTimeEarned")}
               </p>
             </div>
-            <div className="rounded-2xl bg-[#F5F6F8] p-4 text-center">
+            <div className="rounded-2xl bg-page-bg p-4 text-center">
               <div className="flex items-center justify-center gap-1">
                 <p className="text-2xl font-extrabold text-gray-900">{rating.toFixed(1)}</p>
                 <Star size={18} className="fill-yellow-400 text-yellow-400" />

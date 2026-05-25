@@ -5,7 +5,7 @@ export { ShimmerBlock as SkeletonBlock };
 
 export function SkeletonProfile() {
   return (
-    <div className="min-h-screen bg-[#F5F6F8] dark:bg-[#0b0e11]">
+    <div className="min-h-screen bg-page-bg dark:bg-surface">
       <div
         className="rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-24"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}

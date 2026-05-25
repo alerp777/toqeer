@@ -56,7 +56,7 @@ export function ShimmerHeader({ children }: { children?: ReactNode }) {
       className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
     >
-      <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-[#F0B90B]/[0.04]" />
+      <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-brand/[0.04]" />
       <div className="absolute bottom-10 -left-16 h-56 w-56 rounded-full bg-white/[0.02]" />
       {children}
     </div>
@@ -65,14 +65,14 @@ export function ShimmerHeader({ children }: { children?: ReactNode }) {
 
 export function PageShimmer() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0b0e11]">
+    <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="flex flex-col items-center gap-5">
         <div
           style={{
             width: 36,
             height: 36,
             border: "4px solid #252836",
-            borderTopColor: "#F0B90B",
+            borderTopColor: "var(--color-brand)",
             borderRadius: "50%",
             animation: "pgshimmer-spin 0.8s linear infinite",
           }}
@@ -85,7 +85,7 @@ export function PageShimmer() {
                 width: 24,
                 height: 4,
                 borderRadius: 2,
-                background: "#F0B90B",
+                background: "var(--color-brand)",
                 animation: `pgshimmer-pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
               }}
             />

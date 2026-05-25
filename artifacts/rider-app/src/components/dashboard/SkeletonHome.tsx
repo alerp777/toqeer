@@ -2,7 +2,7 @@ import { ShimmerBlock, ShimmerHeader } from "@/components/ui/shimmer";
 
 export function SkeletonHome() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F6F8] dark:bg-[#0b0e11]">
+    <div className="flex min-h-screen flex-col bg-page-bg dark:bg-surface">
       <ShimmerHeader>
         <div className="relative mb-6 flex items-center justify-between">
           <div className="space-y-2">

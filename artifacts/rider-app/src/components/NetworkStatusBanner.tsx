@@ -103,10 +103,10 @@ export function NetworkStatusBanner() {
             : "linear-gradient(135deg,#130f00,#1e1700)",
           border: isOfflineBanner
             ? "1px solid rgba(239,68,68,0.35)"
-            : "1px solid rgba(240,185,11,0.35)",
+            : "1px solid rgba(240,185,11,0.35)" /* brand/35 */,
           boxShadow: isOfflineBanner
             ? "0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(239,68,68,0.1)"
-            : "0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(240,185,11,0.1)",
+            : "0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(240,185,11,0.1)" /* brand/10 */,
         }}
       >
         {/* Left accent bar */}
@@ -116,7 +116,7 @@ export function NetworkStatusBanner() {
             height: 28,
             borderRadius: 2,
             flexShrink: 0,
-            background: isOfflineBanner ? "#ef4444" : "#F0B90B",
+            background: isOfflineBanner ? "#ef4444" : "var(--color-brand)",
           }}
         />
 
@@ -132,7 +132,7 @@ export function NetworkStatusBanner() {
               margin: 0,
               fontSize: 12,
               fontWeight: 700,
-              color: isOfflineBanner ? "#fca5a5" : "#F0B90B",
+              color: isOfflineBanner ? "#fca5a5" : "var(--color-brand)",
               lineHeight: 1.3,
             }}
           >
@@ -162,7 +162,7 @@ export function NetworkStatusBanner() {
             height: 7,
             borderRadius: "50%",
             flexShrink: 0,
-            background: isOfflineBanner ? "#ef4444" : "#F0B90B",
+            background: isOfflineBanner ? "#ef4444" : "var(--color-brand)",
             animation: "nsb-dot 1.4s ease-in-out infinite",
           }}
         />

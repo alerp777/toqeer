@@ -309,7 +309,7 @@ export function GuestLanding() {
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ color: "#0b0e11" }}
+                style={{ color: "var(--color-surface)" }}
               >
                 <circle cx="5.5" cy="17.5" r="2.5" />
                 <circle cx="18.5" cy="17.5" r="2.5" />
@@ -843,7 +843,7 @@ export function GuestLanding() {
               height="30"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#0b0e11"
+              stroke="var(--color-surface)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"

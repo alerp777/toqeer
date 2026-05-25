@@ -390,7 +390,7 @@ type TxFilter = "all" | "credit" | "debit" | "bonus" | "fees";
 
 function SkeletonWallet() {
   return (
-    <div className="min-h-screen bg-[#F5F6F8]">
+    <div className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -693,7 +693,7 @@ export default function Wallet() {
 
   if (isError) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#F5F6F8]">
+      <div className="flex min-h-screen flex-col bg-page-bg">
         <div
           className="rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-10"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -717,7 +717,7 @@ export default function Wallet() {
 
   if (!config.features.wallet) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8]">
+      <div className="min-h-screen bg-page-bg">
         <div
           className="rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-10"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -740,7 +740,7 @@ export default function Wallet() {
   }
 
   return (
-    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-[#F5F6F8]">
+    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}

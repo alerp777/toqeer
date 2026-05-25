@@ -26,7 +26,7 @@ import { useLanguage } from "../lib/useLanguage";
 
 function SkeletonNotifications() {
   return (
-    <div className="min-h-screen bg-[#F5F6F8] dark:bg-[#0b0e11]">
+    <div className="min-h-screen bg-page-bg dark:bg-surface">
       <ShimmerHeader>
         <div className="relative mb-4 flex items-center justify-between">
           <div className="space-y-2">
@@ -335,7 +335,7 @@ export default function Notifications() {
 
   if (isError)
     return (
-      <div className="flex min-h-screen flex-col bg-[#F5F6F8]">
+      <div className="flex min-h-screen flex-col bg-page-bg">
         <div
           className="rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 py-8"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -356,7 +356,7 @@ export default function Notifications() {
     );
 
   return (
-    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-[#F5F6F8]">
+    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}

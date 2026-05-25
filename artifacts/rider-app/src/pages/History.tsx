@@ -146,7 +146,7 @@ export default function History() {
   const totalLoaded = filtered.length;
 
   return (
-    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-[#F5F6F8]">
+    <PullToRefresh onRefresh={handlePullRefresh} className="min-h-screen bg-page-bg">
       <div
         className="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 px-5 pb-8"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
@@ -200,7 +200,7 @@ export default function History() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-10 space-y-3 bg-[#F5F6F8] px-4 pt-4 pb-2">
+      <div className="sticky top-0 z-10 space-y-3 bg-page-bg px-4 pt-4 pb-2">
         <div className="flex gap-1 rounded-full border border-gray-100 bg-white p-1 shadow-sm">
           {PERIOD_TABS.map((tab) => (
             <button

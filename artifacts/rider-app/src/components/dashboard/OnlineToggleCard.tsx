@@ -21,12 +21,12 @@ export const OnlineToggleCard = memo(function OnlineToggleCard({
 }: OnlineToggleCardProps) {
   return (
     <div
-      className={`rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 ${effectiveOnline ? "border-green-500/20 bg-white/[0.08]" : "border-white/[0.06] bg-white/[0.04]"}`}
+      className={`rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 ${effectiveOnline ? "border-green-500/20 bg-glass-raised" : "border-glass bg-glass-dim"}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${effectiveOnline ? "bg-green-500/15" : "bg-white/[0.06]"}`}
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${effectiveOnline ? "bg-green-500/15" : "bg-glass"}`}
           >
             {effectiveOnline ? (
               <Zap size={22} className="text-green-400" />

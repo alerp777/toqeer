@@ -895,7 +895,7 @@ export default function Home() {
     <PullToRefresh
       onRefresh={handlePullRefresh}
       accentColor="#F0B90B"
-      className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-[#F5F6F8]"
+      className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-page-bg"
     >
       <FixedBanners
         socketConnected={socketConnected}
@@ -1092,7 +1092,7 @@ export default function Home() {
             )}
 
             <div
-              className={`overflow-hidden rounded-3xl shadow-sm transition-all duration-300 ${newFlash ? "ring-4 ring-green-400 ring-offset-2 ring-offset-[#F5F6F8]" : ""}`}
+              className={`overflow-hidden rounded-3xl shadow-sm transition-all duration-300 ${newFlash ? "ring-4 ring-green-400 ring-offset-2 ring-offset-page-bg" : ""}`}
             >
               <RequestListHeader totalRequests={totalRequests} T={T} />
               <HomeRequestList
@@ -1149,7 +1149,7 @@ export default function Home() {
             <button
               onClick={toggleOnline}
               disabled={toggling}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#F0B90B] px-6 py-3 text-sm font-bold text-gray-900 shadow-sm shadow-amber-200/60 transition-all hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-gray-900 shadow-sm shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
               aria-label="Go online to start accepting orders"
             >
               <Zap size={16} /> Go Online
