@@ -1,5 +1,10 @@
 import { useCallback } from "react";
 
+export interface UserStatus {
+  status: string;
+  rejectionReason?: string | null;
+}
+
 export interface AppStatus {
   maintenance: boolean;
   maintenanceMsg?: string;

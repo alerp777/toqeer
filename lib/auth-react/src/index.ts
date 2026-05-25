@@ -110,4 +110,4 @@ export type { PendingOverlayProps, RejectedOverlayProps, MaintenanceOverlayProps
 
 // App status hook
 export { useAppStatus } from "./hooks/useAppStatus";
-export type { UseAppStatusOptions, AppStatus } from "./hooks/useAppStatus";
+export type { UseAppStatusOptions, AppStatus, UserStatus } from "./hooks/useAppStatus";

@@ -3,13 +3,13 @@ import { useAuthTheme } from "../context/ThemeContext";
 
 export interface GuestLandingStat {
   v: string;
-  l: string;
+  l: LocalisedString;
 }
 
 export interface GuestLandingFeature {
   icon: string;
-  title: string;
-  desc: string;
+  title: LocalisedString;
+  desc: LocalisedString;
   color?: string;
 }
 
@@ -352,7 +352,7 @@ export function GuestLanding({
                     fontFamily: bodyFont,
                   }}
                 >
-                  {s.l}
+                  {resolve(s.l, lang)}
                 </div>
               </div>
             ))}
@@ -404,7 +404,7 @@ export function GuestLanding({
                     fontFamily: bodyFont,
                   }}
                 >
-                  {f.title}
+                  {resolve(f.title, lang)}
                 </h3>
                 <p
                   style={{
@@ -415,7 +415,7 @@ export function GuestLanding({
                     fontFamily: bodyFont,
                   }}
                 >
-                  {f.desc}
+                  {resolve(f.desc, lang)}
                 </p>
               </div>
             ))}

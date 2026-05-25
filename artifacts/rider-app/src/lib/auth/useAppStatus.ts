@@ -1,16 +1,10 @@
 import { useAppStatus as _useAppStatus } from "@workspace/auth-react";
-import type { AppStatus } from "@workspace/auth-react";
 import { api } from "../api";
 import { usePlatformConfig } from "../useConfig";
 
-export type { AppStatus } from "@workspace/auth-react";
+export type { AppStatus, UserStatus } from "@workspace/auth-react";
 
-export interface UserStatus {
-  status: string;
-  rejectionReason?: string | null;
-}
-
-export function useAppStatus(): AppStatus {
+export function useAppStatus() {
   const { config, isLoading } = usePlatformConfig();
   return _useAppStatus({
     platformConfig: {
