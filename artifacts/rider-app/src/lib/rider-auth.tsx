@@ -21,6 +21,24 @@ import { getRiderApiBase } from "./envValidation";
 import { executeLogoutSequence } from "./logoutSequence";
 const log = createLogger("[auth]");
 
+/**
+ * Returns true when the error represents a network-level failure (server
+ * unreachable, DNS, CORS preflight, timeout) rather than an HTTP-level
+ * rejection (401, 403, 422 …).  Used at startup so a temporary outage does
+ * not clear a valid cached session and force the rider back to login.
+ */
+function isNetworkUnreachable(err: unknown): boolean {
+  /* fetch() itself threw — no HTTP response was received at all */
+  if (err instanceof TypeError) return true;
+  const e = err as Record<string, unknown>;
+  /* No numeric status → error came before an HTTP response (timeout, abort
+     already handled separately, ECONNREFUSED, etc.) */
+  if (typeof e.status !== "number") return true;
+  /* 5xx → server reached but failing; keep session so rider can retry */
+  if (e.status >= 500) return true;
+  return false;
+}
+
 export function normalizeRoles(u: { roles?: unknown; role?: unknown }): string[] {
   if (Array.isArray(u.roles)) return u.roles as string[];
   if (typeof u.role === "string") return [u.role];
@@ -72,6 +90,11 @@ interface AuthCtx {
   token: string | null;
   loading: boolean;
   storageError: boolean;
+  /** True when startup getMe() failed with a network / 5xx error.
+   *  The cached token is preserved so the rider's session survives a retry. */
+  apiUnreachable: boolean;
+  /** Re-attempt the startup getMe() without a full page reload. */
+  retryConnection: () => void;
   twoFactorPending: boolean;
   setTwoFactorPending: (v: boolean) => void;
   login: (token: string, user: AuthUser, refreshToken?: string) => void;
@@ -104,6 +127,10 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState(false);
+  const [apiUnreachable, setApiUnreachable] = useState(false);
+  /* Incrementing this counter re-triggers the startup getMe() effect so the
+     rider can retry without a full page reload. */
+  const [retryKey, setRetryKey] = useState(0);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const refreshUserInflightRef = useRef<Promise<void> | null>(null);
@@ -131,6 +158,10 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
   useEffect(() => {
     const controller = new AbortController();
     void (async () => {
+      /* Reset unreachable flag at the start of each attempt so the retry path
+         starts fresh without stale state from the previous attempt. */
+      setApiUnreachable(false);
+      setLoading(true);
       try {
         await tokenStoreReady;
       } catch (storeErr) {
@@ -191,6 +222,16 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
           });
           return;
         }
+        if (isNetworkUnreachable(err)) {
+          /* Network / 5xx failure — preserve the token so the session survives
+             a temporary outage.  The app will surface a retry screen instead
+             of bouncing the rider to the login page. */
+          log.warn("startup getMe failed with network error — keeping token, showing retry screen", err);
+          setApiUnreachable(true);
+          /* Do NOT clear the token or navigate to /login. */
+          return;
+        }
+        /* HTTP 4xx (401, 403, …) — the token is invalid; clear it as before. */
         api.clearTokens();
         setToken(null);
       } finally {
@@ -198,7 +239,7 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
       }
     })();
     return () => controller.abort();
-  }, [sharedAuth]);
+  }, [sharedAuth, retryKey]);
 
   useEffect(() => {
     const clearAuth = () => {
@@ -276,6 +317,13 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
 
   const clearSessionExpired = useCallback(() => setSessionExpired(false), []);
 
+  const retryConnection = useCallback(() => {
+    /* Re-run the startup getMe() effect without a full page reload.
+       Also flush any stale React Query cache so the retry starts clean. */
+    queryClient.clear();
+    setRetryKey((k) => k + 1);
+  }, [queryClient]);
+
   return (
     <Ctx.Provider
       value={{
@@ -283,6 +331,8 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
         token,
         loading,
         storageError,
+        apiUnreachable,
+        retryConnection,
         twoFactorPending,
         setTwoFactorPending,
         login,
