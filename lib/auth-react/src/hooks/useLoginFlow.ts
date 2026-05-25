@@ -22,9 +22,11 @@ interface ApiResponse<T> {
 export interface UseLoginFlowOptions {
   baseURL?: string;
   role?: "customer" | "rider" | "vendor" | "admin";
-  onSuccess?: (user: AuthUser, accessToken: string) => void;
+  onSuccess?: (user: AuthUser, accessToken: string, refreshToken?: string) => void;
   /** Optional function to translate raw API error strings before displaying them */
   translateError?: (raw: string) => string;
+  /** Called with the dev-only OTP when it is present in an API response (dev mode only) */
+  onDevOtp?: (otp: string) => void;
 }
 
 export function useLoginFlow({
@@ -32,6 +34,7 @@ export function useLoginFlow({
   role,
   onSuccess,
   translateError,
+  onDevOtp,
 }: UseLoginFlowOptions = {}) {
   const ctx = useContext(AuthContext);
 
@@ -139,7 +142,8 @@ export function useLoginFlow({
             }
             // Fire-and-forget: errors here are surfaced in verifyOtp if OTP wasn't sent
             try {
-              await apiFetch("/api/auth/send-otp", sendBody);
+              const sendRes = await apiFetch<{ devOtp?: string }>("/api/auth/send-otp", sendBody);
+              if (sendRes.data?.devOtp && onDevOtp) onDevOtp(sendRes.data.devOtp);
             } catch (sendErr) {
               const msg = sendErr instanceof Error ? sendErr.message : "Failed to send OTP";
               setError(applyTranslation(msg));
@@ -177,6 +181,7 @@ export function useLoginFlow({
         const res = await apiFetch<{
           user: AuthUser;
           accessToken: string;
+          refreshToken?: string;
           twoFactorRequired?: boolean;
         }>("/api/auth/verify-otp", body);
         const data = res.data!;
@@ -186,7 +191,7 @@ export function useLoginFlow({
           return;
         }
         ctx?.login(data.user, data.accessToken);
-        onSuccess?.(data.user, data.accessToken);
+        onSuccess?.(data.user, data.accessToken, data.refreshToken);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "OTP verification failed";
         setError(applyTranslation(msg));
@@ -210,6 +215,7 @@ export function useLoginFlow({
         const res = await apiFetch<{
           user: AuthUser;
           accessToken: string;
+          refreshToken?: string;
           twoFactorRequired?: boolean;
         }>("/api/auth/login", { identifier, password });
         const data = res.data!;
@@ -219,7 +225,7 @@ export function useLoginFlow({
           return;
         }
         ctx?.login(data.user, data.accessToken);
-        onSuccess?.(data.user, data.accessToken);
+        onSuccess?.(data.user, data.accessToken, data.refreshToken);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Password login failed";
         setError(applyTranslation(msg));
@@ -240,7 +246,7 @@ export function useLoginFlow({
       setLoading(true);
       setError(null);
       try {
-        const res = await apiFetch<{ user: AuthUser; accessToken: string }>(
+        const res = await apiFetch<{ user: AuthUser; accessToken: string; refreshToken?: string }>(
           "/api/auth/2fa/verify",
           { identifier, code }
         );
@@ -248,7 +254,7 @@ export function useLoginFlow({
         setTwoFactorPending(false);
         ctx?.setTwoFactorPending(false);
         ctx?.login(data.user, data.accessToken);
-        onSuccess?.(data.user, data.accessToken);
+        onSuccess?.(data.user, data.accessToken, data.refreshToken);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "2FA verification failed";
         setError(applyTranslation(msg));

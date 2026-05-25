@@ -65,7 +65,9 @@ export interface LoginScreenProps {
   role: AppRole;
   customFields?: CustomField[];
   baseURL?: string;
-  onSuccess?: (user: AuthUser, token: string) => void;
+  onSuccess?: (user: AuthUser, token: string, refreshToken?: string) => void;
+  /** Called when an OTP is sent; receives the devOtp string if present in the response (dev only) */
+  onOtpSent?: (devOtp?: string) => void;
   onRegisterPress?: () => void;
   enableSocial?: boolean;
   enableMagicLink?: boolean;
@@ -118,6 +120,7 @@ export function LoginScreen({
   customFields = [],
   baseURL = "",
   onSuccess,
+  onOtpSent,
   onRegisterPress,
   enableSocial = false,
   enableMagicLink = false,
@@ -209,6 +212,7 @@ export function LoginScreen({
     role: role === "admin" ? undefined : role,
     onSuccess,
     translateError,
+    onDevOtp: onOtpSent,
   });
 
   useEffect(() => {
@@ -324,7 +328,7 @@ export function LoginScreen({
       }
       const data = (await res.json()) as { token?: string; accessToken?: string; refreshToken?: string };
       const token = (data.accessToken ?? data.token ?? "") as string;
-      onSuccess?.({ id: "", email: emailAddress, roles: [role] } as unknown as AuthUser, token);
+      onSuccess?.({ id: "", email: emailAddress, roles: [role] } as unknown as AuthUser, token, data.refreshToken);
     } catch (e) {
       setEmailError(e instanceof Error ? e.message : "OTP verification failed");
       setEmailOtp("");
