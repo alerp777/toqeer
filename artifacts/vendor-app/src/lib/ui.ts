@@ -93,7 +93,7 @@ export const CAMPAIGN_STATUS_BADGE: Record<string, string> = {
 
 /* ── Layout ── */
 export const SECTION = "px-4 py-4 space-y-3";
-export const PAGE = "min-h-screen bg-[#0A0F1A]";
+export const PAGE = "min-h-screen bg-gray-50 dark:bg-[#0A0F1A]";
 
 /* ── Helpers ── */
 export function fc(n: string | number | null | undefined, currencySymbol = "Rs."): string {

@@ -657,7 +657,7 @@ export default function Wallet() {
 
   if (!config.features.wallet) {
     return (
-      <div className="bg-[#0A0F1A] md:bg-transparent">
+      <div className="bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent">
         <PageHeader title={T("wallet")} subtitle={T("earningsPayoutsShort")} />
         <div className="px-4 py-8 text-center">
           <div className="mx-auto max-w-sm rounded-3xl bg-white p-10 shadow-sm">

@@ -505,7 +505,7 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
     >
       <PullToRefresh
         onRefresh={handlePullRefresh}
-        className="min-h-screen bg-[#0A0F1A] md:bg-transparent"
+        className="min-h-screen bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent"
       >
         {/* ── Offline Banner ── */}
         {!isOnline && (

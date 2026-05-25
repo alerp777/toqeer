@@ -236,7 +236,7 @@ export default function Analytics() {
 
   if (isError)
     return (
-      <div className="bg-[#0A0F1A] md:bg-transparent">
+      <div className="bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent">
         <PageHeader title={T("analytics")} subtitle={T("storePerformance")} />
         <div className="px-4 py-4">
           <ErrorState

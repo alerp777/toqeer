@@ -5,10 +5,11 @@ const THEME_KEY = "ajkmart_dark_mode";
 export function useTheme() {
   const [isDark, setIsDark] = useState(() => {
     try {
-      return localStorage.getItem(THEME_KEY) === "true";
+      const stored = localStorage.getItem(THEME_KEY);
+      return stored === null ? true : stored === "true";
     } catch (err) {
       console.warn("[artifacts/vendor-app/src/lib/useTheme.ts]", err);
-      return false;
+      return true;
     } // eslint-disable-line no-console
   });
 

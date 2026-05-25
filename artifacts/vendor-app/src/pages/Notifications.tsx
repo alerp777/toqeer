@@ -134,7 +134,7 @@ export default function Notifications() {
   });
 
   return (
-    <div className="bg-[#0A0F1A] md:bg-transparent">
+    <div className="bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent">
       <PageHeader
         title={T("notifications")}
         subtitle={unread > 0 ? `${unread} ${T("unread")}` : T("allCaughtUp")}

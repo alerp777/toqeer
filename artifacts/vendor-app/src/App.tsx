@@ -955,7 +955,7 @@ function AppRoutes() {
     );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-100 dark:bg-[#060A14]">
       {/* ── Maintenance overlay: shown immediately but blocks after 5-min grace ── */}
       {config.platform.appStatus === "maintenance" && maintenanceBlocked && (
         <MaintenanceScreen
