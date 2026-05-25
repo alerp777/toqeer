@@ -1,4 +1,5 @@
 import { createLogger } from "@/lib/logger";
+import { ShimmerBlock } from "@/components/ui/shimmer";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import { Bot, Flag, MoreVertical, Paperclip, Send, Sparkles, Trash2, UserX, X } from "lucide-react";
@@ -66,10 +67,10 @@ interface AiMessage {
 function ConversationSkeleton() {
   return (
     <div className="flex items-center gap-3 rounded-2xl p-3">
-      <div className="h-12 w-12 animate-pulse rounded-full bg-gray-200" />
+      <ShimmerBlock className="h-12 w-12 flex-shrink-0 rounded-full" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-3 w-48 animate-pulse rounded bg-gray-100" />
+        <ShimmerBlock className="h-3.5 w-32 rounded" />
+        <ShimmerBlock className="h-3 w-48 rounded" />
       </div>
     </div>
   );
@@ -78,8 +79,8 @@ function ConversationSkeleton() {
 function MessageSkeleton({ align }: { align: "left" | "right" }) {
   return (
     <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`h-9 animate-pulse rounded-2xl bg-gray-200 ${align === "right" ? "w-40 rounded-br-md" : "w-52 rounded-bl-md"}`}
+      <ShimmerBlock
+        className={`h-9 rounded-2xl ${align === "right" ? "w-40 rounded-br-md" : "w-52 rounded-bl-md"}`}
       />
     </div>
   );
@@ -1151,26 +1152,18 @@ export default function Chat() {
           <div className="space-y-2">
             {requestsLoading ? (
               <>
-                <div className="flex animate-pulse items-center justify-between rounded-2xl bg-gray-50 p-4">
-                  <div className="space-y-2">
-                    <div className="h-3.5 w-28 rounded bg-gray-200" />
-                    <div className="h-3 w-20 rounded bg-gray-100" />
+                {[28, 24].map((w, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-2xl bg-gray-50 p-4">
+                    <div className="space-y-2">
+                      <ShimmerBlock className={`h-3.5 w-${w} rounded`} />
+                      <ShimmerBlock className={`h-3 w-${i === 0 ? 20 : 16} rounded`} />
+                    </div>
+                    <div className="flex gap-2">
+                      <ShimmerBlock className="h-9 w-16 rounded-xl" />
+                      <ShimmerBlock className="h-9 w-16 rounded-xl" />
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <div className="h-9 w-16 rounded-xl bg-gray-200" />
-                    <div className="h-9 w-16 rounded-xl bg-gray-100" />
-                  </div>
-                </div>
-                <div className="flex animate-pulse items-center justify-between rounded-2xl bg-gray-50 p-4">
-                  <div className="space-y-2">
-                    <div className="h-3.5 w-24 rounded bg-gray-200" />
-                    <div className="h-3 w-16 rounded bg-gray-100" />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="h-9 w-16 rounded-xl bg-gray-200" />
-                    <div className="h-9 w-16 rounded-xl bg-gray-100" />
-                  </div>
-                </div>
+                ))}
               </>
             ) : requests.length === 0 ? (
               <p className="py-12 text-center text-gray-400">No pending requests</p>
