@@ -1,6 +1,7 @@
 import { AlertTriangle, Bike, Eye } from "lucide-react";
 import type { Order, Ride } from "../../lib/api";
 import { OrderRequestCard, RideRequestCard } from "../dashboard";
+import { ShimmerBlock } from "../ui/shimmer";
 
 function getDeliveryEarn(type: string, config: any): number {
   const df = config.deliveryFee;
@@ -79,9 +80,18 @@ export function HomeRequestList({
 }: HomeRequestListProps) {
   if (requestsLoading) {
     return (
-      <div className="bg-white p-10 text-center">
-        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
-        <p className="text-xs font-medium text-gray-400">Loading requests…</p>
+      <div className="space-y-px bg-white p-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-start gap-3 rounded-2xl p-3">
+            <ShimmerBlock className="h-11 w-11 flex-shrink-0 rounded-2xl" />
+            <div className="flex-1 space-y-2">
+              <ShimmerBlock className="h-4 w-2/5 rounded-lg" />
+              <ShimmerBlock className="h-3 w-3/5 rounded-lg" />
+              <ShimmerBlock className="h-3 w-1/2 rounded-lg" />
+            </div>
+            <ShimmerBlock className="h-10 w-16 flex-shrink-0 rounded-2xl" />
+          </div>
+        ))}
       </div>
     );
   }

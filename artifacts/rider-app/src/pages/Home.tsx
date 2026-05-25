@@ -6,7 +6,7 @@ const log = createLogger("[Home]");
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tDual } from "@workspace/i18n";
-import { AlertTriangle, CheckCircle, ChevronRight, Clock, WifiOff, Wifi, Zap } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronRight, Clock, Wifi, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { haversineMeters } from "../components/dashboard/helpers";
 import { api, type Order, type Ride } from "../lib/api";
@@ -63,7 +63,6 @@ export default function Home() {
   const [tabVisible, setTabVisible] = useState(!document.hidden);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error">("success");
-  const [slowNetChip, setSlowNetChip] = useState(false);
   const [newFlash, setNewFlash] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set<string>());
   const [profileBannerDismissed, setProfileBannerDismissed] = useState(() => {
@@ -132,16 +131,6 @@ export default function Home() {
     toastTimerRef.current = setTimeout(() => setToastMsg(""), 3000);
   }, []);
 
-  const prevTierRef = useRef<string>(networkTier);
-  useEffect(() => {
-    const prev = prevTierRef.current;
-    prevTierRef.current = networkTier;
-    if (networkTier === "slow" && prev !== "slow") {
-      setSlowNetChip(true);
-    } else if (networkTier !== "slow" && prev === "slow") {
-      setSlowNetChip(false);
-    }
-  }, [networkTier]);
 
   const [wakeLockWarning, setWakeLockWarning] = useState(false);
   const [optimisticOnline, setOptimisticOnline] = useState<boolean | null>(null);
@@ -1160,7 +1149,7 @@ export default function Home() {
             <button
               onClick={toggleOnline}
               disabled={toggling}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-gray-800 active:scale-[0.98] disabled:opacity-60"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#F0B90B] px-6 py-3 text-sm font-bold text-gray-900 shadow-sm shadow-amber-200/60 transition-all hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60"
               aria-label="Go online to start accepting orders"
             >
               <Zap size={16} /> Go Online
@@ -1188,14 +1177,6 @@ export default function Home() {
         </div>
       )}
 
-      {slowNetChip && !toastMsg && (
-        <div className="pointer-events-none fixed top-6 right-4 left-4 z-[1090] animate-[slideDown_0.3s_ease-out]">
-          <div className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-xl">
-            <WifiOff size={15} />
-            Slow connection — refreshing less often
-          </div>
-        </div>
-      )}
 
       {hasActiveTask && !config.content.trackerBannerEnabled && (
         <Link

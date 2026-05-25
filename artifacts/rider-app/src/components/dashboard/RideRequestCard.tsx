@@ -323,7 +323,7 @@ export const RideRequestCard = memo(function RideRequestCard({
             disabled={
               rideExpired || acceptPending || anyAcceptPending || ignorePending || !!isRestricted
             }
-            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-900 py-2.5 text-sm font-extrabold text-white shadow-sm transition-all hover:bg-gray-800 active:scale-[0.98] disabled:opacity-60"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#F0B90B] py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-amber-200/60 transition-all hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60"
             aria-label="Accept ride"
           >
             <CheckCircle size={15} />
@@ -388,7 +388,7 @@ export const RideRequestCard = memo(function RideRequestCard({
                 <button
                   onClick={() => onAccept(r.id)}
                   disabled={rideExpired || acceptPending || anyAcceptPending || !!isRestricted}
-                  className="flex min-h-[44px] items-center gap-1 rounded-xl bg-gray-900 px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
+                  className="flex min-h-[44px] items-center gap-1 rounded-xl bg-[#F0B90B] px-3.5 py-2 text-sm font-bold text-gray-900 shadow-sm shadow-amber-200/60 transition-colors hover:bg-amber-400 disabled:opacity-60"
                   aria-label="Accept ride at current fare"
                 >
                   <CheckCircle size={13} /> Accept
@@ -463,7 +463,7 @@ export const RideRequestCard = memo(function RideRequestCard({
               <button
                 onClick={() => onAccept(r.id)}
                 disabled={rideExpired || acceptPending || anyAcceptPending || !!isRestricted}
-                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-900 py-2.5 text-sm font-extrabold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-60"
+                className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#F0B90B] py-2.5 text-sm font-extrabold text-gray-900 shadow-sm shadow-amber-200/60 transition-all hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60"
                 aria-label="Accept ride"
               >
                 <CheckCircle size={14} />
