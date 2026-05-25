@@ -102,7 +102,7 @@ export type { UseForgotPasswordFlowOptions, ForgotPasswordStep } from "./hooks/u
 
 // Guest landing page
 export { GuestLanding } from "./components/GuestLanding";
-export type { GuestLandingProps, GuestLandingStat, GuestLandingFeature } from "./components/GuestLanding";
+export type { GuestLandingProps, GuestLandingStat, GuestLandingFeature, GuestLandingStep, GuestLandingTestimonial, GuestLandingFaqItem, GuestLandingTrustBadge } from "./components/GuestLanding";
 
 // Auth overlay screens
 export { PendingOverlay, RejectedOverlay, MaintenanceOverlay, BiometricEnrollOverlay } from "./components/AuthOverlay";
