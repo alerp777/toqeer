@@ -9,6 +9,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
+import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { useStoreStatus } from "../hooks/useStoreStatus";
 import { StoreHoursChip } from "../components/ui/StoreHoursChip";
 import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
@@ -522,12 +523,7 @@ export default function Dashboard() {
       onRefresh={handleRefresh}
       className="min-h-screen bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent"
     >
-      {/* ── Offline Banner ── */}
-      {!isOnline && (
-        <div className="bg-red-500 px-4 py-2 text-center text-xs font-bold text-white">
-          📴 You're offline — data may be out of date
-        </div>
-      )}
+      <OfflineBanner show={!isOnline} />
       {/* ── Header ── */}
       <PageHeader
         title={

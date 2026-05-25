@@ -13,6 +13,7 @@ import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerCards, ShimmerRows } from "../components/ui/ShimmerBlock";
+import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
 import { unlockAudio } from "../lib/notificationSound";
@@ -507,19 +508,8 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
         onRefresh={handlePullRefresh}
         className="min-h-screen bg-gray-50 dark:bg-[#0A0F1A] md:bg-transparent"
       >
-        {/* ── Offline Banner ── */}
-        {!isOnline && (
-          <div className="bg-red-500 px-4 py-2 text-center text-xs font-bold text-white">
-            📴 You're offline — order updates will be queued and sent when reconnected
-          </div>
-        )}
-        {/* ── Socket.IO reconnect indicator — shown only when real-time link drops ── */}
-        {isOnline && !socketConnected && (
-          <div className="flex items-center justify-center gap-2 bg-amber-500 px-4 py-2 text-center text-xs font-bold text-white">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white/70" />
-            Real-time updates disconnected — reconnecting…
-          </div>
-        )}
+        <OfflineBanner show={!isOnline} message="📴 You're offline — order updates will be queued and sent when reconnected" />
+        <OfflineBanner show={isOnline && !socketConnected} variant="socket" />
         {syncToast && (
           <div className="fixed top-4 right-4 left-4 z-[9999] rounded-2xl bg-gray-900 px-4 py-3 text-center text-sm font-semibold text-white shadow-xl">
             {syncToast}
