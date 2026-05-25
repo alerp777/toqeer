@@ -9,6 +9,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
+import { useStoreStatus } from "../hooks/useStoreStatus";
 import { StoreHoursChip } from "../components/ui/StoreHoursChip";
 import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
 import { BADGE_BLUE, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
@@ -419,13 +420,8 @@ export default function Dashboard() {
     onError: (e: Error) => showToast("❌ " + errMsg(e)),
   });
 
-  const toggleMut = useMutation({
-    mutationFn: (isOpen: boolean) => api.updateStore({ storeIsOpen: isOpen }),
-    onSuccess: () => {
-      void refreshUser();
-      void qc.invalidateQueries({ queryKey: ["vendor-stats"] });
-    },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+  const { isOpen, storeHours, toggle, isPending: togglePending } = useStoreStatus({
+    onError: (e) => showToast("❌ " + errMsg(e)),
   });
 
   const [schedSaving, setSchedSaving] = useState(false);
@@ -570,17 +566,17 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <span className="hidden text-sm font-medium text-gray-500 md:block">{T("store")}:</span>
             <button
-              onClick={() => toggleMut.mutate(!user?.storeIsOpen)}
-              disabled={toggleMut.isPending}
-              className={`relative h-8 w-14 flex-shrink-0 rounded-full transition-all duration-300 focus:outline-none ${user?.storeIsOpen ? "bg-green-400" : "bg-gray-300"}`}
+              onClick={toggle}
+              disabled={togglePending}
+              className={`relative h-8 w-14 flex-shrink-0 rounded-full transition-all duration-300 focus:outline-none ${isOpen ? "bg-green-400" : "bg-gray-300"}`}
             >
               <div
-                className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${user?.storeIsOpen ? "left-7" : "left-1"}`}
+                className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${isOpen ? "left-7" : "left-1"}`}
               />
             </button>
             <div className="flex flex-col items-start gap-0.5">
-              <StoreStatusBadge isOpen={!!user?.storeIsOpen} />
-              <StoreHoursChip storeHours={user?.storeHours} />
+              <StoreStatusBadge isOpen={isOpen} />
+              <StoreHoursChip storeHours={storeHours} />
             </div>
           </div>
         }
@@ -593,12 +589,12 @@ export default function Dashboard() {
             <div className="text-right">
               <p className="text-xs font-medium text-orange-100">{T("storeStatus")}</p>
               <button
-                onClick={() => toggleMut.mutate(!user?.storeIsOpen)}
-                disabled={toggleMut.isPending}
-                className={`relative mt-1 block h-7 w-14 rounded-full transition-all duration-300 ${user?.storeIsOpen ? "bg-green-400" : "bg-white/30"}`}
+                onClick={toggle}
+                disabled={togglePending}
+                className={`relative mt-1 block h-7 w-14 rounded-full transition-all duration-300 ${isOpen ? "bg-green-400" : "bg-white/30"}`}
               >
                 <div
-                  className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 ${user?.storeIsOpen ? "left-8" : "left-1"}`}
+                  className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 ${isOpen ? "left-8" : "left-1"}`}
                 />
               </button>
             </div>
@@ -821,7 +817,7 @@ export default function Dashboard() {
         <QuickActions />
 
         {/* Weekly Store Schedule Editor */}
-        <ScheduleEditor storeHours={user?.storeHours} onSave={saveSchedule} saving={schedSaving} />
+        <ScheduleEditor storeHours={storeHours} onSave={saveSchedule} saving={schedSaving} />
 
         {/* ── Desktop: 2-column layout for orders ── */}
         <div className="space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">

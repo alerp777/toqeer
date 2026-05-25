@@ -8,6 +8,7 @@ import { StoreStatusBadge } from "./ui/StoreStatusBadge";
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
+import { useStoreStatus } from "../hooks/useStoreStatus";
 
 const items: { href: string; labelKey: TranslationKey; icon: string; descKey: TranslationKey }[] = [
   { href: "/", labelKey: "dashboard", icon: "📊", descKey: "overviewStats" },
@@ -26,6 +27,7 @@ const items: { href: string; labelKey: TranslationKey; icon: string; descKey: Tr
 export function SideNav() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { isOpen, storeHours } = useStoreStatus();
   const { config } = usePlatformConfig();
   const { symbol: currencySymbol } = useCurrency();
   const { language } = useLanguage();
@@ -89,12 +91,12 @@ export function SideNav() {
         </div>
 
         <div className="relative mt-3 flex items-center justify-between">
-          <StoreStatusBadge isOpen={!!user?.storeIsOpen} variant="glass" />
+          <StoreStatusBadge isOpen={isOpen} variant="glass" />
           <span className="text-xs font-semibold" style={{ color: "rgba(219,234,254,0.70)" }}>
             {Math.round(100 - (config.platform.vendorCommissionPct ?? 15))}% earnings
           </span>
         </div>
-        <StoreHoursChip storeHours={user?.storeHours} variant="glass" className="mt-1" />
+        <StoreHoursChip storeHours={storeHours} variant="glass" className="mt-1" />
       </div>
 
       {/* ── Navigation Items ── */}
