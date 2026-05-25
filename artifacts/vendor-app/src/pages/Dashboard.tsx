@@ -9,6 +9,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
+import { StoreHoursChip } from "../components/ui/StoreHoursChip";
 import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
 import { BADGE_BLUE, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
 import { usePlatformConfig } from "../lib/useConfig";
@@ -577,7 +578,10 @@ export default function Dashboard() {
                 className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${user?.storeIsOpen ? "left-7" : "left-1"}`}
               />
             </button>
-            <StoreStatusBadge isOpen={!!user?.storeIsOpen} />
+            <div className="flex flex-col items-start gap-0.5">
+              <StoreStatusBadge isOpen={!!user?.storeIsOpen} />
+              <StoreHoursChip storeHours={user?.storeHours} />
+            </div>
           </div>
         }
         mobileContent={

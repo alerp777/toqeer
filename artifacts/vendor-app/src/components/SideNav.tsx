@@ -3,6 +3,7 @@ import { tDual, type TranslationKey } from "@workspace/i18n";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { fc } from "../lib/ui";
+import { StoreHoursChip } from "./ui/StoreHoursChip";
 import { StoreStatusBadge } from "./ui/StoreStatusBadge";
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
@@ -93,6 +94,7 @@ export function SideNav() {
             {Math.round(100 - (config.platform.vendorCommissionPct ?? 15))}% earnings
           </span>
         </div>
+        <StoreHoursChip storeHours={user?.storeHours} variant="glass" className="mt-1" />
       </div>
 
       {/* ── Navigation Items ── */}
