@@ -64,3 +64,8 @@ attached_assets/
 
 # Security — no committed key/secret reference files
 mykey*.md
+
+# Android keystores — NEVER commit these; store passwords in CI secrets
+*.jks
+*.keystore
+.env.capacitor.local
