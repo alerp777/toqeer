@@ -1,19 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import {
+  onConnect,
+  onDisconnect,
+  onNewOrder,
+  onOrderUpdate,
+  onRiderLocation,
+} from "../lib/socket";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
-import {
-  markOrderSeen,
-  playOrderSound,
-  unlockAudio,
-  wasOrderSeenRecently,
-} from "../lib/notificationSound";
+import { unlockAudio } from "../lib/notificationSound";
 import { CARD, DEFAULT_COMMISSION_PCT, errMsg, fc, fd } from "../lib/ui";
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
@@ -118,7 +119,6 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
   const [bulkConfirm, setBulkConfirm] = useState<"accept" | "reject" | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [socketConnected, setSocketConnected] = useState(true);
-  const socketRef = useRef<Socket | null>(null);
   const [riderPositions, setRiderPositions] = useState<
     Record<string, { lat: number; lng: number; updatedAt: string }>
   >({});
@@ -320,94 +320,49 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
     return () => window.removeEventListener("focus", handler);
   }, []);
 
-  /* Socket.io: subscribe to vendor:{userId} room for real-time order events.
-   *
-   * Room re-join on reconnect: `vendor:join` is emitted on every `connect`
-   * event (not just the first one) so reconnections after a network drop
-   * automatically restore the real-time channel without vendor action.
-   * Socket.IO re-fires `connect` after each successful reconnection, making
-   * this the single reliable hook for both initial join and post-disconnect
-   * re-join. The `reconnect` event fires at the same time and is added as an
-   * explicit belt-and-suspenders guard. */
+  /* Subscribe to the global vendor socket (singleton managed in lib/socket.ts).
+   * The socket is connected/disconnected by App.tsx on login/logout so it is
+   * always available regardless of which page the vendor is currently viewing.
+   * Orders.tsx only needs to subscribe to events — no io() call needed here. */
   useEffect(() => {
     if (!user?.id) return;
-    const token = api.getToken();
-    const socket = io(window.location.origin, {
-      path: "/api/socket.io",
-      query: { rooms: `vendor:${user.id}` },
-      auth: { token },
-      extraHeaders: { Authorization: `Bearer ${token}` },
-      transports: ["polling", "websocket"],
-      /* Reconnection settings — aggressive retries so a brief network drop
-         does not permanently lose the real-time channel. */
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-    });
-    socketRef.current = socket;
 
-    /* joinVendorRoom: called on initial connect AND every reconnect. */
-    const joinVendorRoom = () => {
-      socket.emit("join", `vendor:${user.id}`);
-    };
-
-    let isFirstConnect = true;
-    socket.on("connect", () => {
-      joinVendorRoom();
+    const unsubConnect = onConnect(() => {
       setSocketConnected(true);
-      if (!isFirstConnect) {
-        /* Catch-up: fetch any orders that arrived while disconnected. */
-        void qc.invalidateQueries({ queryKey: ["vendor-orders"] });
-      }
-      isFirstConnect = false;
-    });
-
-    socket.on("disconnect", () => {
-      setSocketConnected(false);
-    });
-
-    /* Belt-and-suspenders: socket.io-client `reconnect` fires after the
-       transport is fully re-established. Re-emit the join in case the
-       `connect` event was missed for any reason. */
-    socket.io.on("reconnect", () => {
-      joinVendorRoom();
-      setSocketConnected(true);
-    });
-    socket.on(
-      "rider:location",
-      (payload: { userId: string; latitude: number; longitude: number; updatedAt: string }) => {
-        setRiderPositions((prev) => ({
-          ...prev,
-          [payload.userId]: {
-            lat: payload.latitude,
-            lng: payload.longitude,
-            updatedAt: payload.updatedAt,
-          },
-        }));
-      }
-    );
-    socket.on("order:new", (payload?: { _isTest?: boolean; id?: string }) => {
-      /* Deduplicate: if the FCM foreground handler already alerted for this
-         order within the last 5 seconds, skip the sound/badge to avoid a
-         double-alert. Cache invalidation is always safe to run. */
-      const orderId = payload?.id;
-      const alreadySeen = orderId ? wasOrderSeenRecently(orderId) : false;
-      if (orderId && !alreadySeen) markOrderSeen(orderId);
-      void qc.invalidateQueries({ queryKey: ["vendor-orders"] });
-      if (!payload?._isTest && !alreadySeen) {
-        playOrderSound();
-        setUnreadCount((c) => c + 1);
-      }
-    });
-    socket.on("order:update", () => {
+      /* Catch-up: fetch any orders that arrived while disconnected. */
       void qc.invalidateQueries({ queryKey: ["vendor-orders"] });
     });
+
+    const unsubDisconnect = onDisconnect(() => setSocketConnected(false));
+
+    const unsubNewOrder = onNewOrder(() => {
+      /* Sound + banner are handled globally in App.tsx; here we only update
+         the unread badge and refresh the order list for this page. */
+      void qc.invalidateQueries({ queryKey: ["vendor-orders"] });
+      setUnreadCount((c) => c + 1);
+    });
+
+    const unsubOrderUpdate = onOrderUpdate(() => {
+      void qc.invalidateQueries({ queryKey: ["vendor-orders"] });
+    });
+
+    const unsubRiderLocation = onRiderLocation((payload) => {
+      setRiderPositions((prev) => ({
+        ...prev,
+        [payload.userId]: {
+          lat: payload.latitude,
+          lng: payload.longitude,
+          updatedAt: payload.updatedAt,
+        },
+      }));
+    });
+
     return () => {
-      socket.io.off("reconnect");
-      socket.disconnect();
-      socketRef.current = null;
-      setSocketConnected(false);
+      unsubConnect();
+      unsubDisconnect();
+      unsubNewOrder();
+      unsubOrderUpdate();
+      unsubRiderLocation();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);

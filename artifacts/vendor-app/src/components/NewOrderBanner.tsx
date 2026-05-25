@@ -5,11 +5,12 @@ import type { VendorNewOrderEvent } from "../lib/socket";
 interface Props {
   order: VendorNewOrderEvent | null;
   onDismiss: () => void;
+  currencySymbol?: string;
 }
 
 const AUTO_DISMISS_MS = 12_000;
 
-export function NewOrderBanner({ order, onDismiss }: Props) {
+export function NewOrderBanner({ order, onDismiss, currencySymbol = "Rs" }: Props) {
   const [, navigate] = useLocation();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [visible, setVisible] = useState(false);
@@ -74,7 +75,7 @@ export function NewOrderBanner({ order, onDismiss }: Props) {
               <p className="truncate text-sm font-bold text-gray-800">
                 {itemCount > 0 ? `${itemCount} item${itemCount > 1 ? "s" : ""}` : "Order placed"}
                 {" · "}
-                <span className="text-blue-600">Rs {total}</span>
+                <span className="text-blue-600">{currencySymbol} {total}</span>
               </p>
               {order.paymentMethod && (
                 <p className="mt-0.5 text-xs text-gray-400 capitalize">

@@ -6,9 +6,15 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Toaster } from "./components/ui/toaster";
 import { ThemeProvider } from "./lib/auth/ThemeContext";
 import { vendorTheme } from "./lib/auth/theme";
-import { markOrderSeen, wasOrderSeenRecently } from "./lib/notificationSound";
+import { markOrderSeen, playOrderSound, wasOrderSeenRecently } from "./lib/notificationSound";
 import { consumePendingNotificationTap, registerPush, type PushErrorHandler } from "./lib/push";
-import { usePlatformConfig } from "./lib/useConfig";
+import {
+  connectVendorSocket,
+  disconnectVendorSocket,
+  onNewOrder,
+  type VendorNewOrderEvent,
+} from "./lib/socket";
+import { useCurrency, usePlatformConfig } from "./lib/useConfig";
 import { useLanguage } from "./lib/useLanguage";
 import { AuthProvider, useAuth } from "./lib/vendor-auth";
 
@@ -19,6 +25,7 @@ import { initErrorReporter } from "./lib/error-reporter";
 import { initSentry } from "./lib/sentry";
 
 import { AnnouncementBar } from "./components/AnnouncementBar";
+import { NewOrderBanner } from "./components/NewOrderBanner";
 import { BottomNav } from "./components/BottomNav";
 import { MaintenanceScreen } from "./components/MaintenanceScreen";
 import { PopupEngine } from "./components/PopupEngine";
@@ -378,6 +385,7 @@ function AppRoutes() {
   const { user, loading, logout, storageError, sessionExpired, clearSessionExpired, refreshUser } =
     useAuth();
   const { config } = usePlatformConfig();
+  const { symbol: currencySymbol } = useCurrency();
   useLanguage(); /* initialises RTL + language from API on mount */
 
   useEffect(() => {
@@ -455,6 +463,30 @@ function AppRoutes() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, navigate]);
+
+  /* ── Global Socket.IO lifecycle — connect on login, disconnect on logout ──
+     Single shared socket (via connectVendorSocket singleton) so all pages
+     receive real-time order events regardless of which route is active.
+     The NewOrderBanner is mounted here at app-root level so it appears on
+     every page — not just /orders. */
+  const [newOrder, setNewOrder] = useState<VendorNewOrderEvent | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    connectVendorSocket(user.id);
+    const unsubOrder = onNewOrder((order) => {
+      setNewOrder(order);
+      playOrderSound();
+      void queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor-stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor-notifs-count"] });
+    });
+    return () => {
+      unsubOrder();
+      disconnectVendorSocket();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   /* ── Push registration error state: shown as a dismissable banner ── */
   const [pushError, setPushError] = useState<
@@ -1086,6 +1118,13 @@ function AppRoutes() {
               </Switch>
             </div>
           </div>
+
+          {/* Global New Order Banner — visible on every page */}
+          <NewOrderBanner
+            order={newOrder}
+            currencySymbol={currencySymbol}
+            onDismiss={() => setNewOrder(null)}
+          />
 
           {/* Mobile Bottom Nav */}
           <BottomNav />

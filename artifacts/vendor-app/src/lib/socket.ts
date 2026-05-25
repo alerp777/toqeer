@@ -14,12 +14,25 @@ export interface VendorNewOrderEvent {
   [key: string]: unknown;
 }
 
+export interface RiderLocationPayload {
+  userId: string;
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
+}
+
 type NewOrderHandler = (order: VendorNewOrderEvent) => void;
 type OrderUpdateHandler = (order: Record<string, unknown>) => void;
+type RiderLocationHandler = (payload: RiderLocationPayload) => void;
+type ConnectHandler = () => void;
+type DisconnectHandler = () => void;
 
 let _socket: Socket | null = null;
 const _newOrderHandlers = new Set<NewOrderHandler>();
 const _orderUpdateHandlers = new Set<OrderUpdateHandler>();
+const _riderLocationHandlers = new Set<RiderLocationHandler>();
+const _connectHandlers = new Set<ConnectHandler>();
+const _disconnectHandlers = new Set<DisconnectHandler>();
 let _currentVendorId: string | null = null;
 
 function resolveSocketUrl(): string {
@@ -29,6 +42,16 @@ function resolveSocketUrl(): string {
     return base ?? "";
   }
   return window.location.origin;
+}
+
+function safeCall<T extends unknown[]>(handlers: Set<(...args: T) => void>, ...args: T): void {
+  handlers.forEach((fn) => {
+    try {
+      fn(...args);
+    } catch (err) {
+      console.warn("[vendor-socket] handler error:", err); // eslint-disable-line no-console
+    }
+  });
 }
 
 export function connectVendorSocket(vendorId: string): void {
@@ -46,53 +69,58 @@ export function connectVendorSocket(vendorId: string): void {
     query: { rooms: `vendor:${vendorId}` },
     transports: ["websocket", "polling"],
     reconnection: true,
-    reconnectionDelay: 2000,
-    reconnectionDelayMax: 15000,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 10000,
     reconnectionAttempts: Infinity,
   });
 
   _socket.on("connect", () => {
     log.debug("connected, joined vendor:", vendorId);
+    _socket?.emit("join", `vendor:${vendorId}`);
+    safeCall(_connectHandlers);
+  });
+
+  _socket.io.on("reconnect", () => {
+    _socket?.emit("join", `vendor:${vendorId}`);
+    safeCall(_connectHandlers);
+  });
+
+  _socket.on("disconnect", (reason) => {
+    log.debug("disconnected:", reason);
+    safeCall(_disconnectHandlers);
   });
 
   _socket.on("order:new", (order: VendorNewOrderEvent) => {
     const orderId = String(order?.id ?? "");
     if (orderId && wasOrderSeenRecently(orderId)) return;
     if (orderId) markOrderSeen(orderId);
-    _newOrderHandlers.forEach((fn) => {
-      try {
-        fn(order);
-      } catch (err) {
-        console.warn("[artifacts/vendor-app/src/lib/socket.ts]", err);
-      } // eslint-disable-line no-console
-    });
+    safeCall(_newOrderHandlers, order);
   });
 
   _socket.on("order:update", (order: Record<string, unknown>) => {
-    _orderUpdateHandlers.forEach((fn) => {
-      try {
-        fn(order);
-      } catch (err) {
-        console.warn("[artifacts/vendor-app/src/lib/socket.ts]", err);
-      } // eslint-disable-line no-console
-    });
+    safeCall(_orderUpdateHandlers, order);
+  });
+
+  _socket.on("rider:location", (payload: RiderLocationPayload) => {
+    safeCall(_riderLocationHandlers, payload);
   });
 
   _socket.on("connect_error", (err) => {
     log.warn("connect_error:", err.message);
   });
-
-  _socket.on("disconnect", (reason) => {
-    log.debug("disconnected:", reason);
-  });
 }
 
 export function disconnectVendorSocket(): void {
   if (_socket) {
+    _socket.io.off("reconnect");
     _socket.disconnect();
     _socket = null;
   }
   _currentVendorId = null;
+}
+
+export function isSocketConnected(): boolean {
+  return _socket?.connected ?? false;
 }
 
 export function onNewOrder(fn: NewOrderHandler): () => void {
@@ -106,5 +134,26 @@ export function onOrderUpdate(fn: OrderUpdateHandler): () => void {
   _orderUpdateHandlers.add(fn);
   return () => {
     _orderUpdateHandlers.delete(fn);
+  };
+}
+
+export function onRiderLocation(fn: RiderLocationHandler): () => void {
+  _riderLocationHandlers.add(fn);
+  return () => {
+    _riderLocationHandlers.delete(fn);
+  };
+}
+
+export function onConnect(fn: ConnectHandler): () => void {
+  _connectHandlers.add(fn);
+  return () => {
+    _connectHandlers.delete(fn);
+  };
+}
+
+export function onDisconnect(fn: DisconnectHandler): () => void {
+  _disconnectHandlers.add(fn);
+  return () => {
+    _disconnectHandlers.delete(fn);
   };
 }
