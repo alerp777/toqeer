@@ -86,6 +86,28 @@ function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
   );
 }
 
+function SignInFooter({ onNavigate }: { onNavigate: () => void }) {
+  const theme = useAuthTheme();
+  return (
+    <div style={{
+      textAlign: "center",
+      padding: "0 0 24px",
+      marginTop: -8,
+    }}>
+      <span style={{ color: theme.textMuted, fontSize: 14 }}>
+        Already have an account?{" "}
+        <a
+          href="/login"
+          onClick={(e) => { e.preventDefault(); onNavigate(); }}
+          style={{ color: theme.primary, fontWeight: 600, textDecoration: "none" }}
+        >
+          Sign in
+        </a>
+      </span>
+    </div>
+  );
+}
+
 export function RegisterWizard() {
   const [, navigate] = useLocation();
   const { sendOtp, register } = useAuth();
@@ -159,22 +181,7 @@ export function RegisterWizard() {
           }}
           onDone={() => setSubmitted(true)}
         />
-        <div style={{
-          textAlign: "center",
-          padding: "0 0 24px",
-          marginTop: -8,
-        }}>
-          <span style={{ color: "#8B95A9", fontSize: 14 }}>
-            Already have an account?{" "}
-            <a
-              href="/login"
-              onClick={(e) => { e.preventDefault(); navigate("/login"); }}
-              style={{ color: "#1A56DB", fontWeight: 600, textDecoration: "none" }}
-            >
-              Sign in
-            </a>
-          </span>
-        </div>
+        <SignInFooter onNavigate={() => navigate("/login")} />
       </div>
     </ThemeProvider>
   );
