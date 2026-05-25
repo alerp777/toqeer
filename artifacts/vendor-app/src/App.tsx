@@ -12,6 +12,7 @@ import {
   connectVendorSocket,
   disconnectVendorSocket,
   onNewOrder,
+  onOrderUpdate,
   type VendorNewOrderEvent,
 } from "./lib/socket";
 import { useCurrency, usePlatformConfig } from "./lib/useConfig";
@@ -480,9 +481,15 @@ function AppRoutes() {
       void queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
       void queryClient.invalidateQueries({ queryKey: ["vendor-stats"] });
       void queryClient.invalidateQueries({ queryKey: ["vendor-notifs-count"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor-notifications"] });
+    });
+    const unsubOrderUpdate = onOrderUpdate(() => {
+      void queryClient.invalidateQueries({ queryKey: ["vendor-notifs-count"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor-notifications"] });
     });
     return () => {
       unsubOrder();
+      unsubOrderUpdate();
       disconnectVendorSocket();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

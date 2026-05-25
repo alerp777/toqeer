@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { onNewOrder, onOrderUpdate } from "../lib/socket";
 import { PageHeader } from "../components/PageHeader";
 import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows } from "../components/ui/ShimmerBlock";
@@ -35,12 +36,30 @@ export default function Notifications() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["vendor-notifications"],
     queryFn: () => api.getNotifications(),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     staleTime: 20000,
   });
 
   const notifs: Notification[] = data?.notifications || [];
   const unread: number = data?.unread || 0;
+
+  /* ── Real-time refresh: react instantly to socket events while on this page ──
+     App.tsx already invalidates ["vendor-notifications"] globally, but calling
+     refetch() here ensures the page re-fetches even if the query was not stale. */
+  useEffect(() => {
+    const unsubNew = onNewOrder(() => {
+      void refetch();
+      void qc.invalidateQueries({ queryKey: ["vendor-notifs-count"] });
+    });
+    const unsubUpdate = onOrderUpdate(() => {
+      void refetch();
+      void qc.invalidateQueries({ queryKey: ["vendor-notifs-count"] });
+    });
+    return () => {
+      unsubNew();
+      unsubUpdate();
+    };
+  }, [refetch, qc]);
 
   const pullY = useRef(0);
   const pulling = useRef(false);

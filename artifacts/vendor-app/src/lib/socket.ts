@@ -21,9 +21,21 @@ export interface RiderLocationPayload {
   updatedAt: string;
 }
 
+export interface NotificationPayload {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  icon?: string;
+  isRead?: boolean;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
 type NewOrderHandler = (order: VendorNewOrderEvent) => void;
 type OrderUpdateHandler = (order: Record<string, unknown>) => void;
 type RiderLocationHandler = (payload: RiderLocationPayload) => void;
+type NotificationHandler = (notif: NotificationPayload) => void;
 type ConnectHandler = () => void;
 type DisconnectHandler = () => void;
 
@@ -31,6 +43,7 @@ let _socket: Socket | null = null;
 const _newOrderHandlers = new Set<NewOrderHandler>();
 const _orderUpdateHandlers = new Set<OrderUpdateHandler>();
 const _riderLocationHandlers = new Set<RiderLocationHandler>();
+const _notificationHandlers = new Set<NotificationHandler>();
 const _connectHandlers = new Set<ConnectHandler>();
 const _disconnectHandlers = new Set<DisconnectHandler>();
 let _currentVendorId: string | null = null;
@@ -105,6 +118,10 @@ export function connectVendorSocket(vendorId: string): void {
     safeCall(_riderLocationHandlers, payload);
   });
 
+  _socket.on("notification:new", (notif: NotificationPayload) => {
+    safeCall(_notificationHandlers, notif);
+  });
+
   _socket.on("connect_error", (err) => {
     log.warn("connect_error:", err.message);
   });
@@ -155,5 +172,12 @@ export function onDisconnect(fn: DisconnectHandler): () => void {
   _disconnectHandlers.add(fn);
   return () => {
     _disconnectHandlers.delete(fn);
+  };
+}
+
+export function onNotification(fn: NotificationHandler): () => void {
+  _notificationHandlers.add(fn);
+  return () => {
+    _notificationHandlers.delete(fn);
   };
 }
