@@ -3,6 +3,23 @@ import { OtpInput } from "./OtpInput";
 import { PasswordInput } from "./PasswordInput";
 import { PhoneInput } from "./PhoneInput";
 
+function SpinIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      style={{ flexShrink: 0, animation: "auth-spin 0.8s linear infinite" }}
+    >
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  );
+}
+
 export type RegisterRole = "rider" | "vendor" | "customer";
 
 export interface FieldConfig {
@@ -188,10 +205,14 @@ const s = {
   errorBox: {
     background: "#fef2f2",
     border: "1px solid #fca5a5",
-    borderRadius: "8px",
-    padding: "10px 12px",
+    borderRadius: "10px",
+    padding: "12px 14px",
     color: "#b91c1c",
     fontSize: "13px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    lineHeight: 1.4,
   },
   progressDot: (active: boolean, done: boolean, accent: string): React.CSSProperties => ({
     width: active ? "24px" : "8px",
@@ -242,6 +263,20 @@ export function RegisterScreen({
   const [otpSent, setOtpSent] = useState(false);
   const [devOtp, setDevOtp] = useState("");
   const [completed, setCompleted] = useState(false);
+
+  /* Inject shared auth keyframe styles once */
+  useEffect(() => {
+    const id = "auth-shared-keyframes";
+    if (typeof document !== "undefined" && !document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `
+        @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes auth-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   /* Sync initialData changes (e.g. async draft load) */
   useEffect(() => {
@@ -458,7 +493,11 @@ export function RegisterScreen({
   if (completed) {
     const completedContent = (
       <div style={s.header}>
-        <div style={{ fontSize: "48px", marginBottom: "12px" }}>✅</div>
+        <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" />
+          </svg>
+        </div>
         <h2 style={s.title}>Registration Complete</h2>
         <p style={s.subtitle}>Your application has been submitted successfully.</p>
       </div>
@@ -491,13 +530,17 @@ export function RegisterScreen({
             disabled={loading}
             onClick={() => void handleNext()}
           >
-            {loading
-              ? "Please wait…"
-              : isLastStep
-                ? "Go to Login"
-                : stepIndex === steps.length - 2
-                  ? "Submit Registration"
-                  : "Next →"}
+            {loading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                <SpinIcon size={17} /> Please wait…
+              </span>
+            ) : isLastStep ? (
+              "Go to Login"
+            ) : stepIndex === steps.length - 2 ? (
+              "Submit Registration"
+            ) : (
+              "Next →"
+            )}
           </button>
           {stepIndex > 0 && (
             <button type="button" style={s.btnBack(accent)} onClick={handleBack}>
@@ -604,15 +647,19 @@ export function RegisterScreen({
             style={{ ...s.btnPrimary(accent, accentText), ...(loading ? s.btnDisabled : {}) }}
             disabled={loading}
           >
-            {loading
-              ? "Please wait…"
-              : isOtpStep(currentStep)
-                ? "Send OTP"
-                : isLastStep
-                  ? "Go to Login"
-                  : stepIndex === steps.length - 2
-                    ? "Submit Registration"
-                    : "Next →"}
+            {loading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                <SpinIcon size={17} /> Please wait…
+              </span>
+            ) : isOtpStep(currentStep) ? (
+              "Send OTP"
+            ) : isLastStep ? (
+              "Go to Login"
+            ) : stepIndex === steps.length - 2 ? (
+              "Submit Registration"
+            ) : (
+              "Next →"
+            )}
           </button>
 
           {stepIndex > 0 && (
@@ -639,7 +686,13 @@ export function RegisterScreen({
             style={{ ...s.btnPrimary(accent, accentText), ...(loading ? s.btnDisabled : {}) }}
             disabled={loading}
           >
-            {loading ? "Sending…" : "Send Verification Code"}
+            {loading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                <SpinIcon size={17} /> Sending…
+              </span>
+            ) : (
+              "Send Verification Code"
+            )}
           </button>
           {stepIndex > 0 && (
             <button type="button" style={s.btnBack(accent)} onClick={handleBack}>
@@ -663,7 +716,12 @@ export function RegisterScreen({
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }} className={className}>
         {error && (
           <div style={s.errorBox} role="alert" aria-live="assertive">
-            {error}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
         {isDev && devOtp && (
@@ -705,7 +763,12 @@ export function RegisterScreen({
         </div>
         {error && (
           <div style={s.errorBox} role="alert" aria-live="assertive">
-            {error}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
         {isDev && devOtp && (

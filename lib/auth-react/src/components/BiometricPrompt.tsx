@@ -204,7 +204,7 @@ export function BiometricPrompt({
   if (state === "unavailable") {
     return (
       <div style={s.card} className={className}>
-        <span style={s.icon}>🔒</span>
+        <span style={s.icon}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
         <p style={s.title}>Biometrics unavailable</p>
         <p style={s.subtitle}>Biometric authentication is not available on this device.</p>
         {onDismiss && (
@@ -219,7 +219,7 @@ export function BiometricPrompt({
   if (state === "web-unsupported") {
     return (
       <div style={s.card} className={className}>
-        <span style={s.icon}>🌐</span>
+        <span style={s.icon}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
         <p style={s.title}>Not supported in this browser</p>
         <p style={s.subtitle}>
           Biometric sign-in requires the native app. Use the AJKMart app on your phone to enable
@@ -237,7 +237,7 @@ export function BiometricPrompt({
   if (state === "not-enrolled") {
     return (
       <div style={s.card} className={className}>
-        <span style={s.icon}>🫆</span>
+        <span style={s.icon}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><path d="M12 2a10 10 0 0 0-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg></span>
         <p style={s.title}>Set up biometrics</p>
         <p style={s.subtitle}>
           No biometric credential is stored yet. Sign in with your password first to enable
@@ -265,7 +265,15 @@ export function BiometricPrompt({
 
   return (
     <div style={s.card} className={className}>
-      <span style={s.icon}>{state === "success" ? "✅" : state === "enrolling" ? "⏳" : "🫆"}</span>
+      <span style={s.icon}>
+        {state === "success" ? (
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+        ) : state === "enrolling" ? (
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        ) : (
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><path d="M12 2a10 10 0 0 0-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        )}
+      </span>
       <p style={s.title}>{label}</p>
       <p style={s.subtitle}>
         {state === "prompting"

@@ -33,7 +33,12 @@ function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
         gap: 20,
         textAlign: "center",
       }}>
-        <div style={{ fontSize: 56, lineHeight: 1 }}>🎉</div>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="9 12 11 14 15 10" />
+          </svg>
+        </div>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#E2E8F4", margin: "0 0 8px" }}>
             Application Submitted!
@@ -50,8 +55,12 @@ function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
           padding: "12px 16px",
           width: "100%",
         }}>
-          <p style={{ fontSize: 13, color: "#8B95A9", margin: 0 }}>
-            📱 Keep an eye on your registered phone number for status updates.
+          <p style={{ fontSize: 13, color: "#8B95A9", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+              <line x1="12" y1="18" x2="12.01" y2="18" />
+            </svg>
+            Keep an eye on your registered phone number for status updates.
           </p>
         </div>
         <button

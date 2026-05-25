@@ -113,9 +113,14 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif",
       }}>
-        <p style={{ color: riderTheme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5 }}>
-          {roleError}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, color: riderTheme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5, justifyContent: "center" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{roleError}</span>
+        </div>
         <button
           onClick={() => setRoleError(null)}
           style={{

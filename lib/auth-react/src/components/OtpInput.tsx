@@ -305,7 +305,8 @@ export function OtpInput({
 
   const allFilled = values.every((v) => v !== "");
   const errorColor = "#ef4444";
-  const accentColor = "#f59e0b";
+  /* Theme-aware accent — falls back to amber if no CSS variable is set */
+  const accentColor = "var(--otp-accent, #f59e0b)";
   const successColor = "#10b981";
 
   return (

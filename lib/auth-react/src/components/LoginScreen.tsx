@@ -1,5 +1,22 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AuthUser } from "../AuthProvider";
+
+function SpinIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      style={{ flexShrink: 0, animation: "auth-spin 0.8s linear infinite" }}
+    >
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  );
+}
 import { useAuthTheme } from "../context/ThemeContext";
 import { useLoginFlow } from "../hooks/useLoginFlow";
 import { BiometricEnrollOverlay } from "./AuthOverlay";
@@ -231,6 +248,21 @@ export function LoginScreen({
     const timer = setTimeout(() => setEmailResendCooldown((v) => v - 1), 1000);
     return () => clearTimeout(timer);
   }, [emailResendCooldown]);
+
+  /* Inject shared auth keyframe styles once */
+  useEffect(() => {
+    const id = "auth-shared-keyframes";
+    if (typeof document !== "undefined" && !document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `
+        @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes auth-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .auth-input:focus-visible { outline: none; border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   /* ── Post-auth orchestration ─────────────────────────────────────────────
      Called by every auth path (phone OTP, password, 2FA, email OTP, social).
@@ -612,10 +644,14 @@ export function LoginScreen({
     errorBox: {
       background: theme.errorBackground,
       border: `1px solid ${theme.errorBorder}`,
-      borderRadius: "8px",
-      padding: "10px 12px",
+      borderRadius: "10px",
+      padding: "12px 14px",
       color: theme.error,
       fontSize: "13px",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      lineHeight: 1.4,
     },
     link: {
       background: "none",
@@ -816,7 +852,10 @@ export function LoginScreen({
           {/* Dev OTP banner */}
           {devOtp && import.meta.env.DEV && (
             <div style={s.devOtpBanner}>
-              🔑 Dev OTP: <strong>{devOtp}</strong>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0, marginRight: 6 }}>
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+              </svg>
+              Dev OTP: <strong>{devOtp}</strong>
             </div>
           )}
 
@@ -841,14 +880,24 @@ export function LoginScreen({
           {/* Error */}
           {error && (
             <div style={s.errorBox} role="alert" aria-live="assertive">
-              {error}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{error}</span>
             </div>
           )}
 
           {/* Email OTP error */}
           {loginMode === "email" && emailError && (
             <div style={s.errorBox} role="alert" aria-live="assertive">
-              {emailError}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{emailError}</span>
             </div>
           )}
 
@@ -874,7 +923,13 @@ export function LoginScreen({
                     disabled={emailSending}
                     onClick={() => void handleSendEmailOtp()}
                   >
-                    {emailSending ? "Sending…" : "Send OTP"}
+                    {emailSending ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                        <SpinIcon size={17} /> Sending…
+                      </span>
+                    ) : (
+                      "Send OTP"
+                    )}
                   </button>
                 </>
               ) : (
@@ -944,7 +999,13 @@ export function LoginScreen({
                     style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
                     disabled={loading}
                   >
-                    {loading ? str.checkingBtn : str.continueBtn}
+                    {loading ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                        <SpinIcon size={17} /> {str.checkingBtn}
+                      </span>
+                    ) : (
+                      str.continueBtn
+                    )}
                   </button>
                   {enableMagicLink && onMagicLink && (
                     <p style={s.magicLinkRow}>
@@ -953,11 +1014,17 @@ export function LoginScreen({
                       ) : (
                         <button
                           type="button"
-                          style={s.link}
+                          style={{ ...s.link, ...(magicLinkLoading ? { opacity: 0.55, cursor: "not-allowed" } : {}) }}
                           disabled={magicLinkLoading}
                           onClick={() => void handleMagicLink()}
                         >
-                          {magicLinkLoading ? str.magicLinkSending : str.sendMagicLink}
+                          {magicLinkLoading ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                              <SpinIcon size={15} /> {str.magicLinkSending}
+                            </span>
+                          ) : (
+                            str.sendMagicLink
+                          )}
                         </button>
                       )}
                     </p>
@@ -1012,7 +1079,13 @@ export function LoginScreen({
                             disabled={magicSending}
                             onClick={() => void handleSendMagicLink()}
                           >
-                            {magicSending ? str.magicLinkSending : str.sendMagicLink}
+                            {magicSending ? (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                                <SpinIcon size={17} /> {str.magicLinkSending}
+                              </span>
+                            ) : (
+                              str.sendMagicLink
+                            )}
                           </button>
                         </>
                       )}
@@ -1060,7 +1133,13 @@ export function LoginScreen({
                     style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}
                     disabled={loading}
                   >
-                    {loading ? str.signingInBtn : str.signInBtn}
+                    {loading ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                        <SpinIcon size={17} /> {str.signingInBtn}
+                      </span>
+                    ) : (
+                      str.signInBtn
+                    )}
                   </button>
                   <button
                     type="button"
