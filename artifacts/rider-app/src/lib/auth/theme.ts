@@ -9,7 +9,13 @@
  */
 import type { AuthTheme } from "@workspace/auth-react";
 
-export const riderTheme: Partial<AuthTheme> = {
+type RiderTheme = Partial<AuthTheme> & {
+  featureGreen: string;
+  featureBlue: string;
+  featurePurple: string;
+};
+
+export const riderTheme: RiderTheme = {
   primary: "#F0B90B",
   primaryDark: "#D97706",
   primaryLight: "rgba(240,185,11,0.10)",
@@ -21,4 +27,8 @@ export const riderTheme: Partial<AuthTheme> = {
   rejectedOverlay: "#110B0B",
   maintenanceOverlay: "#0D1017",
   surface: "#131720",
+  error: "#EF4444",
+  featureGreen: "#22C55E",
+  featureBlue: "#3B82F6",
+  featurePurple: "#A855F7",
 };

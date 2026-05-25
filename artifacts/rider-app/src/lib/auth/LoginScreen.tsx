@@ -7,8 +7,6 @@ import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
 import { riderTheme } from "./theme";
 import { facebookLogin, googleOneTap } from "./social-oauth";
 
-/* Feature-card error colour — named constant, not inline hex */
-const CLR_ERROR = "#EF4444";
 
 type SocialResult = { token: string; user: unknown; refreshToken?: string };
 
@@ -116,13 +114,13 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif",
       }}>
-        <p style={{ color: CLR_ERROR, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5 }}>
+        <p style={{ color: riderTheme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5 }}>
           {roleError}
         </p>
         <button
           onClick={() => setRoleError(null)}
           style={{
-            marginTop: 20, background: riderTheme.primary, color: "#000",
+            marginTop: 20, background: riderTheme.primary, color: riderTheme.background,
             border: "none", borderRadius: 8, padding: "10px 24px",
             fontWeight: 600, cursor: "pointer", fontSize: 14,
           }}
@@ -142,6 +140,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     <SharedLoginScreen
       role="rider"
       logoSrc="/ajkmart-logo.png"
+      logoAlt="AJKMart"
       enableBiometric
       enableSocial
       enableEmailOtp
