@@ -12,6 +12,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerCards, ShimmerRows } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
 import { unlockAudio } from "../lib/notificationSound";
@@ -635,7 +636,7 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
             </div>
           )}
           {!isError && isLoading ? (
-            [1, 2, 3].map((i) => <div key={i} className="skeleton h-20 rounded-2xl" />)
+            <ShimmerCards count={3} />
           ) : !isError && orders.length === 0 ? (
             searchQuery.trim() ? (
               <div className={`${CARD} px-4 py-14 text-center`}>
@@ -1180,11 +1181,7 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
                   {vendorLat == null ? "All Online Riders" : "Or choose manually"}
                 </p>
                 {ridersLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-14 animate-pulse rounded-xl bg-gray-100" />
-                    ))}
-                  </div>
+                  <ShimmerRows count={3} />
                 ) : !availableRidersData?.riders?.length ? (
                   <div className="py-8 text-center">
                     <p className="mb-2 text-3xl">🏍️</p>

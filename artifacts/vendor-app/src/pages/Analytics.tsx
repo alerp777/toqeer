@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { PageHeader } from "../components/PageHeader";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerChart, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { api } from "../lib/api";
 import { CARD, CARD_HEADER, fc } from "../lib/ui";
 import { useCurrency } from "../lib/useConfig";
@@ -92,7 +93,7 @@ function aggregate(
 }
 
 function ChartSkeleton({ height = 220 }: { height?: number }) {
-  return <div className="skeleton w-full rounded-xl" style={{ height }} />;
+  return <ShimmerChart height={height} />;
 }
 
 function ChartEmpty({ msg }: { msg: string }) {
@@ -388,7 +389,7 @@ export default function Analytics() {
             <div key={k.label} className={`${k.bg} col-span-1 rounded-2xl p-4`}>
               <p className="text-2xl">{k.icon}</p>
               {loading ? (
-                <div className="skeleton mt-2 h-6 w-24 rounded-lg" />
+                <ShimmerStat />
               ) : (
                 <p className={`text-xl font-extrabold ${k.val} mt-1 leading-tight`}>{k.value}</p>
               )}

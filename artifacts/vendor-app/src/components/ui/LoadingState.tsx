@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { ShimmerCards, ShimmerRows } from "./ShimmerBlock";
 
 interface LoadingStateProps {
   message?: string;
@@ -18,21 +19,14 @@ export function LoadingState({ message, className = "" }: LoadingStateProps) {
 }
 
 export function LoadingRows({ rows = 3 }: { rows?: number }) {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="skeleton h-20 rounded-2xl" />
-      ))}
-    </div>
-  );
+  return <ShimmerRows count={rows} />;
 }
 
 export function LoadingCards({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="skeleton h-24 rounded-2xl" />
-      ))}
-    </div>
+    <ShimmerCards
+      count={count}
+      gridClassName="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+    />
   );
 }

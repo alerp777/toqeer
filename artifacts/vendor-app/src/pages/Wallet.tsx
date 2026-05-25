@@ -5,6 +5,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerRows } from "../components/ui/ShimmerBlock";
 import { api } from "../lib/api";
 import {
   BADGE_BLUE,
@@ -957,11 +958,7 @@ export default function Wallet() {
                 retryLabel={T("retry")}
               />
             ) : isLoading ? (
-              <div className="space-y-3 p-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="skeleton h-16 rounded-xl" />
-                ))}
-              </div>
+              <ShimmerRows count={5} className="p-4" />
             ) : transactions.length === 0 ? (
               <div className="px-4 py-16 text-center">
                 <p className="mb-3 text-4xl">💳</p>

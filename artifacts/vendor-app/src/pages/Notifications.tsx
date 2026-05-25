@@ -3,6 +3,7 @@ import { tDual, type TranslationKey } from "@workspace/i18n";
 import { useCallback, useRef, useState } from "react";
 import { PageHeader } from "../components/PageHeader";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerRows } from "../components/ui/ShimmerBlock";
 import { api } from "../lib/api";
 import { CARD, CARD_HEADER, fd } from "../lib/ui";
 import { useLanguage } from "../lib/useLanguage";
@@ -153,11 +154,7 @@ export default function Notifications() {
           <div className="h-6 w-6 rounded-full border-2 border-blue-400 border-t-transparent" />
         </div>
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="skeleton h-20 rounded-2xl" />
-            ))}
-          </div>
+          <ShimmerRows count={5} />
         ) : isError ? (
           <div className={CARD}>
             <ErrorState

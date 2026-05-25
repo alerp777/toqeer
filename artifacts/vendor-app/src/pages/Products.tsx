@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { PageHeader } from "../components/PageHeader";
+import { ShimmerCards } from "../components/ui/ShimmerBlock";
 import { ProductBulkView } from "../components/products/ProductBulkView";
 import { ProductFormView } from "../components/products/ProductFormView";
 import { StockHistoryPanel } from "../components/products/StockHistoryPanel";
@@ -896,11 +897,10 @@ export default function Products() {
 
         {/* Product list / loading / error / empty states */}
         {isLoading ? (
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 lg:grid-cols-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton h-24 rounded-2xl" />
-            ))}
-          </div>
+          <ShimmerCards
+            count={4}
+            gridClassName="md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-3"
+          />
         ) : isError ? (
           <ErrorState
             title={T("somethingWentWrong")}

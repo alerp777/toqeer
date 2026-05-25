@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
+import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
 import { CARD, DEFAULT_COMMISSION_PCT, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
@@ -115,10 +116,8 @@ function NotificationsSection() {
         </div>
       </div>
       {isLoading ? (
-        <div className="space-y-2 p-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-12 rounded-xl" />
-          ))}
+        <div className="p-4">
+          <ShimmerRows count={3} />
         </div>
       ) : notifs.length === 0 ? (
         <div className="px-4 py-8 text-center">
@@ -485,28 +484,28 @@ export default function Dashboard() {
   const statItems = [
     {
       label: T("todaysOrders"),
-      value: isLoading ? "—" : statsError ? "⚠" : String(stats?.today?.orders ?? 0),
+      value: statsError ? "⚠" : String(stats?.today?.orders ?? 0),
       color: statsError ? "text-red-400" : "text-blue-500",
       bg: statsError ? "bg-red-50" : "bg-blue-50",
       icon: "📦",
     },
     {
       label: T("todaysRevenue"),
-      value: isLoading ? "—" : statsError ? "⚠" : fc(stats?.today?.revenue ?? 0),
+      value: statsError ? "⚠" : fc(stats?.today?.revenue ?? 0),
       color: statsError ? "text-red-400" : "text-amber-600",
       bg: statsError ? "bg-red-50" : "bg-amber-50",
       icon: "💰",
     },
     {
       label: T("weeklyRevenue"),
-      value: isLoading ? "—" : statsError ? "⚠" : fc(stats?.week?.revenue ?? 0),
+      value: statsError ? "⚠" : fc(stats?.week?.revenue ?? 0),
       color: statsError ? "text-red-400" : "text-blue-600",
       bg: statsError ? "bg-red-50" : "bg-blue-50",
       icon: "📅",
     },
     {
       label: T("monthlyRevenue"),
-      value: isLoading ? "—" : statsError ? "⚠" : fc(stats?.month?.revenue ?? 0),
+      value: statsError ? "⚠" : fc(stats?.month?.revenue ?? 0),
       color: statsError ? "text-red-400" : "text-purple-600",
       bg: statsError ? "bg-red-50" : "bg-purple-50",
       icon: "📈",
@@ -672,7 +671,11 @@ export default function Dashboard() {
               >
                 {s.icon}
               </div>
-              <p className={`${STAT_VAL} ${s.color} text-xl md:text-2xl`}>{s.value}</p>
+              {isLoading ? (
+                <ShimmerStat />
+              ) : (
+                <p className={`${STAT_VAL} ${s.color} text-xl md:text-2xl`}>{s.value}</p>
+              )}
               <p className={`${STAT_LBL}`}>{s.label}</p>
             </div>
           ))}
