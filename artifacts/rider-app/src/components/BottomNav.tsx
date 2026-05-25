@@ -96,11 +96,11 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="android-press relative flex min-h-0 flex-1 flex-col items-center gap-0.5 pt-2 pb-1"
+                className="android-press group relative flex min-h-0 flex-1 flex-col items-center gap-0.5 pt-2 pb-1 focus-visible:outline-none"
               >
                 <div className="relative">
                   <span
-                    className={`flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200 ${active ? "bg-gray-900/10" : ""}`}
+                    className={`flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200 group-focus-visible:ring-2 group-focus-visible:ring-brand group-focus-visible:ring-offset-1 ${active ? "bg-gray-900/10" : ""}`}
                   >
                     <Icon
                       size={21}

@@ -51,7 +51,7 @@ export const OnlineToggleCard = memo(function OnlineToggleCard({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleSilence}
-            className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all ${silenceOn ? "border border-red-500/20 bg-red-500/20 text-red-400" : "border border-white/10 bg-white/10 text-white/40"}`}
+            className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${silenceOn ? "border border-red-500/20 bg-red-500/20 text-red-400" : "border border-white/10 bg-white/10 text-white/40"}`}
             aria-label={silenceOn ? "Unmute notification sounds" : "Mute notification sounds"}
           >
             {silenceOn ? <VolumeX size={15} /> : <Volume2 size={15} />}
@@ -62,7 +62,7 @@ export const OnlineToggleCard = memo(function OnlineToggleCard({
           <button
             onClick={onToggleOnline}
             disabled={toggling}
-            className={`relative h-[30px] w-[56px] rounded-full shadow-inner transition-all duration-300 ${effectiveOnline ? "bg-green-500 shadow-green-500/30" : "bg-white/20"} ${toggling ? "scale-95 opacity-50" : "active:scale-95"}`}
+            className={`relative h-[30px] w-[56px] rounded-full shadow-inner transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${effectiveOnline ? "bg-green-500 shadow-green-500/30" : "bg-white/20"} ${toggling ? "scale-95 opacity-50" : "active:scale-95"}`}
             role="switch"
             aria-checked={effectiveOnline}
             aria-label={effectiveOnline ? "Go offline" : "Go online"}
