@@ -98,6 +98,7 @@
     "typescript-eslint": "^8.59.2",
     "vaul": "^1.1.2",
     "vite": "catalog:",
+    "vite-plugin-pwa": "^0.21.1",
     "vitest": "^4.0.18",
     "wouter": "^3.3.5",
     "zod": "catalog:"

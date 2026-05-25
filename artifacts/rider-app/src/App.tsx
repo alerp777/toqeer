@@ -12,6 +12,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { MaintenanceScreen } from "./components/MaintenanceScreen";
 import { PopupEngine } from "./components/PopupEngine";
 import { PwaInstallBanner } from "./components/PwaInstallBanner";
+import { PushPermissionBanner } from "./components/PushPermissionBanner";
 import { Toaster } from "./components/ui/toaster";
 import { NetworkStatusBanner } from "./components/NetworkStatusBanner";
 import { PageShimmer } from "./components/ui/shimmer";
@@ -1601,6 +1602,7 @@ function App() {
                   </WouterRouter>
                   <Toaster />
                   <PwaInstallBanner />
+                  <PushPermissionBanner />
                 </SocketProvider>
               </ThemeProvider>
             </RiderAuthProvider>

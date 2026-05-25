@@ -31,6 +31,7 @@ import { BottomNav } from "./components/BottomNav";
 import { MaintenanceScreen } from "./components/MaintenanceScreen";
 import { PopupEngine } from "./components/PopupEngine";
 import { PwaInstallBanner } from "./components/PwaInstallBanner";
+import { PushPermissionBanner } from "./components/PushPermissionBanner";
 import { SideNav } from "./components/SideNav";
 import { vendorEnv } from "./lib/envValidation";
 import { BOTTOM_PADDING } from "./lib/ui";
@@ -1284,6 +1285,7 @@ export default function App() {
               <AppShell />
             </WouterRouter>
             <PwaInstallBanner />
+            <PushPermissionBanner />
           </ThemeProvider>
         </AuthProvider>
       </QueryClientProvider>
