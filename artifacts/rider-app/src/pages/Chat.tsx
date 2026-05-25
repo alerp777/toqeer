@@ -2,7 +2,7 @@ import { createLogger } from "@/lib/logger";
 import { ShimmerBlock } from "@/components/ui/shimmer";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
-import { Bot, Flag, MoreVertical, Paperclip, Send, Sparkles, Trash2, UserX, X } from "lucide-react";
+import { Bot, Check, CheckCheck, Clipboard, Flag, MessageSquare, MoreVertical, Paperclip, Phone, Send, Sparkles, Trash2, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearch } from "wouter";
 import { api } from "../lib/api";
@@ -891,7 +891,7 @@ export default function Chat() {
       {incomingCall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <div className="mx-4 w-full max-w-sm rounded-3xl bg-white p-8 text-center">
-            <div className="mb-4 text-6xl">📞</div>
+            <div className="mb-4 flex items-center justify-center text-6xl text-gray-400"><Phone size={48} /></div>
             <h2 className="mb-2 text-xl font-bold">Incoming Call</h2>
             <p className="mb-6 text-gray-500">
               {incomingCall.callerName} ({incomingCall.callerAjkId})
@@ -920,7 +920,7 @@ export default function Chat() {
                 onClick={handleAcceptCall}
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500 text-2xl text-white"
               >
-                📞
+                <Phone size={20} />
               </button>
             </div>
           </div>
@@ -946,13 +946,13 @@ export default function Chat() {
 
       <div className="px-4 pt-4 pb-2">
         <div className="mb-3 flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-gray-800">💬 Messages</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-extrabold text-gray-800"><MessageSquare size={24} /> Messages</h1>
           {ajkId && (
             <button
               onClick={() => navigator.clipboard.writeText(ajkId)}
               className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"
             >
-              {ajkId} 📋
+              {ajkId} <Clipboard size={12} className="inline" />
             </button>
           )}
         </div>
@@ -1003,7 +1003,7 @@ export default function Chat() {
                 onClick={() => startCall(selectedConv.otherUser?.id)}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-lg text-white"
               >
-                📞
+                <Phone size={20} />
               </button>
               <div className="relative">
                 <button
@@ -1097,7 +1097,11 @@ export default function Chat() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                      {msg.senderId === user?.id && (msg.deliveryStatus === "read" ? " ✓✓" : " ✓")}
+                      {msg.senderId === user?.id && (
+                        <span className="ml-1 inline text-emerald-200">
+                          {msg.deliveryStatus === "read" ? <CheckCheck size={10} /> : <Check size={10} />}
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -1116,7 +1120,7 @@ export default function Chat() {
               </>
             ) : conversations.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="mb-4 text-5xl">💬</p>
+                <p className="mb-4 flex items-center justify-center text-5xl text-gray-400"><MessageSquare size={48} /></p>
                 <p className="font-bold text-gray-600">No conversations yet</p>
               </div>
             ) : (

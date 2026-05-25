@@ -1,5 +1,19 @@
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { QueryClientProvider } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Ban,
+  BellOff,
+  ChartPie,
+  CheckCircle2,
+  Lock,
+  Megaphone,
+  Search,
+  Wifi,
+  Wallet,
+  X,
+} from "lucide-react";
 import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -227,7 +241,7 @@ function KycGate({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-sm">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
-          🔒
+          <Lock size={28} className="text-amber-600" />
         </div>
         <h2 className="mb-2 text-lg font-extrabold text-gray-800">
           Identity Verification Required
@@ -237,22 +251,22 @@ function KycGate({ children }: { children: React.ReactNode }) {
         </p>
         <div className="mb-5 space-y-1.5 rounded-xl bg-gray-50 p-3 text-left">
           {[
-            "📊 Business Analytics",
-            "🏷️ Discount Promotions",
-            "📢 Ad Campaigns",
-            "💸 Wallet Withdrawals",
-          ].map((f) => (
-            <div key={f} className="flex items-center gap-2 text-sm text-gray-600">
+            { label: "Business Analytics", icon: ChartPie },
+            { label: "Discount Promotions", icon: Megaphone },
+            { label: "Ad Campaigns", icon: Megaphone },
+            { label: "Wallet Withdrawals", icon: Wallet },
+          ].map(({ label, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-2 text-sm text-gray-600">
               <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 text-[10px] font-bold text-orange-500">
-                ✓
+                <CheckCircle2 size={12} />
               </span>
-              <span>{f}</span>
+              <span>{label}</span>
             </div>
           ))}
         </div>
         {user?.kycStatus === "pending" ? (
           <div className="rounded-xl bg-blue-50 p-3 text-center">
-            <p className="text-sm font-bold text-blue-700">⏳ Verification Under Review</p>
+            <p className="text-sm font-bold text-blue-700">Verification Under Review</p>
             <p className="mt-1 text-xs text-blue-500">
               Our team will notify you within 24 hours once your documents are approved.
             </p>
@@ -555,10 +569,10 @@ function AppRoutes() {
       let displayTitle = title;
       let displayBody = body;
       if (notifType === "order_cancelled") {
-        displayTitle = "❌ Order Cancelled";
+        displayTitle = "Order Cancelled";
         displayBody = body || "An order has been cancelled.";
       } else if (notifType === "payment_settlement") {
-        displayTitle = "💰 Payment Settled";
+        displayTitle = "Payment Settled";
         displayBody = body || "A payment has been settled to your wallet.";
       }
       setFcmNotif({ title: displayTitle, body: displayBody, orderId: data?.orderId });
@@ -967,14 +981,14 @@ function AppRoutes() {
         !maintenanceBlocked &&
         maintenanceSecs > 0 && (
           <div className="fixed inset-x-0 top-0 z-50 bg-amber-500 px-4 py-2 text-center text-xs font-bold text-white shadow">
-            ⚠️ {config.platform.appName} is in maintenance mode. Full screen in{" "}
+            <AlertTriangle size={12} className="inline" /> {config.platform.appName} is in maintenance mode. Full screen in{" "}
             {Math.floor(maintenanceSecs / 60)}:{String(maintenanceSecs % 60).padStart(2, "0")}
           </div>
         )}
       {/* ── Limited-service banner: non-blocking strip shown when app_status = "limited" ── */}
       {config.platform.appStatus === "limited" && (
         <div className="fixed inset-x-0 top-0 z-50 bg-orange-400 px-4 py-2 text-center text-xs font-bold text-white shadow">
-          ⚠️ Limited service — some features may be temporarily unavailable
+          <AlertTriangle size={12} className="inline" /> Limited service — some features may be temporarily unavailable
         </div>
       )}
 
@@ -983,16 +997,16 @@ function AppRoutes() {
         <div className="fixed top-0 right-0 left-0 z-[10001] flex items-center gap-3 bg-amber-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md">
           <span className="flex-1">
             {pushError === "permission_denied"
-              ? "🔕 Order notifications are blocked. Go to browser settings → Site Settings → Notifications → Allow."
+              ? "Order notifications are blocked. Go to browser settings → Site Settings → Notifications → Allow."
               : pushError === "network_error"
-                ? "📡 Could not register for notifications. Check your connection."
-                : "⚠️ Notification registration failed. Go to Settings → Test Notification to retry."}
+                ? "Could not register for notifications. Check your connection."
+                : "Notification registration failed. Go to Settings → Test Notification to retry."}
           </span>
           <button
             onClick={() => setPushError(null)}
             className="flex-shrink-0 text-lg leading-none font-bold text-white/80 hover:text-white"
           >
-            ×
+            <X size={14} />
           </button>
         </div>
       )}
@@ -1109,14 +1123,14 @@ function AppRoutes() {
                   <ErrorBoundary>
                     <div className="flex h-64 items-center justify-center">
                       <div className="text-center">
-                        <p className="mb-3 text-4xl">🔍</p>
+                        <Search size={40} className="mx-auto mb-3 text-gray-400" />
                         <p className="text-lg font-extrabold text-gray-700">Page not found</p>
                         <p className="mt-1 text-sm text-gray-400">This page doesn't exist</p>
                         <a
                           href="/"
-                          className="mt-4 inline-block h-10 rounded-xl bg-orange-500 px-6 text-sm leading-10 font-bold text-white"
+                          className="mt-4 inline-flex h-10 items-center gap-1 rounded-xl bg-orange-500 px-6 text-sm font-bold text-white"
                         >
-                          ← Go Home
+                          <ArrowLeft size={14} /> Go Home
                         </a>
                       </div>
                     </div>

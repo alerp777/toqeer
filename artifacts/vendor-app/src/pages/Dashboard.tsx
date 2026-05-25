@@ -1,6 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tDual } from "@workspace/i18n";
-import { Truck } from "lucide-react";
+import {
+  PackageOpen,
+  ShoppingCart,
+  TicketPercent,
+  Settings,
+  AlertTriangle,
+  Bell,
+  Truck,
+  CheckSquare,
+  MessageSquare,
+  Plus,
+  X,
+  MapPin,
+  Pin,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { PageHeader } from "../components/PageHeader";
@@ -14,21 +28,24 @@ import { useStoreStatus } from "../hooks/useStoreStatus";
 import { StoreHoursChip } from "../components/ui/StoreHoursChip";
 import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
 import { BADGE_BLUE, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
+import { useAuthTheme } from "../lib/auth/ThemeContext";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import type { StoreHours } from "../lib/vendor-auth";
 import { useAuth } from "../lib/vendor-auth";
 
 function typeIcon(type: string) {
-  if (type === "order") return "📦";
-  if (type === "wallet") return "💰";
-  if (type === "promo") return "🎟️";
-  if (type === "system") return "⚙️";
-  if (type === "alert") return "⚠️";
-  return "🔔";
+  const s = 16;
+  if (type === "order") return <PackageOpen size={s} />;
+  if (type === "wallet") return <TicketPercent size={s} />;
+  if (type === "promo") return <Plus size={s} />;
+  if (type === "system") return <Settings size={s} />;
+  if (type === "alert") return <AlertTriangle size={s} />;
+  return <Bell size={s} />;
 }
 
 function QuickActions() {
+  const theme = useAuthTheme();
   return (
     <div className={`${CARD} p-4`}>
       <p className="mb-3 text-xs font-extrabold tracking-widest text-gray-400 uppercase">
@@ -37,24 +54,27 @@ function QuickActions() {
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/orders"
-          className="flex flex-col items-center gap-2 rounded-2xl bg-green-50 p-3 text-center transition-transform active:scale-95"
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
+          style={{ background: theme.primaryLight }}
         >
-          <span className="text-2xl">✅</span>
-          <span className="text-xs leading-tight font-bold text-green-700">Accept Orders</span>
+          <CheckSquare size={22} color={theme.success} />
+          <span className="text-xs leading-tight font-bold" style={{ color: theme.success }}>Accept Orders</span>
         </Link>
         <Link
           href="/chat"
-          className="flex flex-col items-center gap-2 rounded-2xl bg-blue-50 p-3 text-center transition-transform active:scale-95"
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
+          style={{ background: theme.primaryLight }}
         >
-          <span className="text-2xl">💬</span>
-          <span className="text-xs leading-tight font-bold text-blue-700">Open Chat</span>
+          <MessageSquare size={22} color={theme.primary} />
+          <span className="text-xs leading-tight font-bold" style={{ color: theme.primary }}>Open Chat</span>
         </Link>
         <Link
           href="/products"
-          className="flex flex-col items-center gap-2 rounded-2xl bg-blue-50 p-3 text-center transition-transform active:scale-95"
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
+          style={{ background: theme.primaryLight }}
         >
-          <span className="text-2xl">🛒</span>
-          <span className="text-xs leading-tight font-bold text-orange-700">Manage Products</span>
+          <ShoppingCart size={22} color={theme.warning} />
+          <span className="text-xs leading-tight font-bold" style={{ color: theme.warning }}>Manage Products</span>
         </Link>
       </div>
     </div>
@@ -230,7 +250,7 @@ function ScheduleEditor({
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold text-gray-800">Weekly Schedule</p>
         <button onClick={() => setExpanded(false)} className="text-lg leading-none text-gray-400">
-          ×
+          <X size={16} />
         </button>
       </div>
       <div className="space-y-2">
@@ -318,13 +338,13 @@ function VendorNoticeBanner({ message }: { message: string }) {
   };
   return (
     <div className="mb-2 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
-      <span className="mt-0.5 flex-shrink-0 text-base text-blue-500">📌</span>
+      <span className="mt-0.5 flex-shrink-0 text-base text-blue-500"><Pin size={16} className="text-blue-500" /></span>
       <p className="flex-1 text-sm leading-snug font-medium text-blue-700">{message}</p>
       <button
         onClick={dismiss}
         className="flex-shrink-0 text-lg leading-none text-blue-400 hover:text-blue-600"
       >
-        ×
+        <X size={16} />
       </button>
     </div>
   );
@@ -343,7 +363,7 @@ function LiveTrackingNotice({
   if (liveTracking || dismissed) return null;
   return (
     <div className="fixed right-4 bottom-24 left-4 z-40 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-lg md:right-6 md:left-auto md:max-w-sm">
-      <span className="text-lg">📍</span>
+      <MapPin size={18} className="text-amber-500" />
       <div className="flex-1">
         <p className="text-xs font-bold text-amber-800">{T("liveTrackingDisabled")}</p>
         <p className="text-xs text-amber-600">{T("liveTrackingUnavailable")}</p>
@@ -355,7 +375,7 @@ function LiveTrackingNotice({
         }}
         className="flex-shrink-0 text-lg leading-none text-amber-500 hover:text-amber-700"
       >
-        ×
+        <X size={16} />
       </button>
     </div>
   );
@@ -850,7 +870,7 @@ export default function Dashboard() {
                             disabled={isOrderPending}
                             className="android-press h-9 min-h-0 rounded-xl bg-green-500 px-4 text-xs font-bold text-white disabled:opacity-60"
                           >
-                            ✓ Accept
+                            <CheckSquare size={14} className="inline" /> Accept
                           </button>
                           <button
                             onClick={() => {
@@ -860,7 +880,7 @@ export default function Dashboard() {
                             disabled={isOrderPending}
                             className="android-press h-9 min-h-0 rounded-xl bg-red-50 px-3 text-xs font-bold text-red-600 disabled:opacity-60"
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         </div>
                       </div>
@@ -1048,7 +1068,7 @@ export default function Dashboard() {
                 }}
                 className="h-11 flex-1 rounded-xl bg-red-500 text-sm font-bold text-white"
               >
-                ✕ {T("cancelConfirm")}
+                <X size={14} className="inline" /> {T("cancelConfirm")}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { RIDER_TOKENS } from "@/lib/useThemeTokens";
 import { Capacitor } from "@capacitor/core";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
+import { CheckCircle, Lock, XCircle } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 import { AnnouncementBar } from "./components/AnnouncementBar";
@@ -1203,7 +1204,7 @@ function AppRoutes() {
                         : "bg-amber-400 text-white"
                   }`}
                 >
-                  {item.done ? "✓" : item.locked ? "🔒" : item.num}
+                  {item.done ? <CheckCircle size={14} /> : item.locked ? <Lock size={14} /> : item.num}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
@@ -1266,8 +1267,8 @@ function AppRoutes() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-rose-100 p-6">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-xl">
-          <div className="mb-4 text-5xl">
-            <span>❌</span>
+          <div className="mb-4 flex items-center justify-center text-5xl text-red-500">
+            <XCircle size={48} />
           </div>
           <h2 className="mb-2 text-xl font-bold text-gray-800">{T("accountRejected")}</h2>
           <p className="mb-2 text-sm leading-relaxed text-gray-500">

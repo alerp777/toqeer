@@ -139,12 +139,12 @@ export function useProductForm({
 
   const handleVideoUpload = async (file: File) => {
     if (file.size > maxVideoMb * 1024 * 1024) {
-      showToast(`❌ Video must be under ${maxVideoMb}MB`);
+      showToast(`Video must be under ${maxVideoMb}MB`);
       return;
     }
     if (!allowedVideoFormats.includes(file.type)) {
       showToast(
-        `❌ Only ${(config.uploads?.allowedVideoFormats ?? ["mp4", "mov", "webm"])
+        `Only ${(config.uploads?.allowedVideoFormats ?? ["mp4", "mov", "webm"])
           .join(", ")
           .toUpperCase()} videos allowed`
       );
@@ -154,13 +154,13 @@ export function useProductForm({
       const duration = await getVideoDuration(file);
       if (duration > maxVideoDurationSec) {
         showToast(
-          `❌ Video must be ${maxVideoDurationSec} seconds or less (yours is ${Math.ceil(duration)}s)`
+          `Video must be ${maxVideoDurationSec} seconds or less (yours is ${Math.ceil(duration)}s)`
         );
         return;
       }
     } catch {
       showToast(
-        "❌ Could not read video file — it may be corrupted or unsupported. Please try a different file."
+        "Could not read video file — it may be corrupted or unsupported. Please try a different file."
       );
       return;
     }
@@ -168,9 +168,9 @@ export function useProductForm({
     try {
       const result = await api.uploadVideo(file);
       f("videoUrl", result.url);
-      showToast("✅ Video uploaded!");
+      showToast("Video uploaded!");
     } catch (e: unknown) {
-      showToast("❌ " + (e instanceof Error ? e.message : "Video upload failed"));
+      showToast("Error: " + (e instanceof Error ? e.message : "Video upload failed"));
     }
     setVideoUploading(false);
   };
@@ -189,9 +189,9 @@ export function useProductForm({
       api.updateProduct(id, { isHidden }),
     onSuccess: (_, { isHidden }) => {
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      showToast(isHidden ? "👁️ Hidden from customers" : "✅ Visible to customers");
+      showToast(isHidden ? "Hidden from customers" : "Visible to customers");
     },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+    onError: (e: Error) => showToast("Error: " + errMsg(e)),
   });
 
   const createMut = useMutation({
@@ -213,7 +213,7 @@ export function useProductForm({
         }
         setShowAdd(false);
         setForm({ ...EMPTY_FORM });
-        showToast(storageMsg ? storageMsg.slice(5) : "📥 Saved offline — will sync when connected");
+        showToast(storageMsg ? storageMsg.slice(5) : "Saved offline — will sync when connected");
         return Promise.resolve(null);
       }
       if (totalProductCount == null)
@@ -238,9 +238,9 @@ export function useProductForm({
       void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
       setShowAdd(false);
       setForm({ ...EMPTY_FORM });
-      showToast("✅ Product added!");
+      showToast("Product added!");
     },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+    onError: (e: Error) => showToast("Error: " + errMsg(e)),
   });
 
   const updateMut = useMutation({
@@ -268,7 +268,7 @@ export function useProductForm({
         }
         setEditProd(null);
         setShowAdd(false);
-        showToast(storageMsg ? storageMsg.slice(5) : "📥 Saved offline — will sync when connected");
+        showToast(storageMsg ? storageMsg.slice(5) : "Saved offline — will sync when connected");
         return Promise.resolve(null);
       }
       const lowStockThresholdVal = editThreshold !== "" ? Number(editThreshold) : null;
@@ -299,9 +299,9 @@ export function useProductForm({
       setEditProd(null);
       setShowAdd(false);
       setEditThreshold("");
-      showToast("✅ Updated!");
+      showToast("Updated!");
     },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+    onError: (e: Error) => showToast("Error: " + errMsg(e)),
   });
 
   const deleteMut = useMutation({
@@ -309,9 +309,9 @@ export function useProductForm({
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
       void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
-      showToast("🗑️ Deleted");
+      showToast("Deleted");
     },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+    onError: (e: Error) => showToast("Error: " + errMsg(e)),
   });
 
   const toggleMut = useMutation({
@@ -319,9 +319,9 @@ export function useProductForm({
       api.updateProduct(id, { inStock }),
     onSuccess: (_, { inStock }) => {
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      showToast(inStock ? "✅ Marked In Stock" : "📦 Marked Out of Stock");
+      showToast(inStock ? "Marked In Stock" : "Marked Out of Stock");
     },
-    onError: (e: Error) => showToast("❌ " + errMsg(e)),
+    onError: (e: Error) => showToast("Error: " + errMsg(e)),
   });
 
   // ── Open / close form ──

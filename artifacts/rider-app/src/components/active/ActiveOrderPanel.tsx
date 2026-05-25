@@ -5,10 +5,12 @@ import {
   MapPin,
   MapPinned,
   Package,
+  Pill,
   Phone,
   RefreshCw,
   ShoppingCart,
   Truck,
+  Utensils,
   User,
   X,
 } from "lucide-react";
@@ -37,9 +39,9 @@ function orderTypeGradient(type?: string | null): string {
 
 export function OrderTypeIcon({ type }: { type?: string | null }) {
   const t = (type || "").toLowerCase();
-  if (t === "food") return <span className="text-xl">🍔</span>;
-  if (t === "pharmacy") return <span className="text-xl">💊</span>;
-  if (t === "grocery") return <span className="text-xl">🛒</span>;
+  if (t === "food") return <Utensils size={20} className="text-white" />;
+  if (t === "pharmacy") return <Pill size={20} className="text-white" />;
+  if (t === "grocery") return <ShoppingCart size={20} className="text-white" />;
   if (t === "mart") return <ShoppingCart size={20} className="text-white" />;
   return <Package size={20} className="text-white" />;
 }

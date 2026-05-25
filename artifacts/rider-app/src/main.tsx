@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import { registerErrorHandler } from "@workspace/logger";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -63,7 +64,7 @@ void (async () => {
             boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
           }}
         >
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}><AlertTriangle size={48} /></div>
           <h1 style={{ color: "#f0fdf4", fontSize: 22, fontWeight: 700, margin: "0 0 10px" }}>
             Cannot Reach Server
           </h1>

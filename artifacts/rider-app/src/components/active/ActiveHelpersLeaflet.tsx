@@ -1,7 +1,7 @@
 import { createLogger } from "@/lib/logger";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { AlertTriangle, ChevronDown, ChevronUp, MapPin, Navigation } from "lucide-react";
+import { AlertTriangle, Bike, ChevronDown, ChevronUp, MapPin, Navigation, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { apiFetch } from "../../lib/api";
@@ -207,19 +207,19 @@ export function RideRouteMap({
             <Marker position={[pickupLat, pickupLng]} icon={pickupIcon}>
               <Popup>
                 <span className="text-xs font-bold text-green-700">
-                  📍 {pickupLabel ?? "Pickup"}
+                  <MapPin size={12} className="inline" /> {pickupLabel ?? "Pickup"}
                 </span>
               </Popup>
             </Marker>
             <Marker position={[dropLat, dropLng]} icon={dropIcon}>
               <Popup>
-                <span className="text-xs font-bold text-red-700">🎯 {dropLabel ?? "Drop-off"}</span>
+                <span className="text-xs font-bold text-red-700"><Target size={12} className="inline" /> {dropLabel ?? "Drop-off"}</span>
               </Popup>
             </Marker>
             {riderLat != null && riderLng != null && (
               <Marker position={[riderLat, riderLng]} icon={riderIcon}>
                 <Popup>
-                  <span className="text-xs font-bold text-blue-700">🏍️ You</span>
+                  <span className="text-xs font-bold text-blue-700"><Bike size={12} className="inline" /> You</span>
                 </Popup>
               </Marker>
             )}

@@ -1,3 +1,4 @@
+import { Navigation, Rocket, Sparkles, Wallet } from "lucide-react";
 import { useState } from "react";
 
 export interface OnboardingProps {
@@ -20,9 +21,17 @@ interface Slide {
   accentColor: string;
 }
 
+function SlideIcon({ name }: { name: string }) {
+  const size = 48;
+  if (name === "Earn More") return <Wallet size={size} className="text-amber-400" />;
+  if (name === "Navigate Live") return <Navigation size={size} className="text-emerald-400" />;
+  if (name === "Get Paid Fast") return <Rocket size={size} className="text-purple-400" />;
+  return <Sparkles size={size} className="text-gray-400" />;
+}
+
 const SLIDES: Slide[] = [
   {
-    icon: "💰",
+    icon: "Earn More",
     titleEn: "Earn More",
     titleUr: "زیادہ کمائیں",
     titleRoman: "Zyada Kamayein",
@@ -32,7 +41,7 @@ const SLIDES: Slide[] = [
     accentColor: GOLD,
   },
   {
-    icon: "🗺️",
+    icon: "Navigate Live",
     titleEn: "Navigate Live",
     titleUr: "لائیو نیویگیشن",
     titleRoman: "Live Navigate Karein",
@@ -42,7 +51,7 @@ const SLIDES: Slide[] = [
     accentColor: "#00C48C",
   },
   {
-    icon: "🚀",
+    icon: "Get Paid Fast",
     titleEn: "Get Paid Fast",
     titleUr: "تیز ادائیگی پائیں",
     titleRoman: "Tezi Se Paid Hon",
@@ -137,7 +146,7 @@ export default function Onboarding({ onDone }: OnboardingProps) {
             boxShadow: `0 0 40px ${current.accentColor}22`,
           }}
         >
-          {current.icon}
+          <SlideIcon name={current.icon} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

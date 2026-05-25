@@ -15,6 +15,8 @@ import {
   ClipboardList,
   Clock,
   CreditCard,
+  HelpCircle,
+  XCircle,
   FileText,
   Home,
   Info,
@@ -1054,31 +1056,31 @@ export default function Profile() {
                         verified: {
                           bg: "bg-green-50 border-green-200",
                           badge: "bg-green-100 text-green-700",
-                          icon: "✓",
+                          icon: <CheckCircle size={10} className="inline" />,
                           label: "Verified",
                         },
                         pending: {
                           bg: "bg-amber-50 border-amber-200",
                           badge: "bg-amber-100 text-amber-700",
-                          icon: "⏳",
+                          icon: <Clock size={10} className="inline" />,
                           label: "Under Review",
                         },
                         rejected: {
                           bg: "bg-red-50 border-red-200",
                           badge: "bg-red-100 text-red-600",
-                          icon: "✗",
+                          icon: <XCircle size={10} className="inline" />,
                           label: "Rejected",
                         },
                         none: {
                           bg: "bg-gray-50 border-gray-200",
                           badge: "bg-gray-100 text-gray-600",
-                          icon: "?",
+                          icon: <HelpCircle size={10} className="inline" />,
                           label: "Not Submitted",
                         },
                       }[kycStatus] ?? {
                         bg: "bg-gray-50 border-gray-200",
                         badge: "bg-gray-100 text-gray-600",
-                        icon: "?",
+                        icon: <HelpCircle size={10} className="inline" />,
                         label: kycStatus,
                       };
 
@@ -1102,7 +1104,7 @@ export default function Profile() {
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${statusConfig.badge}`}
                             >
-                              {statusConfig.icon} {statusConfig.label}
+                              {statusConfig.icon} <span className="ml-0.5">{statusConfig.label}</span>
                             </span>
                           </div>
                           <div className="grid grid-cols-4 gap-1.5">
@@ -1115,7 +1117,7 @@ export default function Profile() {
                                     : "bg-gray-100 text-gray-400"
                                 }`}
                               >
-                                <div className="mb-0.5 text-sm">{d.done ? "✓" : "—"}</div>
+                                <div className="mb-0.5 text-sm">{d.done ? <CheckCircle size={12} className="inline" /> : <span className="text-gray-400">—</span>}</div>
                                 {d.label}
                               </div>
                             ))}

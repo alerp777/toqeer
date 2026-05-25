@@ -1,3 +1,4 @@
+import { Bike, X } from "lucide-react";
 import type { CSSProperties } from "react";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 

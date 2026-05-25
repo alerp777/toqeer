@@ -1,4 +1,5 @@
 import { tDual, type TranslationKey } from "@workspace/i18n";
+import { Camera, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { api } from "../lib/api";
 import { INPUT, LABEL } from "../lib/ui";
@@ -133,12 +134,12 @@ export function ImageUploader({
             </>
           ) : value ? (
             <>
-              <p className="mb-1 text-xs font-bold text-green-600">✓ {T("success")}</p>
+              <p className="mb-1 flex items-center gap-1 text-xs font-bold text-green-600"><CheckCircle2 size={12} /> {T("success")}</p>
               <p className="text-[10px] text-gray-400">{T("edit")}</p>
             </>
           ) : (
             <>
-              <span className="mb-1 text-2xl">📷</span>
+              <Camera size={24} className="mb-1 text-gray-400" />
               <p className="text-xs font-bold text-gray-500">{T("imageUrlLabel")}</p>
               <p className="mt-0.5 text-[10px] text-gray-400">
                 {allowedFormatLabels} · Max {maxImageMb}MB
@@ -159,7 +160,7 @@ export function ImageUploader({
         />
       )}
 
-      {error && <p className="mt-1 text-xs font-medium text-red-500">⚠️ {error}</p>}
+      {error && <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-500"><AlertTriangle size={12} /> {error}</p>}
 
       {value && (
         <div
@@ -180,8 +181,9 @@ export function ImageUploader({
               onChange("");
             }}
             className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+            aria-label="Remove image"
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
       )}

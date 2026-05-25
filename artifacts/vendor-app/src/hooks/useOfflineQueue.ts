@@ -171,9 +171,9 @@ export function useOfflineQueue() {
     setIsSyncing(false);
     flushingRef.current = false;
     if (failed.length === 0) {
-      showSyncToast(`✅ Synced ${total} update${total > 1 ? "s" : ""}`);
+      showSyncToast(`Synced ${total} update${total > 1 ? "s" : ""}`);
     } else {
-      showSyncToast(`⚠️ ${failed.length} update${failed.length > 1 ? "s" : ""} failed to sync`);
+      showSyncToast(`${failed.length} update${failed.length > 1 ? "s" : ""} failed to sync`);
     }
   }, [qc]);
 

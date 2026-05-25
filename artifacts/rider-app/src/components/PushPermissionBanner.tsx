@@ -1,3 +1,4 @@
+import { Bell, X } from "lucide-react";
 import type { CSSProperties } from "react";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 
@@ -21,7 +22,7 @@ export function PushPermissionBanner() {
         <div style={styles.banner}>
           <div style={styles.left}>
             <div style={{ ...styles.iconBox, background: "rgba(239,68,68,0.2)" }}>
-              <span style={{ fontSize: 20 }}>⚠️</span>
+              <Bell size={20} className="text-red-500" />
             </div>
             <div>
               <div style={styles.title}>Notifications Unavailable</div>

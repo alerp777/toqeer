@@ -1,17 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
+import {
+  LayoutDashboard,
+  Package,
+  MessageSquare,
+  Utensils,
+  Wallet,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useLanguage } from "../lib/useLanguage";
 
-const navItems: { href: string; labelKey: TranslationKey; icon: string }[] = [
-  { href: "/", labelKey: "dashboard", icon: "📊" },
-  { href: "/orders", labelKey: "orders", icon: "📦" },
-  { href: "/chat", labelKey: "chat", icon: "💬" },
-  { href: "/products", labelKey: "products", icon: "🍽️" },
-  { href: "/wallet", labelKey: "wallet", icon: "💰" },
-  { href: "/profile", labelKey: "account", icon: "👤" },
+const navItems: { href: string; labelKey: TranslationKey; Icon: LucideIcon }[] = [
+  { href: "/", labelKey: "dashboard", Icon: LayoutDashboard },
+  { href: "/orders", labelKey: "orders", Icon: Package },
+  { href: "/chat", labelKey: "chat", Icon: MessageSquare },
+  { href: "/products", labelKey: "products", Icon: Utensils },
+  { href: "/wallet", labelKey: "wallet", Icon: Wallet },
+  { href: "/profile", labelKey: "account", Icon: User },
 ];
 
 interface Conversation {
@@ -70,7 +79,7 @@ export function BottomNav() {
                 className="relative flex h-7 w-10 items-center justify-center rounded-xl text-xl transition-all duration-200"
                 style={active ? { background: "rgba(26,86,219,0.18)" } : {}}
               >
-                {item.icon}
+                <item.Icon size={18} strokeWidth={2.2} />
                 {isChatTab && unreadCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1 flex items-center justify-center rounded-full leading-none font-bold text-white"
