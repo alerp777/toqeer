@@ -8,7 +8,8 @@ import { logger } from "./logger.js";
 
 const _require = createRequire(import.meta.url);
 
-const databaseUrl = process.env.DATABASE_URL;
+const rawDbUrl = process.env.DATABASE_URL;
+const databaseUrl = rawDbUrl?.startsWith("=") ? rawDbUrl.slice(1) : rawDbUrl;
 const isProduction = ["production", "staging"].includes(process.env.NODE_ENV ?? "");
 const isDevMock = !process.env.VAULT_UNLOCKED && !isProduction && !databaseUrl;
 

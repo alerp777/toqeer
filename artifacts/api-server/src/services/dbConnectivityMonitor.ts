@@ -29,7 +29,8 @@ let downSinceMs = 0;
 
 function dbHost(): string {
   try {
-    const url = process.env.DATABASE_URL ?? "";
+    const rawUrl = process.env.DATABASE_URL ?? "";
+    const url = rawUrl.startsWith("=") ? rawUrl.slice(1) : rawUrl;
     const host = new URL(url).hostname;
     return host || "unknown-host";
   } catch (err) {

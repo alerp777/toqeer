@@ -31,7 +31,8 @@ const router = Router();
 let _pool: Pool | null = null;
 
 function getPool(): Pool | null {
-  const databaseUrl = process.env["DATABASE_URL"];
+  const rawUrl = process.env["DATABASE_URL"];
+  const databaseUrl = rawUrl?.startsWith("=") ? rawUrl.slice(1) : rawUrl;
   if (!databaseUrl) return null;
   if (!_pool) {
     _pool = new Pool({ ...buildPgPoolConfig(databaseUrl), max: 5 });

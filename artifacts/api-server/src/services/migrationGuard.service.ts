@@ -111,7 +111,8 @@ export async function checkMigrationGuard(): Promise<MigrationGuardReport> {
     return report;
   }
 
-  const databaseUrl = process.env.DATABASE_URL;
+  const rawUrl = process.env.DATABASE_URL;
+  const databaseUrl = rawUrl?.startsWith("=") ? rawUrl.slice(1) : rawUrl;
   if (!databaseUrl) {
     const report: MigrationGuardReport = {
       ok: true,
