@@ -9,6 +9,7 @@ const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   try {
+    res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
     const placement = (req.query["placement"] as string) || "home";
     const service = req.query["service"] as string | undefined;
     const now = new Date();

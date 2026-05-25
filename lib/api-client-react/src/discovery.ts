@@ -101,6 +101,34 @@ export interface FlashDealProduct {
   soldCount: number;
 }
 
+export interface HomeFeedResponse {
+  banners: Banner[];
+  flashDeals: FlashDealProduct[];
+  trending: RecommendationProduct[];
+}
+
+export const getHomeFeed = async (
+  params?: { placement?: string; service?: string; flashLimit?: number; trendingLimit?: number },
+  options?: RequestInit
+): Promise<HomeFeedResponse> => {
+  const qs = new URLSearchParams();
+  if (params?.placement) qs.set("placement", params.placement);
+  if (params?.service) qs.set("service", params.service);
+  if (params?.flashLimit) qs.set("flashLimit", String(params.flashLimit));
+  if (params?.trendingLimit) qs.set("trendingLimit", String(params.trendingLimit));
+  const q = qs.toString();
+  const res: { banners?: Banner[]; flashDeals?: unknown[]; trending?: unknown[] } =
+    await customFetch(`/home-feed${q ? `?${q}` : ""}`, {
+      ...options,
+      method: "GET",
+    });
+  return {
+    banners: (res.banners ?? []) as Banner[],
+    flashDeals: (res.flashDeals ?? []) as FlashDealProduct[],
+    trending: (res.trending ?? []) as RecommendationProduct[],
+  };
+};
+
 export const getFlashDeals = async (
   params?: { limit?: number },
   options?: RequestInit

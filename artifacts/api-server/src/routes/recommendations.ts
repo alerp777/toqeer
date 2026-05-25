@@ -144,6 +144,7 @@ router.get("/for-you", customerAuth, async (req, res) => {
 
 router.get("/trending", async (req, res) => {
   try {
+    res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
     const limit = Math.min(20, parseInt(String(req.query["limit"] || "10")));
     const type = req.query["type"] as string | undefined;
 

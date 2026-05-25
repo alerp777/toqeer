@@ -66,6 +66,7 @@ AJKMart is a full-stack super-app for Azad Jammu & Kashmir (AJK), Pakistan. It p
 |---|---|
 | `artifacts/api-server/src/routes/auth/` | Auth routes (phone OTP, password, magic link, OAuth, 2FA) |
 | `artifacts/api-server/src/routes/admin/` | Admin sub-routers (auth, users, orders, rides, finance, content, system) |
+| `artifacts/api-server/src/routes/home-feed.ts` | `GET /api/home-feed` — banners + flash-deals + trending in one parallel fetch (P1) |
 | `artifacts/api-server/src/routes/rides.ts` | Ride booking, fare estimation, OTP verify, parcel |
 | `artifacts/api-server/src/routes/wallet.ts` | Deposit, P2P transfer (SELECT FOR UPDATE), withdraw |
 | `artifacts/api-server/src/routes/rider.ts` | Rider profile, KYC, ride status transitions |

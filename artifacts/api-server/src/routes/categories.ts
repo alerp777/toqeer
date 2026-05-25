@@ -1,6 +1,7 @@
 import { db } from "@workspace/db";
 import { categoriesTable, productsTable } from "@workspace/db/schema";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, max, sql } from "drizzle-orm";
+import crypto from "crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { generateId } from "../lib/id.js";
@@ -83,6 +84,7 @@ router.get("/", validateQuery(listQuerySchema), async (req, res) => {
         const s = await getCachedSettings();
         const featureKey = `feature_${type}`;
         if ((s[featureKey] ?? "on") !== "on") {
+          res.set("Cache-Control", "public, max-age=1800, stale-while-revalidate=300");
           sendSuccess(res, { categories: [] });
           return;
         }
@@ -97,6 +99,26 @@ router.get("/", validateQuery(listQuerySchema), async (req, res) => {
     const conditions = [eq(categoriesTable.isActive, true)];
     if (type) {
       conditions.push(eq(categoriesTable.type, type));
+    }
+
+    /* ── Compute ETag from count + latest updatedAt ───────────────────── */
+    const [etagRow] = await db
+      .select({
+        count: sql<number>`count(*)::int`,
+        maxUpdatedAt: max(categoriesTable.updatedAt),
+      })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.isActive, true));
+
+    const etagInput = `${etagRow?.count ?? 0}-${etagRow?.maxUpdatedAt?.toISOString() ?? ""}`;
+    const etag = `"${crypto.createHash("sha1").update(etagInput).digest("hex")}"`;
+
+    res.set("Cache-Control", "public, max-age=1800, stale-while-revalidate=300");
+    res.set("ETag", etag);
+
+    if (req.headers["if-none-match"] === etag) {
+      res.status(304).end();
+      return;
     }
 
     const allCats = await db

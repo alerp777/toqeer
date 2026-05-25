@@ -48,6 +48,9 @@ import riderRouter from "./rider/index.js";
 import publicVendorsRouter from "./public-vendors.js";
 import vendorRouter from "./vendor.js";
 
+// ── Home feed (aggregated public surface) ─────────────────────────────────
+import homeFeedRouter from "./home-feed.js";
+
 // ── Shared / public surface ────────────────────────────────────────────────
 import deepLinksPublicRouter from "./deep-links-public.js";
 import docsRouter from "./docs.js";
@@ -256,6 +259,7 @@ router.use("/wishlist", checkSessionRevocation, verifyTokenFamily, userApiLimite
 router.use("/referrals", userApiLimiter, referralsRouter);
 
 // ── 7. Public / lightly-gated customer routes ─────────────────────────────
+router.use("/home-feed", homeFeedGetLimiter, homeFeedRouter);
 router.use("/products", homeFeedGetLimiter, productsRouter);
 router.use("/categories", publicGetLimiter, categoriesRouter);
 router.use("/banners", publicGetLimiter, bannersRouter);

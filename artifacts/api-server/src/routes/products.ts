@@ -11,6 +11,54 @@ import { getCachedSettings } from "./admin.js";
 
 const router: IRouter = Router();
 
+/* ── In-memory search cache (30 s TTL, max 500 entries, LRU by insertion order) ── */
+const SEARCH_CACHE_TTL_MS = 30_000;
+const SEARCH_CACHE_MAX = 500;
+
+interface SearchCacheEntry {
+  data: unknown;
+  expiresAt: number;
+}
+
+const searchCache = new Map<string, SearchCacheEntry>();
+
+function buildSearchCacheKey(
+  q: string,
+  type: string | undefined,
+  category: string | undefined,
+  sort: string | undefined,
+  page: number,
+  perPage: number,
+  minPrice: number | undefined,
+  maxPrice: number | undefined,
+  minRating: number | undefined,
+  slim: boolean
+): string {
+  return [
+    q.toLowerCase().trim(),
+    type ?? "",
+    category ?? "",
+    sort ?? "",
+    page,
+    perPage,
+    minPrice ?? "",
+    maxPrice ?? "",
+    minRating ?? "",
+    slim ? "1" : "0",
+  ].join("|");
+}
+
+function pruneSearchCache(): void {
+  const now = Date.now();
+  for (const [key, entry] of searchCache) {
+    if (entry.expiresAt < now) searchCache.delete(key);
+  }
+  while (searchCache.size > SEARCH_CACHE_MAX) {
+    const firstKey = searchCache.keys().next().value;
+    if (firstKey !== undefined) searchCache.delete(firstKey);
+  }
+}
+
 function mapProduct(p: typeof productsTable.$inferSelect) {
   return {
     ...p,
@@ -38,6 +86,7 @@ function mapSlimProduct(p: typeof productsTable.$inferSelect) {
 /* ── GET /products/flash-deals ──────────────────────────────────────────── */
 router.get("/flash-deals", async (req, res) => {
   try {
+    res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=60");
     const s = await getCachedSettings();
     const flashDefault = parseInt(s["pagination_flash_deals"] ?? "20") || 20;
     const flashMax = Math.max(flashDefault, parseInt(s["pagination_products_max"] ?? "50") || 50);
@@ -67,6 +116,7 @@ router.get("/flash-deals", async (req, res) => {
         sendSuccess(res, { products: [], total: 0 });
         return;
       }
+
 
       const dealProductIds = activeDeals.map((d) => d.productId);
       const dealMap = new Map(activeDeals.map((d) => [d.productId, d]));
@@ -250,6 +300,7 @@ router.get("/search", async (req, res) => {
     const page = Math.min(Math.max(parsed.data.page ?? 1, 1), 10000);
     const perPage = Math.min(parsed.data.perPage ?? defaultPP, maxPP);
     const offset = (page - 1) * perPage;
+    const slimSearch = parsed.data.slim === "true";
 
     if (!q || !q.trim()) {
       sendSuccess(res, { products: [], total: 0, page, perPage, totalPages: 0 });
@@ -257,6 +308,19 @@ router.get("/search", async (req, res) => {
     }
 
     const trimmed = q.trim();
+
+    /* ── Search cache lookup ──────────────────────────────────────────── */
+    const cacheKey = buildSearchCacheKey(
+      trimmed, type, category, sort, page, perPage,
+      minPrice, maxPrice, minRating, slimSearch
+    );
+    const now = Date.now();
+    const cached = searchCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      logger.debug({ cacheKey }, "[products/search] cache hit");
+      res.json(cached.data);
+      return;
+    }
 
     const tokens = trimmed
       .replace(/[^a-zA-Z0-9\s\u0600-\u06FF]/g, " ")
@@ -346,15 +410,22 @@ router.get("/search", async (req, res) => {
         );
       });
 
-    const slimSearch = parsed.data.slim === "true";
+    const responsePayload = {
+      success: true,
+      data: {
+        products: allProducts.map(slimSearch ? mapSlimProduct : mapProduct),
+        total,
+        page,
+        perPage,
+        totalPages: Math.ceil(total / perPage),
+      },
+    };
 
-    sendSuccess(res, {
-      products: allProducts.map(slimSearch ? mapSlimProduct : mapProduct),
-      total,
-      page,
-      perPage,
-      totalPages: Math.ceil(total / perPage),
-    });
+    /* ── Write to search cache ────────────────────────────────────────── */
+    pruneSearchCache();
+    searchCache.set(cacheKey, { data: responsePayload, expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
+
+    res.json(responsePayload);
   } catch (err) {
     logger.error(
       {

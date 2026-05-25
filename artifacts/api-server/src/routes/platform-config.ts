@@ -14,8 +14,16 @@ const router: IRouter = Router();
 
 // Public endpoint — all client apps fetch this for config + feature flags
 router.get("/", async (req, res) => {
-  res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
   const s: Record<string, string> = await getCachedSettings();
+
+  /* ── ETag derived from settings hash — skip expensive payload build on 304 ── */
+  const settingsEtag = `"${crypto.createHash("sha1").update(JSON.stringify(s)).digest("hex")}"`;
+  res.set("ETag", settingsEtag);
+  if (req.headers["if-none-match"] === settingsEtag) {
+    res.status(304).end();
+    return;
+  }
   const isDemoMode = s["platform_mode"] !== "live";
   let demoData: {
     vendors: unknown[];
