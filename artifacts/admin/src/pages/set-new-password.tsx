@@ -1,37 +1,17 @@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/lib/adminAuthContext";
+import {
+  computeStrength,
+  STRENGTH_META,
+  validateStrength,
+} from "@/lib/auth/passwordStrength";
 import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
-function validateStrength(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters";
-  if (!/[A-Z]/.test(pw)) return "Password must contain at least 1 uppercase letter";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least 1 number";
-  return null;
-}
-
-type StrengthLevel = 0 | 1 | 2 | 3 | 4;
-
-function computeStrength(pw: string): StrengthLevel {
-  if (!pw) return 0;
-  if (pw.length < 8) return 1;
-  if (!/[A-Z]/.test(pw)) return 2;
-  if (!/[0-9]/.test(pw)) return 3;
-  return 4;
-}
-
-const STRENGTH_META: Record<StrengthLevel, { label: string; bar: string; text: string }> = {
-  0: { label: "", bar: "", text: "" },
-  1: { label: "Weak", bar: "bg-red-500", text: "text-red-400" },
-  2: { label: "Fair", bar: "bg-orange-400", text: "text-orange-400" },
-  3: { label: "Good", bar: "bg-amber-400", text: "text-amber-400" },
-  4: { label: "Strong", bar: "bg-emerald-500", text: "text-emerald-400" },
-};
-
 export default function SetNewPassword() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const { state, changePassword, logout } = useAdminAuth();
   const { toast } = useToast();
 
@@ -43,8 +23,8 @@ export default function SetNewPassword() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!state.isLoading && !state.accessToken) setLocation("/login");
-  }, [state.isLoading, state.accessToken, setLocation]);
+    if (!state.isLoading && !state.accessToken) navigate("/login");
+  }, [state.isLoading, state.accessToken, navigate]);
 
   const strengthLevel = computeStrength(newPassword);
   const sm = STRENGTH_META[strengthLevel];
@@ -69,7 +49,7 @@ export default function SetNewPassword() {
     try {
       await changePassword(currentPassword, newPassword);
       toast({ title: "Password updated", description: "Welcome aboard. You're all set." });
-      setLocation("/dashboard");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to change password");
     } finally {
@@ -81,7 +61,7 @@ export default function SetNewPassword() {
     try {
       await logout();
     } finally {
-      setLocation("/login");
+      navigate("/login");
     }
   }
 
@@ -89,7 +69,7 @@ export default function SetNewPassword() {
     <div className="grid min-h-screen place-items-center bg-[#0f1117] px-4">
       <div className="w-full max-w-[420px]">
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
             <KeyRound className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Set new password</h1>
@@ -97,8 +77,8 @@ export default function SetNewPassword() {
         </div>
 
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] p-7 shadow-2xl backdrop-blur-md">
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-400/20 bg-amber-400/8 px-4 py-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-indigo-400/20 bg-indigo-400/8 px-4 py-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400" />
             <p className="text-[12px] leading-snug text-white/50">
               This step is optional — your current password keeps working until you change it.
             </p>
@@ -119,7 +99,7 @@ export default function SetNewPassword() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Your current password"
-                className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                 required
               />
             </div>
@@ -139,7 +119,7 @@ export default function SetNewPassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                  className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                   required
                 />
                 <button
@@ -181,7 +161,7 @@ export default function SetNewPassword() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter the new password"
-                className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                 required
               />
             </div>
@@ -195,7 +175,7 @@ export default function SetNewPassword() {
             <button
               type="submit"
               disabled={submitting || !currentPassword || !newPassword || !confirmPassword}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-500 disabled:opacity-50"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

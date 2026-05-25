@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  ArrowRight,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -9,41 +8,19 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/lib/adminAuthContext";
-
-function validateStrength(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters.";
-  if (!/[A-Z]/.test(pw)) return "Password must contain at least 1 uppercase letter.";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least 1 number.";
-  return null;
-}
-
-type StrengthLevel = 0 | 1 | 2 | 3 | 4;
-
-function computeStrength(pw: string): StrengthLevel {
-  if (!pw) return 0;
-  if (pw.length < 8) return 1;
-  if (!/[A-Z]/.test(pw)) return 2;
-  if (!/[0-9]/.test(pw)) return 3;
-  return 4;
-}
-
-const STRENGTH_META: Record<StrengthLevel, { label: string; bar: string; text: string }> = {
-  0: { label: "", bar: "", text: "" },
-  1: { label: "Weak", bar: "bg-red-500", text: "text-red-500" },
-  2: { label: "Fair", bar: "bg-orange-400", text: "text-orange-400" },
-  3: { label: "Good", bar: "bg-amber-400", text: "text-amber-500" },
-  4: { label: "Strong", bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
-};
+import {
+  computeStrength,
+  STRENGTH_META,
+  validateStrength,
+} from "@/lib/auth/passwordStrength";
 
 export function FirstLoginCredentialsDialog() {
-  const [, setLocation] = useLocation();
   const { state, changePassword, updateOwnProfile, dismissDefaultCredentialsPrompt } =
     useAdminAuth();
   const { toast } = useToast();
@@ -83,11 +60,6 @@ export function FirstLoginCredentialsDialog() {
     }
   }, [open, state.user?.username]);
 
-  const handleSkip = () => {
-    dismissDefaultCredentialsPrompt();
-    setOpen(false);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -101,8 +73,8 @@ export function FirstLoginCredentialsDialog() {
     if (!wantsUsernameChange && !wantsPasswordChange) {
       setFormError(
         passwordSavedThisSession
-          ? "Pick a new username, or click Skip for now."
-          : "Update your username, password, or both — or click Skip for now."
+          ? "Pick a new username to finish setup."
+          : "Update your username, password, or both to secure your account."
       );
       return;
     }
@@ -175,16 +147,16 @@ export function FirstLoginCredentialsDialog() {
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => {
-        if (!next && !submitting) handleSkip();
+      onOpenChange={(_next) => {
+        // Block dismissal — credentials must be updated before continuing
       }}
     >
       <DialogContent
-        className="overflow-hidden rounded-2xl border-0 p-0 shadow-2xl sm:max-w-md [&_[data-dialog-close]]:top-3.5 [&_[data-dialog-close]]:right-3.5 [&_[data-dialog-close]]:h-7 [&_[data-dialog-close]]:w-7 [&_[data-dialog-close]]:rounded-full [&_[data-dialog-close]]:bg-white/15 [&_[data-dialog-close]]:text-white [&_[data-dialog-close]]:backdrop-blur-sm [&_[data-dialog-close]]:hover:bg-white/25 [&_[data-dialog-close]]:hover:text-white"
+        className="overflow-hidden rounded-2xl border-0 p-0 shadow-2xl sm:max-w-md [&_[data-dialog-close]]:hidden"
         data-testid="dialog-first-login-credentials"
       >
         {/* ── Header ───────────────────────────────────────────── */}
-        <div className="relative bg-gradient-to-br from-amber-500 via-amber-400 to-orange-500 px-6 pt-6 pb-5">
+        <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 px-6 pt-6 pb-5">
           {/* subtle grid texture */}
           <div
             className="pointer-events-none absolute inset-0 opacity-10"
@@ -193,7 +165,7 @@ export function FirstLoginCredentialsDialog() {
                 "repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(255,255,255,.4) 19px,rgba(255,255,255,.4) 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(255,255,255,.4) 19px,rgba(255,255,255,.4) 20px)",
             }}
           />
-          <div className="relative flex items-start gap-4 pr-7">
+          <div className="relative flex items-start gap-4 pr-2">
             {/* icon badge */}
             <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-lg ring-1 ring-white/30 backdrop-blur-sm">
               <KeyRound className="h-5 w-5 text-white" />
@@ -208,7 +180,7 @@ export function FirstLoginCredentialsDialog() {
               {/* security badge */}
               <span className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold tracking-wider text-white/90 uppercase backdrop-blur-sm">
                 <ShieldCheck className="h-3 w-3" />
-                Action required
+                Security setup required
               </span>
             </div>
           </div>
@@ -233,7 +205,7 @@ export function FirstLoginCredentialsDialog() {
                 placeholder={state.user?.username ?? "admin"}
                 autoComplete="username"
                 disabled={submitting}
-                className="border-border/70 bg-muted/40 h-10 rounded-lg text-sm transition-colors focus:border-amber-400 focus:ring-amber-400/20"
+                className="border-border/70 bg-muted/40 h-10 rounded-lg text-sm transition-colors focus:border-indigo-400 focus:ring-indigo-400/20"
                 data-testid="input-new-username"
               />
               <p className="text-muted-foreground/70 text-[12px]">
@@ -261,7 +233,7 @@ export function FirstLoginCredentialsDialog() {
                     placeholder="Your current password"
                     autoComplete="current-password"
                     disabled={submitting}
-                    className="border-border/70 bg-muted/40 h-10 rounded-lg pr-10 text-sm transition-colors focus:border-amber-400 focus:ring-amber-400/20"
+                    className="border-border/70 bg-muted/40 h-10 rounded-lg pr-10 text-sm transition-colors focus:border-indigo-400 focus:ring-indigo-400/20"
                     data-testid="input-current-password"
                   />
                 </div>
@@ -282,7 +254,7 @@ export function FirstLoginCredentialsDialog() {
                     Password updated
                   </p>
                   <p className="text-[12px] text-emerald-600/70 dark:text-emerald-400/70">
-                    Now save a new username, or skip for now.
+                    Now set a new username to finish setup.
                   </p>
                 </div>
               </div>
@@ -307,7 +279,7 @@ export function FirstLoginCredentialsDialog() {
                       placeholder="Min 8 chars, 1 uppercase, 1 number"
                       autoComplete="new-password"
                       disabled={submitting}
-                      className="border-border/70 bg-muted/40 h-10 rounded-lg pr-10 text-sm transition-colors focus:border-amber-400 focus:ring-amber-400/20"
+                      className="border-border/70 bg-muted/40 h-10 rounded-lg pr-10 text-sm transition-colors focus:border-indigo-400 focus:ring-indigo-400/20"
                       data-testid="input-new-password"
                     />
                     <button
@@ -359,7 +331,7 @@ export function FirstLoginCredentialsDialog() {
                     placeholder="Re-enter the new password"
                     autoComplete="new-password"
                     disabled={submitting}
-                    className="border-border/70 bg-muted/40 h-10 rounded-lg text-sm transition-colors focus:border-amber-400 focus:ring-amber-400/20"
+                    className="border-border/70 bg-muted/40 h-10 rounded-lg text-sm transition-colors focus:border-indigo-400 focus:ring-indigo-400/20"
                     data-testid="input-confirm-password"
                   />
                 </div>
@@ -379,52 +351,23 @@ export function FirstLoginCredentialsDialog() {
           </div>
 
           {/* ── Footer ─────────────────────────────────────────── */}
-          <div className="border-border/60 bg-muted/20 mt-4 flex items-center justify-between gap-3 border-t px-6 py-4">
-            {/* left: full-screen link */}
-            <button
-              type="button"
-              onClick={() => {
-                handleSkip();
-                setLocation("/set-new-password");
-              }}
+          <div className="border-border/60 bg-muted/20 mt-4 flex items-center justify-end gap-3 border-t px-6 py-4">
+            <Button
+              type="submit"
+              size="sm"
               disabled={submitting}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex items-center gap-1 rounded text-[12px] font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:opacity-40"
-              data-testid="button-open-full-screen"
+              className="h-8 rounded-lg border-0 bg-indigo-600 px-4 text-[13px] font-semibold text-white hover:bg-indigo-500 focus-visible:ring-indigo-400/40 active:bg-indigo-700"
+              data-testid="button-save-credentials"
             >
-              Full screen
-              <ArrowRight className="h-3 w-3" />
-            </button>
-
-            {/* right: skip + save */}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSkip}
-                disabled={submitting}
-                className="border-border/70 hover:border-border h-8 rounded-lg px-4 text-[13px] font-medium"
-                data-testid="button-skip-credentials"
-              >
-                Skip
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={submitting}
-                className="h-8 rounded-lg border-0 bg-amber-500 px-4 text-[13px] font-semibold text-white hover:bg-amber-600 focus-visible:ring-amber-400/40 active:bg-amber-700"
-                data-testid="button-save-credentials"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  "Save changes"
-                )}
-              </Button>
-            </div>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
           </div>
         </form>
       </DialogContent>

@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 
@@ -42,12 +42,12 @@ export default function ForgotPassword() {
     <div className="grid min-h-screen place-items-center bg-[#0f1117] px-4">
       <div className="w-full max-w-[420px]">
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30">
-            <ShoppingBag className="h-7 w-7 text-white" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <ShieldCheck className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Reset password</h1>
           <p className="mt-1.5 text-[13px] text-white/50">
-            {submitted ? "Check your inbox" : "We’ll send a reset link to your email"}
+            {submitted ? "Check your inbox" : "We'll send a reset link to your email"}
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function ForgotPassword() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-9 text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-9 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                     required
                   />
                 </div>
@@ -109,7 +109,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={submitting || !email.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-500 disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

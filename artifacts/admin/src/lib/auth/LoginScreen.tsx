@@ -203,10 +203,10 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               height: 56,
               borderRadius: 16,
               margin: "0 auto 14px",
-              background: "linear-gradient(135deg, #f59e0b, #ea580c)",
+              background: "linear-gradient(135deg, #6366f1, #7c3aed)",
               display: "grid",
               placeItems: "center",
-              boxShadow: "0 14px 30px rgba(245,158,11,0.3)",
+              boxShadow: "0 14px 30px rgba(99,102,241,0.3)",
             }}
           >
             <ShieldCheck style={{ width: 28, height: 28, color: "#fff" }} />
@@ -275,7 +275,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="username"
                     placeholder="admin@example.com"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-10 text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                   />
                 </div>
               </div>
@@ -298,7 +298,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     placeholder="Enter your password"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                   />
                   <button
                     type="button"
@@ -359,7 +359,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   justifySelf: "flex-start",
                   border: "none",
                   background: "transparent",
-                  color: "#fbbf24",
+                  color: "#818cf8",
                   fontSize: 13,
                   fontWeight: 600,
                   padding: 0,
@@ -381,8 +381,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   border: "none",
                   background:
                     isLoading || isRateLimited || !username.trim() || !password.trim()
-                      ? "rgba(245,158,11,0.5)"
-                      : "#f59e0b",
+                      ? "rgba(99,102,241,0.5)"
+                      : "#6366f1",
                   color: "#fff",
                   fontWeight: 800,
                   cursor: "pointer",
@@ -404,8 +404,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               <div
                 style={{
                   borderRadius: 16,
-                  border: "1px solid rgba(251,191,36,0.22)",
-                  background: "rgba(251,191,36,0.08)",
+                  border: "1px solid rgba(99,102,241,0.22)",
+                  background: "rgba(99,102,241,0.08)",
                   padding: 14,
                   color: "rgba(255,255,255,0.86)",
                   fontSize: 13,
@@ -415,6 +415,16 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 Enter the 6-digit code from your authenticator app.
               </div>
               <OtpInput length={6} onComplete={setTotp} label="Authenticator code" />
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.38)",
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                Resend not available — check your authenticator app.
+              </p>
               <button
                 type="button"
                 onClick={() => setLocation("/forgot-password")}
@@ -422,7 +432,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   justifySelf: "flex-start",
                   border: "none",
                   background: "transparent",
-                  color: "#fbbf24",
+                  color: "#818cf8",
                   fontSize: 13,
                   fontWeight: 600,
                   padding: 0,
@@ -463,7 +473,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                     height: 42,
                     borderRadius: 12,
                     border: "none",
-                    background: isLoading ? "rgba(245,158,11,0.5)" : "#f59e0b",
+                    background: isLoading ? "rgba(99,102,241,0.5)" : "#6366f1",
                     color: "#fff",
                     fontWeight: 800,
                     cursor: "pointer",
@@ -504,7 +514,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 setSessionExpiredOpen(false);
                 setLocation("/login");
               }}
-              className="h-11 rounded-xl bg-amber-500 font-semibold text-white"
+              className="h-11 rounded-xl bg-indigo-600 font-semibold text-white hover:bg-indigo-500"
             >
               Sign in
             </button>

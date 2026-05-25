@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { validateStrength } from "@/lib/auth/passwordStrength";
 import {
   ArrowLeft,
   ArrowRight,
@@ -6,7 +7,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ShoppingBag,
+  ShieldCheck,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,13 +20,6 @@ function getTokenFromQuery(): string {
   } catch {
     return "";
   }
-}
-
-function validateStrength(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters";
-  if (!/[A-Z]/.test(pw)) return "Password must contain at least 1 uppercase letter";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least 1 number";
-  return null;
 }
 
 type ValidationState =
@@ -129,8 +123,8 @@ export default function ResetPassword() {
     <div className="grid min-h-screen place-items-center bg-[#0f1117] px-4">
       <div className="w-full max-w-[420px]">
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30">
-            <ShoppingBag className="h-7 w-7 text-white" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <ShieldCheck className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Choose new password</h1>
           <p className="mt-1.5 text-[13px] text-white/50">
@@ -167,7 +161,7 @@ export default function ResetPassword() {
                 </p>
               </div>
               <Link href="/forgot-password">
-                <a className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-400/80 transition-colors hover:text-amber-300">
+                <a className="inline-flex items-center gap-1.5 text-[13px] font-medium text-indigo-400/80 transition-colors hover:text-indigo-300">
                   Request a new reset link <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </Link>
@@ -202,7 +196,7 @@ export default function ResetPassword() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 8 chars, 1 uppercase, 1 number"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                     required
                   />
                   <button
@@ -229,7 +223,7 @@ export default function ResetPassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter the new password"
-                  className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-amber-400/60 focus:bg-white/[0.08] focus:ring-amber-400/15"
+                  className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
                   required
                 />
               </div>
@@ -243,7 +237,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={submitting || !password || !confirmPassword}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-500 disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
