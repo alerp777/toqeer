@@ -2,7 +2,7 @@ import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { createLogger } from "@/lib/logger";
 import { RIDER_TOKENS } from "@/lib/useThemeTokens";
 import { Capacitor } from "@capacitor/core";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
@@ -41,6 +41,7 @@ import { initSentry } from "./lib/sentry";
 import { SocketProvider } from "./lib/socket";
 import { getRiderModules, usePlatformConfig } from "./lib/useConfig";
 import { LanguageProvider, useLanguage } from "./lib/useLanguage";
+import { queryClient } from "@/lib/queryClient";
 const log = createLogger("[App]");
 
 /* PF4 / R3: All pages are lazy-loaded so the initial bundle only downloads
@@ -65,19 +66,6 @@ const VanDriver = lazy(() => import("./pages/VanDriver"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const PenaltyHistory = lazy(() => import("./pages/PenaltyHistory"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      networkMode: "offlineFirst",
-      /* Prevent background refetches from firing on every render while the
-         device is online.  Individual queries override this where tighter
-         freshness is needed (e.g. live ride requests use per-tier intervals). */
-      staleTime: 10_000,
-    },
-  },
-});
 
 /* PWA5: Capacitor-aware base resolution. `BASE_URL` may be `./` or a
    `capacitor://` URL on native; resolving against `window.location.origin`

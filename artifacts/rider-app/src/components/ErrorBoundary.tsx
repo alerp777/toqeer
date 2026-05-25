@@ -1,26 +1,23 @@
 import { createLogger } from "@/lib/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { Component, useCallback, useMemo, type ReactNode } from "react";
 import { reportError } from "../lib/error-reporter";
+import { queryClient } from "../lib/queryClient";
 
 const log = createLogger("[ErrorBoundary]");
 
 type FallbackFn = (reset: () => void, error: Error | null) => ReactNode;
 
 /* ── Branded Default Fallback ────────────────────────────────────────────────
-   Functional component so it can call useQueryClient().
    On retry: clears React Query cache first so stale queries don't cause a
    crash loop when the boundary resets and child components re-fetch.        */
 function DefaultFallback({ reset, error }: { reset: () => void; error: Error | null }) {
-  const qc = useQueryClient();
-
   const handleRetry = useCallback(() => {
     /* Flush stale cache — prevents the re-mounted tree from immediately
        re-throwing due to a cached error response from the failed request. */
-    qc.clear();
+    queryClient.clear();
     reset();
-  }, [qc, reset]);
+  }, [reset]);
 
   /* Stable 5-char reference derived from error message — rider can screenshot
      and quote this code to support instead of describing the crash in words. */
@@ -139,7 +136,6 @@ class ErrorBoundaryCore extends Component<CoreProps, CoreState> {
 }
 
 /* ── ErrorBoundary — public functional wrapper ───────────────────────────────
-   Functional so it can call useQueryClient() and pass DefaultFallback.
    Callers may supply their own fallback (ReactNode or FallbackFn) to override.
 
    Global Re-use:
@@ -151,8 +147,6 @@ interface Props {
 }
 
 export function ErrorBoundary({ children, fallback }: Props) {
-  const qc = useQueryClient();
-
   /* Stable fallback function: if caller passes a ReactNode, wrap it;
      if they pass a FallbackFn, use it directly; otherwise DefaultFallback.  */
   const resolvedFallback = useCallback<FallbackFn>(
@@ -165,8 +159,7 @@ export function ErrorBoundary({ children, fallback }: Props) {
       }
       return <DefaultFallback reset={reset} error={error} />;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fallback, qc]
+    [fallback]
   );
 
   return (
