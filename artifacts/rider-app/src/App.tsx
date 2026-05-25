@@ -459,6 +459,24 @@ function AppRoutes() {
     };
   }, []);
 
+  /* ── Auto-retry when device comes back online during API-unreachable state ──
+     When the startup getMe() failed with a network error, the rider sees the
+     "Cannot connect to server" screen. If their internet recovers, we call
+     retryConnection() automatically so they don't need to tap Retry manually.
+     The listener is only registered while apiUnreachable is true and is
+     cleaned up as soon as the state resolves (or the component unmounts). */
+  useEffect(() => {
+    if (!apiUnreachable) return;
+    const handleOnline = () => {
+      log.info("Device came back online — auto-retrying connection");
+      retryConnection();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [apiUnreachable, retryConnection]);
+
   useEffect(() => {
     initErrorReporter();
   }, []);
