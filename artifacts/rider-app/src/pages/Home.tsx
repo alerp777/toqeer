@@ -698,7 +698,7 @@ export default function Home() {
       );
       stopRequestSoundIfEmpty();
       void qc.invalidateQueries({ queryKey: ["rider-active"] });
-      showToast("Order accepted! Check Active tab.", "success");
+      showToast(T("orderAcceptedActiveTab"), "success");
     },
     onError: (e: Error & { status?: number }, id) => {
       if (e?.status === 409 || /already taken|already accepted/i.test(e?.message || "")) {
@@ -710,7 +710,7 @@ export default function Home() {
             return { ...old, orders: (old.orders || []).filter((o) => o.id !== id) };
           }
         );
-        showToast("This order was already accepted by another rider.", "error");
+        showToast(T("orderAlreadyTaken"), "error");
       } else {
         /* Persist to IndexedDB queue so the accept survives connectivity loss */
         const looksLikeNetErr = /network|fetch|timeout|offline/i.test(e?.message || "");
@@ -734,7 +734,7 @@ export default function Home() {
     onSuccess: (_: unknown, id: string) => {
       dismiss(id);
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
-      showToast("Order rejected.", "success");
+      showToast(T("orderRejected"), "success");
     },
     onError: (e: Error) => {
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
@@ -765,7 +765,7 @@ export default function Home() {
       stopRequestSoundIfEmpty();
       void qc.invalidateQueries({ queryKey: ["rider-active"] });
       logRideEvent(id, "accepted", (msg, isErr) => showToast(msg, isErr ? "error" : "success"));
-      showToast("Ride accepted! Check Active tab.", "success");
+      showToast(T("rideAcceptedActiveTab"), "success");
     },
     onError: (e: Error & { status?: number }, id) => {
       if (e?.status === 409 || /already taken|already accepted/i.test(e?.message || "")) {
@@ -777,7 +777,7 @@ export default function Home() {
             return { ...old, rides: (old.rides || []).filter((r) => r.id !== id) };
           }
         );
-        showToast("This ride was already accepted by another rider.", "error");
+        showToast(T("rideAlreadyTaken"), "error");
       } else {
         /* Persist to IndexedDB queue so the accept survives connectivity loss */
         const looksLikeNetErr = /network|fetch|timeout|offline/i.test(e?.message || "");
@@ -801,11 +801,11 @@ export default function Home() {
       api.counterRide(id, { counterFare }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
-      showToast("Counter offer submitted!", "success");
+      showToast(T("counterOfferSent"), "success");
     },
     onError: (e: Error) => {
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
-      showToast(e.message || "Counter offer failed", "error");
+      showToast(e.message || T("counterOfferFailed"), "error");
     },
   });
 
@@ -814,7 +814,7 @@ export default function Home() {
     onSuccess: (_: unknown, id: string) => {
       dismiss(id);
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
-      showToast("Ride skipped.", "success");
+      showToast(T("rideSkipped"), "success");
     },
     onError: (e: Error) => {
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });

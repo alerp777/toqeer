@@ -6,6 +6,7 @@ import {
   useTokenRefresh,
   type AuthUser as SharedAuthUser,
 } from "@workspace/auth-react";
+import { tDual } from "@workspace/i18n";
 import {
   createContext,
   useCallback,
@@ -260,7 +261,7 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
   const login = (t: string, u: AuthUser, refreshToken?: string) => {
     const roles = normalizeRoles(u);
     if (roles.length > 0 && !roles.includes("rider"))
-      throw new Error("This app is for riders only");
+      throw new Error(tDual("ridersOnlyError", "en"));
     u.roles = roles;
     queryClient.clear();
     api.storeTokens(t, refreshToken);

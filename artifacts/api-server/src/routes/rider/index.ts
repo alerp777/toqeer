@@ -6586,4 +6586,79 @@ router.post("/ai-chat", async (req: Request, res: Response) => {
   }
 });
 
+/* ── Vehicle Types ─────────────────────────────────────────────────────────────
+   GET /rider/vehicle-types
+   Returns the supported vehicle categories that riders can register with. */
+router.get("/vehicle-types", async (_req: Request, res: Response) => {
+  try {
+    const vehicleTypes = ["Bike", "Car", "Rickshaw", "Van", "Truck"];
+    sendSuccess(res, { vehicleTypes });
+  } catch (err) {
+    logger.error(
+      { error: err instanceof Error ? err.message : String(err) },
+      "[rider/vehicle-types] error"
+    );
+    sendError(res, "Internal server error", 500);
+  }
+});
+
+/* ── Delete Account ────────────────────────────────────────────────────────────
+   DELETE /rider/account
+   Soft-deletes the authenticated rider's own account by stamping deletedAt.
+   The client must clear tokens and log the rider out after this call. */
+router.delete("/account", async (req: Request, res: Response) => {
+  try {
+    const riderId = req.riderId;
+    if (!riderId) {
+      sendError(res, "Unauthorized", 401);
+      return;
+    }
+    await db
+      .update(usersTable)
+      .set({ deletedAt: new Date() })
+      .where(eq(usersTable.id, riderId));
+    logger.info({ riderId }, "[rider/account] soft-deleted rider account");
+    sendSuccess(res, { deleted: true });
+  } catch (err) {
+    logger.error(
+      { error: err instanceof Error ? err.message : String(err) },
+      "[rider/account] delete error"
+    );
+    sendError(res, "Internal server error", 500);
+  }
+});
+
+/* ── Submit Feedback ───────────────────────────────────────────────────────────
+   POST /rider/feedback
+   Accepts structured feedback from an authenticated rider. Currently logged
+   via the application logger; a dedicated DB table can be added later. */
+const feedbackSchema = z.object({
+  message: z.string().min(1).max(2000),
+  rating: z.number().int().min(1).max(5).optional(),
+  category: z.enum(["app", "support", "earnings", "safety", "other"]).optional(),
+});
+
+router.post("/feedback", async (req: Request, res: Response) => {
+  try {
+    const parse = feedbackSchema.safeParse(req.body);
+    if (!parse.success) {
+      sendError(res, "Invalid request", 400);
+      return;
+    }
+    const { message, rating, category } = parse.data;
+    const riderId = req.riderId;
+    logger.info(
+      { riderId, rating, category, messageLen: message.length },
+      "[rider/feedback] received"
+    );
+    sendSuccess(res, { received: true });
+  } catch (err) {
+    logger.error(
+      { error: err instanceof Error ? err.message : String(err) },
+      "[rider/feedback] error"
+    );
+    sendError(res, "Internal server error", 500);
+  }
+});
+
 export default router;

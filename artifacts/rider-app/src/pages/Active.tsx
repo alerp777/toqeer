@@ -638,7 +638,7 @@ export default function Active() {
   const mapMutationError = (e: Error, t: typeof T): string => {
     const lower = (e?.message ?? "").toLowerCase();
     if (lower.includes("offline") || lower.includes("network"))
-      return "Network unavailable — will retry when online";
+      return t("networkUnavailable");
     if (lower.includes("timeout")) return "Request timed out — please try again";
     return t("somethingWentWrong") as string;
   };

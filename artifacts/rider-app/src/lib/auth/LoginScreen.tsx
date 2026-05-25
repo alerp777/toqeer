@@ -1,9 +1,11 @@
 import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen } from "@workspace/auth-react";
+import { tDual } from "@workspace/i18n";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
 import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
+import { useLanguage } from "../useLanguage";
 import { riderTheme } from "./theme";
 import { facebookLogin, googleOneTap } from "./social-oauth";
 
@@ -18,6 +20,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const { login } = useRiderAuth();
   const [, navigate] = useLocation();
   const authConfig = useRiderAuthConfig();
+  const { language } = useLanguage();
   const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [enrollData, setEnrollData] = useState<{
@@ -52,10 +55,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     const roles = normalizeRoles(profile as { roles?: unknown; role?: unknown });
     if (roles.length > 0 && !roles.includes("rider")) {
       api.clearTokens();
-      setRoleError(
-        `This account is registered as "${roles[0] ?? "unknown"}". ` +
-        `Please use an account with rider access.`
-      );
+      setRoleError(tDual("accessDenied", language));
       return;
     }
 

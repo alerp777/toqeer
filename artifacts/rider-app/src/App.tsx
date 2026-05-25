@@ -109,6 +109,8 @@ const NOTIF_ASKED_KEY = "_ajkm_notifPermissionAsked";
 
 
 function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   return (
     <div
       style={{
@@ -163,10 +165,10 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
           </svg>
         </div>
         <h2 style={{ color: "#E8E9EF", fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>
-          Session Expired
+          {T("sessionExpired")}
         </h2>
         <p style={{ color: "#6B7280", fontSize: 14, lineHeight: 1.6, margin: "0 0 24px" }}>
-          Your session has timed out for security. Please sign in again to continue.
+          {T("sessionExpiredMsg")}
         </p>
         <button
           onClick={onDismiss}
@@ -182,7 +184,7 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
             cursor: "pointer",
           }}
         >
-          Sign In Again
+          {T("signInAgain")}
         </button>
       </div>
     </div>
@@ -1016,7 +1018,7 @@ function AppRoutes() {
               letterSpacing: "-0.01em",
             }}
           >
-            Cannot connect to server
+            {T("cannotConnectServer")}
           </h1>
 
           {/* Description */}
@@ -1028,7 +1030,7 @@ function AppRoutes() {
               color: "#6B7280",
             }}
           >
-            Check your connection and try again. Your session has been preserved.
+            {T("checkConnectionRetry")}
           </p>
 
           {/* Retry button */}
@@ -1050,7 +1052,7 @@ function AppRoutes() {
               marginBottom: 10,
             }}
           >
-            Retry
+            {T("retry")}
           </button>
 
           {/* Secondary: hard reload */}
@@ -1071,7 +1073,7 @@ function AppRoutes() {
               cursor: "pointer",
             }}
           >
-            Reload App
+            {T("reloadApp")}
           </button>
         </div>
       </div>
@@ -1135,9 +1137,9 @@ function AppRoutes() {
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/15">
               <span className="text-3xl">⏳</span>
             </div>
-            <h2 className="mb-1 text-xl font-extrabold">Application Submitted</h2>
+            <h2 className="mb-1 text-xl font-extrabold">{T("applicationSubmitted")}</h2>
             <p className="text-sm text-gray-400">
-              Welcome, <span className="font-semibold text-white">{user.name || "Rider"}</span>
+              {T("welcome")}, <span className="font-semibold text-white">{user.name || T("riderFallback")}</span>
             </p>
             {submittedLabel && <p className="mt-1 text-xs text-gray-500">{submittedLabel}</p>}
           </div>
@@ -1145,37 +1147,37 @@ function AppRoutes() {
           {/* Progress checklist */}
           <div className="space-y-3 px-6 py-5">
             <p className="mb-3 text-xs font-bold tracking-wider text-gray-500 uppercase">
-              Application Progress
+              {T("applicationProgress")}
             </p>
             {[
               {
                 num: 1,
-                label: "Registration submitted",
-                sub: "Your account details are saved",
+                label: T("regSubmitted"),
+                sub: T("regSubmittedSub"),
                 done: true,
                 locked: false,
                 pulse: false,
               },
               {
                 num: 2,
-                label: "Documents under review",
-                sub: "Admin is reviewing your documents",
+                label: T("docsUnderReview"),
+                sub: T("docsUnderReviewSub"),
                 done: false,
                 locked: false,
                 pulse: true,
               },
               {
                 num: 3,
-                label: "Go online & accept rides",
-                sub: "Unlocks after admin approval",
+                label: T("goOnlineAcceptRides"),
+                sub: T("unlocksAfterApproval"),
                 done: false,
                 locked: true,
                 pulse: false,
               },
               {
                 num: 4,
-                label: "Withdraw earnings",
-                sub: "Unlocks after approval + bank info",
+                label: T("withdrawEarnings"),
+                sub: T("unlocksAfterApprovalBank"),
                 done: false,
                 locked: true,
                 pulse: false,
@@ -1266,9 +1268,9 @@ function AppRoutes() {
           <div className="mb-4 text-5xl">
             <span>❌</span>
           </div>
-          <h2 className="mb-2 text-xl font-bold text-gray-800">Account Rejected</h2>
+          <h2 className="mb-2 text-xl font-bold text-gray-800">{T("accountRejected")}</h2>
           <p className="mb-2 text-sm leading-relaxed text-gray-500">
-            Your rider account application was not approved.
+            {T("accountRejectedMsg")}
           </p>
           {user.rejectionReason && (
             <p className="mb-6 text-sm font-medium text-red-600">
@@ -1308,9 +1310,9 @@ function AppRoutes() {
           <div className="mb-4 text-5xl">
             <span>🚫</span>
           </div>
-          <h2 className="mb-2 text-xl font-bold text-gray-800">Account Suspended</h2>
+          <h2 className="mb-2 text-xl font-bold text-gray-800">{T("accountSuspended")}</h2>
           <p className="mb-6 text-sm leading-relaxed text-gray-500">
-            Your account has been suspended. Please contact support for assistance.
+            {T("accountSuspendedMsg")}
           </p>
           {supportPhone && (
             <a
