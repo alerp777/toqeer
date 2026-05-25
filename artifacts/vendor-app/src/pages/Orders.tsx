@@ -16,7 +16,7 @@ import { ShimmerCards, ShimmerRows } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
 import { unlockAudio } from "../lib/notificationSound";
-import { CARD, DEFAULT_COMMISSION_PCT, errMsg, fc, fd } from "../lib/ui";
+import { CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd } from "../lib/ui";
 import { useCurrency, usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import { useAuth } from "../lib/vendor-auth";
@@ -44,16 +44,6 @@ const NEXT_KEYS: Record<string, { next: string; labelKey: TranslationKey; bg: st
   preparing: { next: "ready", labelKey: "markReady", bg: "bg-purple-500 text-white" },
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  confirmed: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  ready: "bg-indigo-100 text-indigo-700",
-  picked_up: "bg-cyan-100 text-cyan-700",
-  out_for_delivery: "bg-teal-100 text-teal-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-600",
-};
 
 const ORDER_ICON: Record<string, string> = { food: "🍔", mart: "🛒", pharmacy: "💊", parcel: "📦" };
 
@@ -750,7 +740,7 @@ export default function Orders({ targetOrderId }: { targetOrderId?: string } = {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${(o.status && STATUS_BADGE[o.status]) || "bg-gray-100 text-gray-600"}`}
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${(o.status && ORDER_STATUS_BADGE[o.status]) || "bg-gray-100 text-gray-600"}`}
                           >
                             {o.status ? o.status.replace(/_/g, " ").toUpperCase() : "UNKNOWN"}
                           </span>

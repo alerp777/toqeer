@@ -9,7 +9,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ShimmerRows, ShimmerStat } from "../components/ui/ShimmerBlock";
 import { useOfflineQueue } from "../hooks/useOfflineQueue";
 import { api } from "../lib/api";
-import { CARD, DEFAULT_COMMISSION_PCT, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
+import { BADGE_BLUE, BADGE_GREEN, BADGE_RED, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import type { StoreHours } from "../lib/vendor-auth";
@@ -576,9 +576,7 @@ export default function Dashboard() {
                 className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${user?.storeIsOpen ? "left-7" : "left-1"}`}
               />
             </button>
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-bold ${user?.storeIsOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
-            >
+            <span className={user?.storeIsOpen ? BADGE_GREEN : BADGE_RED}>
               {user?.storeIsOpen ? T("openLabel") : T("closedLabel")}
             </span>
           </div>
@@ -892,7 +890,7 @@ export default function Dashboard() {
                   <p className="text-sm font-bold text-gray-800">
                     {activeOrders.length} {T("activeOrders")}
                   </p>
-                  <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                  <span className={BADGE_BLUE}>
                     {T("inProgress")}
                   </span>
                 </div>
@@ -908,13 +906,7 @@ export default function Dashboard() {
                       <div className="text-right">
                         <p className="text-sm font-bold text-gray-800">{fc(o.total)}</p>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            o.status === "preparing"
-                              ? "bg-purple-100 text-purple-700"
-                              : o.status === "ready"
-                                ? "bg-indigo-100 text-indigo-700"
-                                : "bg-blue-100 text-blue-700"
-                          }`}
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ORDER_STATUS_BADGE[o.status] ?? "bg-blue-100 text-blue-700"}`}
                         >
                           {(o.status ?? "").toUpperCase()}
                         </span>

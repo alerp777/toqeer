@@ -50,6 +50,47 @@ export const BADGE_PURPLE =
   "text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700";
 export const BADGE_GRAY = "text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600";
 
+/* ── Status badge maps — single source of truth across all pages ── */
+export const ORDER_STATUS_BADGE: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  confirmed: "bg-blue-100 text-blue-700",
+  preparing: "bg-purple-100 text-purple-700",
+  ready: "bg-indigo-100 text-indigo-700",
+  picked_up: "bg-cyan-100 text-cyan-700",
+  out_for_delivery: "bg-teal-100 text-teal-700",
+  delivered: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-600",
+};
+
+export const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  preparing: "Preparing",
+  ready: "Ready",
+  picked_up: "Picked Up",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export const PAYMENT_STATUS_BADGE: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  paid: "bg-green-100 text-green-700",
+  failed: "bg-red-100 text-red-600",
+  refunded: "bg-gray-100 text-gray-600",
+  cod: "bg-amber-100 text-amber-700",
+};
+
+export const CAMPAIGN_STATUS_BADGE: Record<string, string> = {
+  live: "bg-green-100 text-green-700",
+  draft: "bg-gray-100 text-gray-600",
+  ended: "bg-red-100 text-red-600",
+  paused: "bg-yellow-100 text-yellow-700",
+  pending: "bg-blue-100 text-blue-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-600",
+};
+
 /* ── Layout ── */
 export const SECTION = "px-4 py-4 space-y-3";
 export const PAGE = "min-h-screen bg-[#0A0F1A]";

@@ -4,7 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { PullToRefresh } from "../components/PullToRefresh";
 import { ErrorState } from "../components/ui/ErrorState";
 import { apiFetch } from "../lib/api";
-import { BTN_PRIMARY, BTN_SECONDARY, CARD, errMsg, fc } from "../lib/ui";
+import { BTN_PRIMARY, BTN_SECONDARY, CAMPAIGN_STATUS_BADGE, CARD, errMsg, fc } from "../lib/ui";
 import { formatDateTz, useCurrency, usePlatformConfig } from "../lib/useConfig";
 
 type Participation = {
@@ -30,15 +30,6 @@ type Campaign = {
   participation?: Participation | null;
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  live: "bg-green-100 text-green-700",
-  draft: "bg-gray-100 text-gray-600",
-  ended: "bg-red-100 text-red-600",
-  paused: "bg-yellow-100 text-yellow-700",
-  pending: "bg-blue-100 text-blue-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-600",
-};
 
 const THEME_EMOJIS: Record<string, string> = {
   flash: "⚡",
@@ -89,7 +80,7 @@ function CampaignCard({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold text-gray-900">{campaign.name}</h3>
             <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[campaign.status] ?? "bg-gray-100 text-gray-600"}`}
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${CAMPAIGN_STATUS_BADGE[campaign.status] ?? "bg-gray-100 text-gray-600"}`}
             >
               {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
             </span>
@@ -130,7 +121,7 @@ function CampaignCard({
       {participation ? (
         <div className="flex items-center gap-2">
           <div
-            className={`flex-1 rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold ${STATUS_COLORS[participation.status] ?? "bg-gray-100 text-gray-600"}`}
+            className={`flex-1 rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold ${CAMPAIGN_STATUS_BADGE[participation.status] ?? "bg-gray-100 text-gray-600"}`}
           >
             {participation.status === "pending"
               ? "⏳ Pending Admin Approval"
