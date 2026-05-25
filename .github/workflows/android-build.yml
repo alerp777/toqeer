@@ -1,4 +1,4 @@
-name: Android APK Build
+name: Android Build (APK + AAB)
 
 on:
   push:
@@ -18,9 +18,9 @@ env:
   JAVA_VERSION: "17"
 
 jobs:
-  # ── Rider APK ─────────────────────────────────────────────────────────────
+  # ── Rider APK + AAB ───────────────────────────────────────────────────────
   build-rider:
-    name: Build AJKMart Rider APK
+    name: Build AJKMart Rider
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event.inputs.app == 'rider' || github.event.inputs.app == 'both' }}
 
@@ -72,25 +72,34 @@ jobs:
           echo "${{ secrets.RIDER_KEYSTORE_BASE64 }}" | base64 --decode \
             > artifacts/rider-app/android/app/rider.jks
 
-      - name: Build release APK
+      - name: Build release APK + AAB
         working-directory: artifacts/rider-app/android
         env:
           RIDER_KEYSTORE_PATH: ${{ github.workspace }}/artifacts/rider-app/android/app/rider.jks
           RIDER_KEYSTORE_PASSWORD: ${{ secrets.RIDER_KEYSTORE_PASSWORD }}
           RIDER_KEY_ALIAS: ${{ secrets.RIDER_KEY_ALIAS }}
           RIDER_KEY_PASSWORD: ${{ secrets.RIDER_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        # assembleRelease  → signed APK  (sideload / direct install)
+        # bundleRelease    → signed AAB  (Google Play Store submission)
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Upload Rider APK artifact
+      - name: Upload Rider APK
         uses: actions/upload-artifact@v4
         with:
           name: ajkmart-rider-${{ github.ref_name }}.apk
           path: artifacts/rider-app/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
-  # ── Vendor APK ────────────────────────────────────────────────────────────
+      - name: Upload Rider AAB (Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ajkmart-rider-${{ github.ref_name }}.aab
+          path: artifacts/rider-app/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
+
+  # ── Vendor APK + AAB ──────────────────────────────────────────────────────
   build-vendor:
-    name: Build AJKMart Vendor APK
+    name: Build AJKMart Vendor
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event.inputs.app == 'vendor' || github.event.inputs.app == 'both' }}
 
@@ -142,18 +151,27 @@ jobs:
           echo "${{ secrets.VENDOR_KEYSTORE_BASE64 }}" | base64 --decode \
             > artifacts/vendor-app/android/app/vendor.jks
 
-      - name: Build release APK
+      - name: Build release APK + AAB
         working-directory: artifacts/vendor-app/android
         env:
           VENDOR_KEYSTORE_PATH: ${{ github.workspace }}/artifacts/vendor-app/android/app/vendor.jks
           VENDOR_KEYSTORE_PASSWORD: ${{ secrets.VENDOR_KEYSTORE_PASSWORD }}
           VENDOR_KEY_ALIAS: ${{ secrets.VENDOR_KEY_ALIAS }}
           VENDOR_KEY_PASSWORD: ${{ secrets.VENDOR_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        # assembleRelease  → signed APK  (sideload / direct install)
+        # bundleRelease    → signed AAB  (Google Play Store submission)
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Upload Vendor APK artifact
+      - name: Upload Vendor APK
         uses: actions/upload-artifact@v4
         with:
           name: ajkmart-vendor-${{ github.ref_name }}.apk
           path: artifacts/vendor-app/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
+
+      - name: Upload Vendor AAB (Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ajkmart-vendor-${{ github.ref_name }}.aab
+          path: artifacts/vendor-app/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
