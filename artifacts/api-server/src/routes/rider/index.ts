@@ -464,10 +464,6 @@ const MAX_PROOF_PHOTO_BYTES = 5 * 1024 * 1024;
    We measure only the base64 payload (after the data URI prefix) for accuracy. */
 const MAX_PROOF_PHOTO_BASE64_LEN = Math.ceil(MAX_PROOF_PHOTO_BYTES * (4 / 3));
 
-// TODO: migrate proofPhoto storage from base64 DB column to file storage (S3/CDN).
-// Storing large base64 blobs in PostgreSQL inflates row size, slows queries, and
-// increases backup size. Follow-up: upload the decoded bytes to object storage,
-// persist only the resulting URL in proofPhotoUrl, and drop the inline data URI.
 function proofPhotoWithinLimit(dataUri: string): boolean {
   const commaIdx = dataUri.indexOf(",");
   const payload = commaIdx >= 0 ? dataUri.slice(commaIdx + 1) : dataUri;
@@ -481,8 +477,12 @@ function proofPhotoWithinLimit(dataUri: string): boolean {
   return withinLimit;
 }
 
+/* orderStatusSchema accepts the new proofPhotoUrl (URL string, preferred) and the
+   deprecated proofPhoto (base64 data URI) for backwards compatibility during the
+   grace period. Clients should migrate to proofPhotoUrl. */
 const orderStatusSchema = z.object({
   status: z.enum(["out_for_delivery", "picked_up", "delivered", "cancelled"]),
+  proofPhotoUrl: z.string().url("proofPhotoUrl must be a valid URL").optional(),
   proofPhoto: z
     .string()
     .refine(
@@ -493,10 +493,22 @@ const orderStatusSchema = z.object({
     .optional(),
 });
 
+/* rideStatusSchema accepts the new proofPhotoUrl (URL string, preferred) and the
+   deprecated proofPhoto (base64 data URI) for backwards compatibility during the
+   grace period. Clients should migrate to proofPhotoUrl. */
 const rideStatusSchema = z.object({
   status: z.enum(["arrived", "in_transit", "completed", "cancelled"]),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
+  proofPhotoUrl: z.string().url("proofPhotoUrl must be a valid URL").optional(),
+  proofPhoto: z
+    .string()
+    .refine(
+      (v) => v.startsWith("data:image/"),
+      "proofPhoto must be a base64 data URI (data:image/...)"
+    )
+    .refine(proofPhotoWithinLimit, "proofPhoto exceeds 5 MB limit")
+    .optional(),
 });
 
 const RIDE_STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -2104,7 +2116,19 @@ router.patch("/orders/:id/status", async (req, res) => {
       return;
     }
     const riderId = req.riderId!;
-    const { status, proofPhoto } = parsed.data;
+    const { status, proofPhotoUrl, proofPhoto } = parsed.data;
+
+    /* Resolve the effective proof URL: prefer the new proofPhotoUrl field; fall back to the
+       deprecated base64 proofPhoto field for backwards compatibility. Log a deprecation warning
+       when only the legacy field is provided so operators can track migration progress. */
+    let resolvedProofPhotoUrl: string | undefined = proofPhotoUrl;
+    if (!resolvedProofPhotoUrl && proofPhoto) {
+      logger.warn(
+        { orderId: req.params["id"] },
+        "[rider/orders] DEPRECATED: proofPhoto base64 field used — clients should migrate to proofPhotoUrl (URL string)"
+      );
+      resolvedProofPhotoUrl = proofPhoto;
+    }
 
     const [order] = await db
       .select()
@@ -2117,7 +2141,7 @@ router.patch("/orders/:id/status", async (req, res) => {
     }
 
     /* Proof photo is mandatory for delivery confirmation — prevents fraudulent delivery claims */
-    if (status === "delivered" && !proofPhoto) {
+    if (status === "delivered" && !resolvedProofPhotoUrl) {
       sendValidationError(
         res,
         "Proof of delivery photo is required to mark an order as delivered. Please upload a photo."
@@ -2181,8 +2205,8 @@ router.patch("/orders/:id/status", async (req, res) => {
       status,
       updatedAt: new Date(),
     };
-    if (status === "delivered" && proofPhoto) {
-      updateData.proofPhotoUrl = proofPhoto;
+    if (status === "delivered" && resolvedProofPhotoUrl) {
+      updateData.proofPhotoUrl = resolvedProofPhotoUrl;
     }
 
     let updated: typeof order;
@@ -3022,7 +3046,19 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
       return;
     }
     const riderId = req.riderId!;
-    const { status, lat: _lat, lng: _lng } = parsed.data;
+    const { status, lat: _lat, lng: _lng, proofPhotoUrl: rawProofPhotoUrl, proofPhoto: rideProofPhoto } = parsed.data;
+
+    /* Resolve the effective proof URL: prefer the new proofPhotoUrl field; fall back to the
+       deprecated base64 proofPhoto field for backwards compatibility during the grace period.
+       Log a structured deprecation warning when only the legacy field is provided. */
+    let proofPhotoUrl: string | undefined = rawProofPhotoUrl;
+    if (!proofPhotoUrl && rideProofPhoto) {
+      logger.warn(
+        { rideId: req.params["id"] },
+        "[rider/rides] DEPRECATED: proofPhoto base64 field used — clients should migrate to proofPhotoUrl (URL string)"
+      );
+      proofPhotoUrl = rideProofPhoto;
+    }
 
     const [ride] = await db
       .select()
@@ -3122,7 +3158,7 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
         updated = await db.transaction(async (tx) => {
           const [statusRow] = await tx
             .update(ridesTable)
-            .set({ status, completedAt: new Date(), updatedAt: new Date() })
+            .set({ status, completedAt: new Date(), updatedAt: new Date(), ...(proofPhotoUrl ? { proofPhotoUrl } : {}) })
             .where(
               and(
                 eq(ridesTable.id, req.params["id"] as string),
@@ -3216,7 +3252,7 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
         updated = await db.transaction(async (tx) => {
           const [statusRow] = await tx
             .update(ridesTable)
-            .set({ status, completedAt: new Date(), updatedAt: new Date() })
+            .set({ status, completedAt: new Date(), updatedAt: new Date(), ...(proofPhotoUrl ? { proofPhotoUrl } : {}) })
             .where(
               and(
                 eq(ridesTable.id, req.params["id"] as string),

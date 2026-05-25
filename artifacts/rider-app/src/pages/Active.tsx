@@ -9,6 +9,7 @@ import { enqueueAction } from "../lib/offline/queueManager";
 import { useAuth } from "../lib/rider-auth";
 import { logRideEvent } from "../lib/rideUtils";
 import { useSocket } from "../lib/socket";
+import { uploadProofPhoto } from "../lib/uploadProofPhoto";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 const log = createLogger("[Active]");
@@ -48,6 +49,10 @@ export default function Active() {
   const [proofStagedForRetry, setProofStagedForRetry] = useState(false);
   const [showNoPhotoWarning, setShowNoPhotoWarning] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [rideProofFile, setRideProofFile] = useState<File | null>(null);
+  const [rideProofPhoto, setRideProofPhoto] = useState<string | null>(null);
+  const [rideProofUploading, setRideProofUploading] = useState(false);
+  const ridePhotoInputRef = useRef<HTMLInputElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pressedBtn, setPressedBtn] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -572,7 +577,7 @@ export default function Active() {
       showToast("You're offline — update queued for retry", true);
       enqueueAction("update_order", id, {
         status: "delivered",
-        ...(photoUrl ? { proofPhoto: photoUrl } : {}),
+        ...(photoUrl ? { proofPhotoUrl: photoUrl } : {}),
       }).catch((err) => {
         log.error(
           { err: err instanceof Error ? err.message : String(err) },
@@ -582,6 +587,52 @@ export default function Active() {
       return;
     }
     updateOrderMut.mutate({ id, status: "delivered", photoUrl });
+  };
+
+  const handleRidePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    let compressed: File = file;
+    try {
+      compressed = await compressImage(file, 1920, 1.5 * 1024 * 1024);
+    } catch (err) {
+      log.error(
+        { err: err instanceof Error ? err.message : String(err) },
+        "[Active] ride compressImage failed — using original"
+      );
+    }
+    setRideProofFile(compressed);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const raw = ev.target?.result as string;
+      if (raw) setRideProofPhoto(raw);
+    };
+    reader.onerror = () => { setRideProofFile(null); setRideProofPhoto(null); };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCompleteRide = async (id: string) => {
+    let photoUrl: string | undefined;
+    if (rideProofFile) {
+      setRideProofUploading(true);
+      try {
+        photoUrl = await uploadProofPhoto(rideProofFile);
+      } catch (e: unknown) {
+        const status = (e as { status?: number })?.status;
+        if (status === 400 || status === 413) {
+          showToast("Photo too large, please try again.", true);
+        } else {
+          showToast(
+            e instanceof Error ? e.message : "Photo upload failed. Please try again.",
+            true
+          );
+        }
+        setRideProofUploading(false);
+        return;
+      }
+      setRideProofUploading(false);
+    }
+    updateRideMut.mutate({ id, status: "completed", proofPhotoUrl: photoUrl });
   };
 
   const mapMutationError = (e: Error, t: typeof T): string => {
@@ -629,7 +680,7 @@ export default function Active() {
       if (looksLikeNetworkErr && !context?.enqueued)
         enqueueAction("update_order", vars.id, {
           status: vars.status,
-          ...(vars.photoUrl ? { proofPhoto: vars.photoUrl } : {}),
+          ...(vars.photoUrl ? { proofPhotoUrl: vars.photoUrl } : {}),
         }).catch((err) => {
           log.error(
             { err: err instanceof Error ? err.message : String(err) },
@@ -649,14 +700,16 @@ export default function Active() {
       status,
       lat,
       lng,
+      proofPhotoUrl,
     }: {
       id: string;
       status: string;
       lat?: number;
       lng?: number;
+      proofPhotoUrl?: string;
     }) => {
       const loc = lat != null && lng != null ? { lat, lng } : undefined;
-      return api.updateRide(id, status, loc);
+      return api.updateRide(id, status, loc, proofPhotoUrl);
     },
     onMutate: () => ({ enqueued: false }),
     onSuccess: (_, vars) => {
@@ -665,8 +718,12 @@ export default function Active() {
       void qc.invalidateQueries({ queryKey: ["rider-earnings"] });
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
       logRideEvent(vars.id, vars.status, (msg, isErr) => showToast(msg, isErr));
-      if (vars.status === "completed") showToast(T("rideCompletedEarnings"));
-      else if (vars.status === "cancelled") showToast(T("rideCancelledMsg"));
+      if (vars.status === "completed") {
+        setRideProofFile(null);
+        setRideProofPhoto(null);
+        if (ridePhotoInputRef.current) ridePhotoInputRef.current.value = "";
+        showToast(T("rideCompletedEarnings"));
+      } else if (vars.status === "cancelled") showToast(T("rideCancelledMsg"));
       else showToast(T("statusUpdated"));
     },
     onError: (e: Error, vars, context) => {
@@ -674,7 +731,11 @@ export default function Active() {
       if (looksLikeNetworkErr && !context?.enqueued) {
         const loc =
           vars.lat != null && vars.lng != null ? { lat: vars.lat, lng: vars.lng } : undefined;
-        enqueueAction("update_ride", vars.id, { status: vars.status, ...(loc ?? {}) }).catch(
+        enqueueAction("update_ride", vars.id, {
+          status: vars.status,
+          ...(loc ?? {}),
+          ...(vars.proofPhotoUrl ? { proofPhotoUrl: vars.proofPhotoUrl } : {}),
+        }).catch(
           (err) => {
             log.error(
               { err: err instanceof Error ? err.message : String(err) },
@@ -947,6 +1008,12 @@ export default function Active() {
               }
             }
             updateRideMut={updateRideMut}
+            handleCompleteRide={handleCompleteRide}
+            rideProofPhoto={rideProofPhoto}
+            rideProofFile={rideProofFile}
+            rideProofUploading={rideProofUploading}
+            ridePhotoInputRef={ridePhotoInputRef}
+            handleRidePhotoCapture={handleRidePhotoCapture}
             setShowOtpModal={setShowOtpModal}
             setOtpInput={setOtpInput}
             setCancelTarget={setCancelTarget}

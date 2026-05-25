@@ -1,4 +1,4 @@
-import { ArrowDown, Bike, Car, CheckCircle, MapPin, Shield, User, X } from "lucide-react";
+import { ArrowDown, Bike, Camera, Car, CheckCircle, MapPin, Shield, User, X } from "lucide-react";
 import {
   CallButton,
   ChatButton,
@@ -26,9 +26,15 @@ export interface ActiveRidePanelProps {
     features?: { sos?: boolean };
   };
   updateRideMut: {
-    mutate: (args: { id: string; status: string; lat?: number; lng?: number }) => void;
+    mutate: (args: { id: string; status: string; lat?: number; lng?: number; proofPhotoUrl?: string }) => void;
     isPending: boolean;
   };
+  handleCompleteRide: (id: string) => Promise<void>;
+  rideProofPhoto: string | null;
+  rideProofFile: File | null;
+  rideProofUploading: boolean;
+  ridePhotoInputRef: React.RefObject<HTMLInputElement | null>;
+  handleRidePhotoCapture: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   setShowOtpModal: (v: boolean) => void;
   setOtpInput: (v: string) => void;
   setCancelTarget: (v: "order" | "ride") => void;
@@ -48,6 +54,12 @@ export function ActiveRidePanel({
   riderEarningPct,
   config,
   updateRideMut,
+  handleCompleteRide,
+  rideProofPhoto,
+  rideProofFile,
+  rideProofUploading,
+  ridePhotoInputRef,
+  handleRidePhotoCapture,
   setShowOtpModal,
   setOtpInput,
   setCancelTarget,
@@ -351,15 +363,47 @@ export function ActiveRidePanel({
             </button>
           )}
           {status === "in_transit" && (
-            <button
-              onClick={() => updateRideMut.mutate({ id, status: "completed" })}
-              disabled={updateRideMut.isPending}
-              onTouchStart={() => setPressedBtn("complete")}
-              onTouchEnd={() => setPressedBtn(null)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 py-4 font-black text-white shadow-lg shadow-green-200 transition-transform disabled:opacity-60 ${pressedBtn === "complete" ? "scale-[0.97]" : ""}`}
-            >
-              <CheckCircle size={16} /> {T("completeRide")}
-            </button>
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="ride-proof-input"
+                  className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600 transition-colors active:bg-gray-100"
+                  title="Attach optional proof photo"
+                >
+                  <Camera size={14} />
+                  {rideProofPhoto ? "Retake" : "Photo"}
+                </label>
+                <input
+                  id="ride-proof-input"
+                  ref={ridePhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleRidePhotoCapture}
+                />
+                {rideProofPhoto && (
+                  <img
+                    src={rideProofPhoto}
+                    alt="Ride proof preview"
+                    className="h-9 w-9 rounded-lg object-cover border border-green-200"
+                  />
+                )}
+                <button
+                  onClick={() => void handleCompleteRide(id)}
+                  disabled={updateRideMut.isPending || rideProofUploading}
+                  onTouchStart={() => setPressedBtn("complete")}
+                  onTouchEnd={() => setPressedBtn(null)}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 py-4 font-black text-white shadow-lg shadow-green-200 transition-transform disabled:opacity-60 ${pressedBtn === "complete" ? "scale-[0.97]" : ""}`}
+                >
+                  <CheckCircle size={16} />
+                  {rideProofUploading ? "Uploading…" : T("completeRide")}
+                </button>
+              </div>
+              {rideProofFile && !rideProofPhoto && (
+                <p className="text-center text-[11px] text-gray-400">Processing photo…</p>
+              )}
+            </div>
           )}
           {(status === "accepted" || status === "arrived" || status === "in_transit") && (
             <button

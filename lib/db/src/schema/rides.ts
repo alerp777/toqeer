@@ -68,6 +68,8 @@ export const ridesTable = pgTable(
     completedAt: timestamp("completed_at"),
     cancelledAt: timestamp("cancelled_at"),
     refundedAt: timestamp("refunded_at"),
+    /** URL of the delivery/completion proof photo (uploaded via /uploads/proof). Replaces inline base64 storage. */
+    proofPhotoUrl: text("proof_photo_url"),
     /** Soft-delete: set instead of hard DELETE so history and audits are preserved. */
     deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

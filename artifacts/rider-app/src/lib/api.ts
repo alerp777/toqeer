@@ -897,17 +897,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ reason: reason || "not_interested" }),
     }),
-  updateOrder: (id: string, status: string, proofPhoto?: string) =>
+  updateOrder: (id: string, status: string, proofPhotoUrl?: string) =>
     apiFetch(`/riders/orders/${id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status, ...(proofPhoto ? { proofPhoto } : {}) }),
+      body: JSON.stringify({ status, ...(proofPhotoUrl ? { proofPhotoUrl } : {}) }),
     }),
   acceptRide: (id: string) =>
     apiFetch(`/riders/rides/${id}/accept`, { method: "POST", body: "{}" }),
-  updateRide: (id: string, status: string, loc?: { lat: number; lng: number }) =>
+  updateRide: (id: string, status: string, loc?: { lat: number; lng: number }, proofPhotoUrl?: string) =>
     apiFetch(`/riders/rides/${id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status, ...(loc || {}) }),
+      body: JSON.stringify({ status, ...(loc || {}), ...(proofPhotoUrl ? { proofPhotoUrl } : {}) }),
     }),
   verifyRideOtp: (id: string, otp: string): Promise<{ success: boolean }> =>
     apiFetch(`/riders/rides/${id}/verify-otp`, { method: "POST", body: JSON.stringify({ otp }) }),
