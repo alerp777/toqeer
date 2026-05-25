@@ -64,6 +64,7 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error">("success");
   const [newFlash, setNewFlash] = useState(false);
+  const [srAnnouncement, setSrAnnouncement] = useState("");
   const [dismissed, setDismissed] = useState<Set<string>>(new Set<string>());
   const [profileBannerDismissed, setProfileBannerDismissed] = useState(() => {
     try {
@@ -284,8 +285,9 @@ export default function Home() {
     const currentIds = new Set<string>(currentIdsSig.split(",").filter(Boolean));
     const prevIds = prevIdsRef.current;
     let hasNew = false;
+    let newCount = 0;
     currentIds.forEach((id) => {
-      if (!prevIds.has(id)) hasNew = true;
+      if (!prevIds.has(id)) { hasNew = true; newCount++; }
     });
 
     if (hasNew && currentIds.size > 0) {
@@ -296,6 +298,11 @@ export default function Home() {
       setAudioLocked(locked);
       if (!locked) playRequestSound();
       hasUnseenRequestsRef.current = true;
+      /* Announce new requests to screen readers */
+      const msg =
+        newCount === 1 ? "New request available" : `${newCount} new requests available`;
+      setSrAnnouncement("");
+      setTimeout(() => setSrAnnouncement(msg), 50);
     }
 
     if (currentIds.size === 0) {
@@ -897,6 +904,10 @@ export default function Home() {
       accentColor="var(--color-brand)"
       className="flex min-h-screen animate-[fadeIn_0.3s_ease-out] flex-col bg-page-bg"
     >
+      {/* Screen-reader live region — announces incoming requests without visual impact */}
+      <div role="status" aria-live="assertive" aria-atomic="true" className="sr-only">
+        {srAnnouncement}
+      </div>
       <FixedBanners
         socketConnected={socketConnected}
         effectiveOnline={effectiveOnline}
