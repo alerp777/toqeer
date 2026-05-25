@@ -93,3 +93,21 @@ export type { RateLimitCountdown } from "./hooks/useRateLimitCountdown";
 // Device metadata capture
 export { captureDeviceMeta } from "./lib/deviceMeta";
 export type { DeviceMeta } from "./lib/deviceMeta";
+
+// Forgot password flow
+export { ForgotPasswordFlow } from "./components/ForgotPasswordFlow";
+export type { ForgotPasswordFlowProps, ForgotPasswordStrings } from "./components/ForgotPasswordFlow";
+export { useForgotPasswordFlow } from "./hooks/useForgotPasswordFlow";
+export type { UseForgotPasswordFlowOptions, ForgotPasswordStep } from "./hooks/useForgotPasswordFlow";
+
+// Guest landing page
+export { GuestLanding } from "./components/GuestLanding";
+export type { GuestLandingProps, GuestLandingStat, GuestLandingFeature } from "./components/GuestLanding";
+
+// Auth overlay screens
+export { PendingOverlay, RejectedOverlay, MaintenanceOverlay, BiometricEnrollOverlay } from "./components/AuthOverlay";
+export type { PendingOverlayProps, RejectedOverlayProps, MaintenanceOverlayProps, BiometricEnrollOverlayProps } from "./components/AuthOverlay";
+
+// App status hook
+export { useAppStatus } from "./hooks/useAppStatus";
+export type { UseAppStatusOptions, AppStatus } from "./hooks/useAppStatus";
