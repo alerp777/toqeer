@@ -1,6 +1,8 @@
 import { RegisterScreen, type StepConfig } from "@workspace/auth-react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
+import { riderTheme } from "./theme";
 
 const DRAFT_KEY = "rider_reg_draft";
 
@@ -77,8 +79,90 @@ export interface RegisterWizardProps {
   onDone?: () => void;
 }
 
+function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: riderTheme.background,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "24px 16px",
+      fontFamily: "Inter, system-ui, sans-serif",
+    }}>
+      <div style={{
+        width: "100%",
+        maxWidth: 420,
+        background: riderTheme.surface,
+        borderRadius: 20,
+        padding: "40px 28px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 20,
+        textAlign: "center",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="9 12 11 14 15 10" />
+          </svg>
+        </div>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: riderTheme.text, margin: "0 0 8px" }}>
+            Application Submitted!
+          </h2>
+          <p style={{ fontSize: 14, color: riderTheme.textMuted, margin: 0, lineHeight: 1.6 }}>
+            Our team will review your details within 24–48 hours. You’ll receive
+            an SMS once your account is approved and ready to ride.
+          </p>
+        </div>
+        <div style={{
+          background: `${riderTheme.primary}18`,
+          border: `1px solid ${riderTheme.primary}40`,
+          borderRadius: 12,
+          padding: "12px 16px",
+          width: "100%",
+        }}>
+          <p style={{ fontSize: 13, color: riderTheme.textMuted, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+              <line x1="12" y1="18" x2="12.01" y2="18" />
+            </svg>
+            Keep an eye on your registered phone number for status updates.
+          </p>
+        </div>
+        <button
+          onClick={onGoToLogin}
+          style={{
+            width: "100%",
+            padding: "14px",
+            borderRadius: 12,
+            border: "none",
+            background: riderTheme.primary,
+            color: riderTheme.background,
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer",
+            marginTop: 4,
+            transition: "opacity 0.15s, filter 0.15s",
+          }}
+        >
+          Go to Sign In
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function RegisterWizard({ onDone }: RegisterWizardProps) {
   const [, navigate] = useLocation();
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return <SubmittedScreen onGoToLogin={() => navigate("/login")} />;
+  }
 
   return (
     <RegisterScreen
@@ -100,7 +184,7 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
           });
           localStorage.removeItem(DRAFT_KEY);
           onDone?.();
-          navigate("/login");
+          setSubmitted(true);
           return { success: true };
         } catch (e: unknown) {
           return { success: false, error: e instanceof Error ? e.message : "Registration failed" };

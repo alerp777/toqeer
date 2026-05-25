@@ -45,7 +45,7 @@ const s = {
     borderRadius: "8px",
     overflow: "hidden",
     background: "#fff",
-    transition: "border-color 0.15s",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
   input: {
     flex: 1,

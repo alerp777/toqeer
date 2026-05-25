@@ -161,7 +161,7 @@ const s = {
     fontSize: "15px",
     outline: "none",
     boxSizing: "border-box" as const,
-    transition: "border-color 0.15s",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
   select: {
     width: "100%",
@@ -171,6 +171,7 @@ const s = {
     fontSize: "15px",
     outline: "none",
     boxSizing: "border-box" as const,
+    transition: "border-color 0.15s, box-shadow 0.15s",
     background: "#fff",
   },
   checkboxRow: {
@@ -189,9 +190,9 @@ const s = {
     fontWeight: 700,
     fontSize: "15px",
     cursor: "pointer",
-    transition: "opacity 0.15s",
+    transition: "opacity 0.15s, filter 0.15s, transform 0.1s",
   }),
-  btnDisabled: { opacity: 0.55, cursor: "not-allowed" } as React.CSSProperties,
+  btnDisabled: { opacity: 0.55, cursor: "not-allowed", transform: "none", filter: "none" } as React.CSSProperties,
   btnBack: (accent: string): React.CSSProperties => ({
     background: "none",
     border: "none",
@@ -199,8 +200,9 @@ const s = {
     cursor: "pointer",
     fontSize: "13px",
     fontWeight: 600,
-    padding: "0",
+    padding: "6px 0",
     textAlign: "center" as const,
+    transition: "opacity 0.15s",
   }),
   errorBox: {
     background: "#fef2f2",
@@ -273,6 +275,8 @@ export function RegisterScreen({
       style.textContent = `
         @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes auth-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .auth-input:focus-visible, .auth-input:focus { outline: none; border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+        .auth-input-wrapper:focus-within { border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
       `;
       document.head.appendChild(style);
     }

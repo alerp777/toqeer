@@ -258,7 +258,8 @@ export function LoginScreen({
       style.textContent = `
         @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes auth-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        .auth-input:focus-visible { outline: none; border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+        .auth-input:focus-visible, .auth-input:focus { outline: none; border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+        .auth-input-wrapper:focus-within { border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
       `;
       document.head.appendChild(style);
     }
@@ -613,7 +614,7 @@ export function LoginScreen({
       fontSize: "15px",
       outline: "none",
       boxSizing: "border-box" as const,
-      transition: "border-color 0.15s",
+      transition: "border-color 0.15s, box-shadow 0.15s",
       background: theme.background,
       color: theme.text,
     },
@@ -625,6 +626,7 @@ export function LoginScreen({
       fontSize: "15px",
       outline: "none",
       boxSizing: "border-box" as const,
+      transition: "border-color 0.15s, box-shadow 0.15s",
       background: theme.surface,
       color: theme.text,
     },
@@ -638,9 +640,9 @@ export function LoginScreen({
       fontWeight: 700,
       fontSize: "15px",
       cursor: "pointer",
-      transition: "opacity 0.15s",
+      transition: "opacity 0.15s, filter 0.15s, transform 0.1s",
     },
-    btnDisabled: { opacity: 0.55, cursor: "not-allowed" },
+    btnDisabled: { opacity: 0.55, cursor: "not-allowed", transform: "none", filter: "none" },
     errorBox: {
       background: theme.errorBackground,
       border: `1px solid ${theme.errorBorder}`,
@@ -662,6 +664,7 @@ export function LoginScreen({
       fontWeight: 600,
       padding: "0",
       textAlign: "center" as const,
+      transition: "opacity 0.15s",
     },
     footerRow: { textAlign: "center" as const, fontSize: "13px", color: theme.textMuted },
     magicLinkRow: {
@@ -1060,8 +1063,11 @@ export function LoginScreen({
                     <div style={s.magicLinkPanel}>
                       <p style={s.magicLinkPanelLabel}>Sign in with magic link</p>
                       {magicSent ? (
-                        <p style={{ fontSize: "13px", color: theme.primary, margin: 0 }}>
-                          ✓ Magic link sent — check your inbox.
+                        <p style={{ fontSize: "13px", color: theme.primary, margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Magic link sent — check your inbox.
                         </p>
                       ) : (
                         <>

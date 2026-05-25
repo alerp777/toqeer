@@ -35,7 +35,7 @@ const s = {
     border: "2px solid #d1d5db",
     borderRadius: "8px",
     overflow: "hidden",
-    transition: "border-color 0.15s",
+    transition: "border-color 0.15s, box-shadow 0.15s",
     background: "#fff",
   },
   select: {
