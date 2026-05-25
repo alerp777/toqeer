@@ -1,4 +1,4 @@
-import { ForgotPasswordFlow } from "@workspace/auth-react";
+import { ForgotPasswordFlow, ThemeProvider } from "@workspace/auth-react";
 import { useRef } from "react";
 import { useLocation } from "wouter";
 import { api } from "../lib/api";
@@ -13,6 +13,7 @@ export default function ForgotPassword() {
   const resetRef = useRef({ resetToken: "", newPassword: "" });
 
   return (
+    <ThemeProvider role="rider">
     <ForgotPasswordFlow
       role="rider"
       logoSrc="/ajkmart-logo.png"
@@ -46,5 +47,6 @@ export default function ForgotPassword() {
       }}
       onSuccess={() => navigate("/login")}
     />
+    </ThemeProvider>
   );
 }

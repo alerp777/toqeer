@@ -1,4 +1,4 @@
-import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, useAuthTheme } from "@workspace/auth-react";
+import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
 import { tDual } from "@workspace/i18n";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -141,19 +141,22 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   }
 
   return (
-    <SharedLoginScreen
-      role="rider"
-      logoSrc="/ajkmart-logo.png"
-      logoAlt="AJKMart"
-      enableBiometric
-      enableSocial
-      enableEmailOtp
-      enableMagicLinkModal
-      loginMethodTabs={["otp", "password", "email"]}
-      captureDevOtp
-      onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
-      onGoogle={() => { void handleGoogle(); }}
-      onFacebook={() => { void handleFacebook(); }}
-    />
+    <ThemeProvider role="rider">
+      <SharedLoginScreen
+        role="rider"
+        logoSrc="/ajkmart-logo.png"
+        logoAlt="AJKMart"
+        enableBiometric
+        enableSocial
+        enableEmailOtp
+        enableMagicLinkModal
+        loginMethodTabs={["otp", "password", "email"]}
+        captureDevOtp
+        onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
+        onGoogle={() => { void handleGoogle(); }}
+        onFacebook={() => { void handleFacebook(); }}
+        onRegisterPress={() => navigate("/register")}
+      />
+    </ThemeProvider>
   );
 }

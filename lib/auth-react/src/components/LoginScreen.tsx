@@ -124,6 +124,8 @@ export interface LoginScreenProps {
   googleClientId?: string;
   /** Facebook App ID — when provided the shared component loads the FB SDK and handles social auth internally */
   facebookAppId?: string;
+  /** Href for the "Forgot password?" link shown on the password step. Defaults to "/forgot-password". Set to null to hide the link. */
+  forgotPasswordHref?: string | null;
   /** Fetch authoritative server profile after raw auth — receives the raw access token */
   fetchProfile?: (token: string) => Promise<unknown>;
   /** Validate the fetched profile; return an error string to reject, null to allow */
@@ -185,6 +187,7 @@ export function LoginScreen({
   checkBiometricStatus,
   enrollBiometric,
   captureDevOtp = false,
+  forgotPasswordHref = "/forgot-password",
 }: LoginScreenProps) {
   const theme = useAuthTheme();
   const displayTitle = title ?? ROLE_LABELS[role];
@@ -1141,6 +1144,16 @@ export function LoginScreen({
                     showStrength={false}
                     autoComplete="current-password"
                   />
+                  {forgotPasswordHref != null && (
+                    <div style={{ textAlign: "right", marginTop: "-8px" }}>
+                      <a
+                        href={forgotPasswordHref}
+                        style={{ fontSize: "13px", color: theme.primary, fontWeight: 600, textDecoration: "none" }}
+                      >
+                        Forgot password?
+                      </a>
+                    </div>
+                  )}
                   <button
                     type="submit"
                     style={{ ...s.btnPrimary, ...(loading ? s.btnDisabled : {}) }}

@@ -1,4 +1,4 @@
-import { RegisterScreen, ThemeProvider } from "@workspace/auth-react";
+import { RegisterScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
 import { AjkmartLogo } from "@workspace/ui/components/AjkmartLogo";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -11,19 +11,20 @@ import {
 } from "./vendor-register-steps";
 
 function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
+  const theme = useAuthTheme();
   return (
     <div style={{
       minHeight: "100vh",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "#060A14",
+      background: theme.background,
       padding: "24px 16px",
     }}>
       <div style={{
         width: "100%",
         maxWidth: 420,
-        background: "#0F1827",
+        background: theme.surface,
         borderRadius: 20,
         padding: "40px 28px",
         boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -40,22 +41,22 @@ function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
           </svg>
         </div>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#E2E8F4", margin: "0 0 8px" }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: "0 0 8px" }}>
             Application Submitted!
           </h2>
-          <p style={{ fontSize: 14, color: "#8B95A9", margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 14, color: theme.textMuted, margin: 0, lineHeight: 1.6 }}>
             Our team will review your details within 24–48 hours. You'll receive
             an SMS once your account is approved and ready to use.
           </p>
         </div>
         <div style={{
-          background: "rgba(26,86,219,0.1)",
-          border: "1px solid rgba(26,86,219,0.25)",
+          background: `${theme.primary}18`,
+          border: `1px solid ${theme.primary}40`,
           borderRadius: 12,
           padding: "12px 16px",
           width: "100%",
         }}>
-          <p style={{ fontSize: 13, color: "#8B95A9", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <p style={{ fontSize: 13, color: theme.textMuted, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
               <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
               <line x1="12" y1="18" x2="12.01" y2="18" />
@@ -70,8 +71,8 @@ function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
             padding: "14px",
             borderRadius: 12,
             border: "none",
-            background: "#1A56DB",
-            color: "#fff",
+            background: theme.primary,
+            color: theme.onPrimary,
             fontWeight: 700,
             fontSize: 15,
             cursor: "pointer",

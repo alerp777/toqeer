@@ -1,4 +1,4 @@
-import { RegisterScreen, type StepConfig } from "@workspace/auth-react";
+import { RegisterScreen, ThemeProvider, type StepConfig } from "@workspace/auth-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
@@ -165,10 +165,11 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
   }
 
   return (
-    <RegisterScreen
-      role="rider"
-      steps={riderSteps}
-      onSubmit={async (raw) => {
+    <ThemeProvider role="rider">
+      <RegisterScreen
+        role="rider"
+        steps={riderSteps}
+        onSubmit={async (raw) => {
         try {
           const d = raw as Record<string, unknown>;
           /* Map wizard field IDs → API-expected keys */
@@ -210,6 +211,7 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
           return {};
         }
       })()}
-    />
+      />
+    </ThemeProvider>
   );
 }

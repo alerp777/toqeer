@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from "react";
+import { useAuthTheme } from "../context/ThemeContext";
 
 export interface PasswordStrength {
   score: 0 | 1 | 2 | 3 | 4;
@@ -35,41 +36,6 @@ export interface PasswordInputProps {
   label?: string;
 }
 
-const s = {
-  wrapper: { display: "flex", flexDirection: "column" as const, gap: "6px" },
-  label: { fontSize: "13px", fontWeight: 600, color: "#374151" },
-  inputRow: {
-    display: "flex",
-    alignItems: "center",
-    border: "2px solid #d1d5db",
-    borderRadius: "8px",
-    overflow: "hidden",
-    background: "#fff",
-    transition: "border-color 0.15s, box-shadow 0.15s",
-  },
-  input: {
-    flex: 1,
-    border: "none",
-    outline: "none",
-    padding: "12px",
-    fontSize: "15px",
-    background: "transparent",
-    letterSpacing: "0.05em",
-  },
-  toggleBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: "0 12px",
-    color: "#9ca3af",
-    fontSize: "18px",
-    lineHeight: 1,
-  },
-  barRow: { display: "flex", gap: "4px", height: "4px" },
-  bar: { flex: 1, borderRadius: "2px", background: "#e5e7eb", transition: "background 0.3s" },
-  strengthLabel: { fontSize: "12px", textAlign: "right" as const },
-};
-
 export function PasswordInput({
   value,
   onChange,
@@ -80,8 +46,46 @@ export function PasswordInput({
   className,
   label,
 }: PasswordInputProps) {
+  const theme = useAuthTheme();
   const [visible, setVisible] = useState(false);
   const strength = showStrength ? calcStrength(value) : null;
+
+  const s = {
+    wrapper: { display: "flex", flexDirection: "column" as const, gap: "6px" },
+    label: { fontSize: "13px", fontWeight: 600, color: theme.text },
+    inputRow: {
+      display: "flex",
+      alignItems: "center",
+      border: `2px solid ${theme.border}`,
+      borderRadius: "8px",
+      overflow: "hidden",
+      background: theme.background,
+      color: theme.text,
+      transition: "border-color 0.15s, box-shadow 0.15s",
+    },
+    input: {
+      flex: 1,
+      border: "none",
+      outline: "none",
+      padding: "12px",
+      fontSize: "15px",
+      background: "transparent",
+      color: theme.text,
+      letterSpacing: "0.05em",
+    },
+    toggleBtn: {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      padding: "0 12px",
+      color: theme.textMuted,
+      fontSize: "18px",
+      lineHeight: 1,
+    },
+    barRow: { display: "flex", gap: "4px", height: "4px" },
+    bar: { flex: 1, borderRadius: "2px", background: theme.border, transition: "background 0.3s" },
+    strengthLabel: { fontSize: "12px", textAlign: "right" as const },
+  };
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     onChange(e.target.value);

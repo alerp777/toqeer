@@ -118,113 +118,6 @@ const ROLE_LABELS: Record<RegisterRole, string> = {
   vendor: "Vendor Registration",
 };
 
-const s = {
-  screen: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f9fafb",
-    padding: "24px 16px",
-  } as React.CSSProperties,
-  card: {
-    width: "100%",
-    maxWidth: "420px",
-    background: "#fff",
-    borderRadius: "16px",
-    padding: "32px 28px",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "20px",
-  },
-  header: { textAlign: "center" as const },
-  title: { fontSize: "22px", fontWeight: 800, color: "#111827", margin: "0 0 4px" },
-  subtitle: { fontSize: "14px", color: "#6b7280", margin: 0 },
-  stepIndicator: {
-    display: "flex",
-    gap: "6px",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    marginBottom: "4px",
-    display: "block",
-  } as React.CSSProperties,
-  input: {
-    width: "100%",
-    padding: "12px",
-    border: "2px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "15px",
-    outline: "none",
-    boxSizing: "border-box" as const,
-    transition: "border-color 0.15s, box-shadow 0.15s",
-  },
-  select: {
-    width: "100%",
-    padding: "12px",
-    border: "2px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "15px",
-    outline: "none",
-    boxSizing: "border-box" as const,
-    transition: "border-color 0.15s, box-shadow 0.15s",
-    background: "#fff",
-  },
-  checkboxRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    cursor: "pointer",
-  } as React.CSSProperties,
-  btnPrimary: (accent: string, textColor = "#fff"): React.CSSProperties => ({
-    width: "100%",
-    padding: "13px",
-    borderRadius: "8px",
-    border: "none",
-    background: accent,
-    color: textColor,
-    fontWeight: 700,
-    fontSize: "15px",
-    cursor: "pointer",
-    transition: "opacity 0.15s, filter 0.15s, transform 0.1s",
-  }),
-  btnDisabled: { opacity: 0.55, cursor: "not-allowed", transform: "none", filter: "none" } as React.CSSProperties,
-  btnBack: (accent: string): React.CSSProperties => ({
-    background: "none",
-    border: "none",
-    color: accent,
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: 600,
-    padding: "6px 0",
-    textAlign: "center" as const,
-    transition: "opacity 0.15s",
-  }),
-  errorBox: {
-    background: "#fef2f2",
-    border: "1px solid #fca5a5",
-    borderRadius: "10px",
-    padding: "12px 14px",
-    color: "#b91c1c",
-    fontSize: "13px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    lineHeight: 1.4,
-  },
-  progressDot: (active: boolean, done: boolean, accent: string): React.CSSProperties => ({
-    width: active ? "24px" : "8px",
-    height: "8px",
-    borderRadius: "4px",
-    background: done || active ? accent : "#e5e7eb",
-    transition: "all 0.2s",
-  }),
-};
 
 /** Returns true only for field-based OTP steps (not component-based). */
 function isOtpStep(step: StepConfig): boolean {
@@ -255,9 +148,121 @@ export function RegisterScreen({
   accentText: accentTextProp,
   bare = false,
 }: RegisterScreenProps) {
+  const theme = useAuthTheme();
   const accent = accentProp ?? ROLE_ACCENT[role];
   const accentText = accentTextProp ?? ROLE_ACCENT_TEXT[role];
   const displayTitle = title ?? ROLE_LABELS[role];
+
+  const s = {
+    screen: {
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: theme.background,
+      padding: "24px 16px",
+    } as React.CSSProperties,
+    card: {
+      width: "100%",
+      maxWidth: "420px",
+      background: theme.surface,
+      borderRadius: "16px",
+      padding: "32px 28px",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+      display: "flex",
+      flexDirection: "column" as const,
+      gap: "20px",
+    },
+    header: { textAlign: "center" as const },
+    title: { fontSize: "22px", fontWeight: 800, color: theme.text, margin: "0 0 4px" },
+    subtitle: { fontSize: "14px", color: theme.textMuted, margin: 0 },
+    stepIndicator: {
+      display: "flex",
+      gap: "6px",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    label: {
+      fontSize: "13px",
+      fontWeight: 600,
+      color: theme.text,
+      marginBottom: "4px",
+      display: "block",
+    } as React.CSSProperties,
+    input: {
+      width: "100%",
+      padding: "12px",
+      border: `2px solid ${theme.border}`,
+      borderRadius: "8px",
+      fontSize: "15px",
+      outline: "none",
+      boxSizing: "border-box" as const,
+      background: theme.background,
+      color: theme.text,
+      transition: "border-color 0.15s, box-shadow 0.15s",
+    },
+    select: {
+      width: "100%",
+      padding: "12px",
+      border: `2px solid ${theme.border}`,
+      borderRadius: "8px",
+      fontSize: "15px",
+      outline: "none",
+      boxSizing: "border-box" as const,
+      transition: "border-color 0.15s, box-shadow 0.15s",
+      background: theme.surface,
+      color: theme.text,
+    },
+    checkboxRow: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: "10px",
+      cursor: "pointer",
+    } as React.CSSProperties,
+    btnPrimary: (a: string, textColor = "#fff"): React.CSSProperties => ({
+      width: "100%",
+      padding: "13px",
+      borderRadius: "8px",
+      border: "none",
+      background: a,
+      color: textColor,
+      fontWeight: 700,
+      fontSize: "15px",
+      cursor: "pointer",
+      transition: "opacity 0.15s, filter 0.15s, transform 0.1s",
+    }),
+    btnDisabled: { opacity: 0.55, cursor: "not-allowed", transform: "none", filter: "none" } as React.CSSProperties,
+    btnBack: (a: string): React.CSSProperties => ({
+      background: "none",
+      border: "none",
+      color: a,
+      cursor: "pointer",
+      fontSize: "13px",
+      fontWeight: 600,
+      padding: "6px 0",
+      textAlign: "center" as const,
+      transition: "opacity 0.15s",
+    }),
+    errorBox: {
+      background: theme.errorBackground,
+      border: `1px solid ${theme.errorBorder}`,
+      borderRadius: "10px",
+      padding: "12px 14px",
+      color: theme.error,
+      fontSize: "13px",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      lineHeight: 1.4,
+    },
+    progressDot: (active: boolean, done: boolean, a: string): React.CSSProperties => ({
+      width: active ? "24px" : "8px",
+      height: "8px",
+      borderRadius: "4px",
+      background: done || active ? a : theme.border,
+      transition: "all 0.2s",
+    }),
+  };
 
   const [stepIndex, setStepIndex] = useState(0);
   const [formData, setFormData] = useState<Record<string, unknown>>(initialData ?? {});
@@ -628,7 +633,7 @@ export function RegisterScreen({
                         updateField(field.id, e.target.checked);
                       }}
                     />
-                    <span style={{ fontSize: "13px", color: "#6b7280" }}>{field.label}</span>
+                    <span style={{ fontSize: "13px", color: theme.textMuted }}>{field.label}</span>
                   </label>
                 ) : (
                   <>

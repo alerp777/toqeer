@@ -2,6 +2,8 @@ import {
   LoginScreen as SharedLoginScreen,
   PendingOverlay,
   RejectedOverlay,
+  ThemeProvider,
+  useAuthTheme,
   type AuthUser as SharedAuthUser,
 } from "@workspace/auth-react";
 import { useCallback, useRef, useState } from "react";
@@ -97,48 +99,61 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   if (overlay === "pending")
     return (
-      <PendingOverlay
-        onCheckStatus={handleCheckStatus}
-        onSignOut={handleSignOut}
-        supportPhone={supportPhone}
-        checking={checkingStatus}
-      />
+      <ThemeProvider role="vendor">
+        <PendingOverlay
+          onCheckStatus={handleCheckStatus}
+          onSignOut={handleSignOut}
+          supportPhone={supportPhone}
+          checking={checkingStatus}
+        />
+      </ThemeProvider>
     );
   if (overlay === "rejected")
     return (
-      <RejectedOverlay
-        rejectionReason={rejectionReason}
-        onSignOut={handleSignOut}
-        supportPhone={supportPhone}
-      />
+      <ThemeProvider role="vendor">
+        <RejectedOverlay
+          rejectionReason={rejectionReason}
+          onSignOut={handleSignOut}
+          supportPhone={supportPhone}
+        />
+      </ThemeProvider>
     );
 
   return (
-    <div style={{ position: "relative" }}>
-      <SharedLoginScreen
-        role="vendor"
-        logoSrc="/ajkmart-logo.png"
-        logoAlt="AJKMart"
-        enableBiometric={false}
-        enableSocial
-        enableEmailOtp
-        enableMagicLinkModal
-        loginMethodTabs={["otp", "password", "email"]}
-        googleClientId={auth.googleClientId}
-        facebookAppId={auth.facebookAppId}
-        onSuccess={handleSuccess}
-        onRegisterPress={() => navigate("/register")}
-        captureDevOtp
-      />
-      <p style={{
-        textAlign: "center",
-        fontSize: 12,
-        color: "#8B95A9",
-        margin: "-8px 0 16px",
-        padding: "0 16px",
-      }}>
-        Fingerprint login is not available on web — use the AJKMart mobile app for biometric sign-in.
-      </p>
-    </div>
+    <ThemeProvider role="vendor">
+      <div style={{ position: "relative" }}>
+        <SharedLoginScreen
+          role="vendor"
+          logoSrc="/ajkmart-logo.png"
+          logoAlt="AJKMart"
+          enableBiometric={false}
+          enableSocial
+          enableEmailOtp
+          enableMagicLinkModal
+          loginMethodTabs={["otp", "password", "email"]}
+          googleClientId={auth.googleClientId}
+          facebookAppId={auth.facebookAppId}
+          onSuccess={handleSuccess}
+          onRegisterPress={() => navigate("/register")}
+          captureDevOtp
+        />
+        <VendorBiometricNote />
+      </div>
+    </ThemeProvider>
+  );
+}
+
+function VendorBiometricNote() {
+  const theme = useAuthTheme();
+  return (
+    <p style={{
+      textAlign: "center",
+      fontSize: 12,
+      color: theme.textMuted,
+      margin: "-8px 0 16px",
+      padding: "0 16px",
+    }}>
+      Fingerprint login is not available on web — use the AJKMart mobile app for biometric sign-in.
+    </p>
   );
 }

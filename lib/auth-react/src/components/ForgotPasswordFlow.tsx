@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthTheme } from "../context/ThemeContext";
 import { useRateLimitCountdown } from "../hooks/useRateLimitCountdown";
 import { useForgotPasswordFlow, type UseForgotPasswordFlowOptions } from "../hooks/useForgotPasswordFlow";
@@ -97,6 +97,21 @@ export function ForgotPasswordFlow({
 }: ForgotPasswordFlowProps) {
   const theme = useAuthTheme();
   const S = { ...DEFAULT_STRINGS, ...customStrings };
+
+  useEffect(() => {
+    const id = "auth-shared-keyframes";
+    if (typeof document !== "undefined" && !document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `
+        @keyframes auth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes auth-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .auth-input:focus-visible, .auth-input:focus { outline: none; border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+        .auth-input-wrapper:focus-within { border-color: var(--auth-focus, currentColor); box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(0,0,0,0.08)); }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   const { step, method, loading, error, actions } = useForgotPasswordFlow({
     role,
@@ -319,6 +334,7 @@ export function ForgotPasswordFlow({
               onChange={(e) => { setContact(e.target.value); setLocalError(null); }}
               placeholder={method === "phone" ? "03XXXXXXXXX" : "your@email.com"}
               style={inputStyle}
+              className="auth-input"
               disabled={isDisabled}
             />
           </div>
