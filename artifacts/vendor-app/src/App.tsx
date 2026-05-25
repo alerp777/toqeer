@@ -39,6 +39,7 @@ import { queryClient } from "./lib/queryClient";
 /* ── Auth screens: eagerly loaded (needed before user is known) ── */
 import ForgotPassword from "./pages/ForgotPassword";
 import GuestLanding from "./pages/GuestLanding";
+import JoinSelect from "./pages/JoinSelect";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
@@ -675,6 +676,7 @@ function AppRoutes() {
         />
       );
     if (location === "/auth/magic-link") return <MagicLinkPage />;
+    if (location === "/join") return <JoinSelect />;
     if (location === "/register") return <Register />;
     if (location === "/login") return <Login />;
     if (location === "/forgot-password") return <ForgotPassword />;

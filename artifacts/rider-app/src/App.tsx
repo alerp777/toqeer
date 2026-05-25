@@ -56,6 +56,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const GuestLanding = lazy(() => import("./pages/GuestLanding"));
 const Register = lazy(() => import("./pages/Register"));
+const JoinSelect = lazy(() => import("./pages/JoinSelect"));
 const NotFound = lazy(() => import("./pages/not-found"));
 const History = lazy(() => import("./pages/History"));
 const Earnings = lazy(() => import("./pages/Earnings"));
@@ -608,7 +609,7 @@ function AppRoutes() {
   /* Deep-link guard: capture the current path when an unauthenticated user
      lands on a protected route (e.g. via a push-notification deep link).
      After the user logs in, we redirect them to the originally-intended path. */
-  const PUBLIC_PATHS = ["/", "/login", "/register", "/forgot-password", "/auth/magic-link"];
+  const PUBLIC_PATHS = ["/", "/login", "/register", "/join", "/forgot-password", "/auth/magic-link"];
   useEffect(() => {
     if (!loading && !user && !PUBLIC_PATHS.includes(location)) {
       intendedRouteRef.current = location;
@@ -1091,6 +1092,7 @@ function AppRoutes() {
           <Suspense fallback={<PageShimmer />}>
             <Switch>
               <Route path="/" component={GuestLanding} />
+              <Route path="/join">{() => <JoinSelect />}</Route>
               <Route path="/auth/magic-link" component={MagicLinkPage} />
               <Route path="/register">{() => <Register />}</Route>
               <Route path="/forgot-password" component={ForgotPassword} />
