@@ -1555,6 +1555,37 @@ function VersionCheckInit() {
   return null;
 }
 
+const SplashScreen = lazy(() => import("./pages/SplashScreen"));
+const OnboardingScreen = lazy(() => import("./pages/Onboarding"));
+
+function AppShell() {
+  const [splashDone, setSplashDone] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(() => {
+    try { return localStorage.getItem("rider_onboarding_done") === "1"; } catch { return false; }
+  });
+
+  if (!splashDone) {
+    return (
+      <Suspense fallback={null}>
+        <SplashScreen onDone={() => setSplashDone(true)} />
+      </Suspense>
+    );
+  }
+  if (!onboardingDone) {
+    return (
+      <Suspense fallback={null}>
+        <OnboardingScreen
+          onDone={() => {
+            try { localStorage.setItem("rider_onboarding_done", "1"); } catch { /* ignore */ }
+            setOnboardingDone(true);
+          }}
+        />
+      </Suspense>
+    );
+  }
+  return <AppRoutes />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -1566,7 +1597,7 @@ function App() {
               <ThemeProvider theme={riderTheme}>
                 <SocketProvider>
                   <WouterRouter base={getRouterBase()}>
-                    <AppRoutes />
+                    <AppShell />
                   </WouterRouter>
                   <Toaster />
                   <PwaInstallBanner />

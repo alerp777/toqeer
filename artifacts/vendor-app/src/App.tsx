@@ -1228,6 +1228,37 @@ const VersionCheckInit = React.memo(function VersionCheckInit() {
   return null;
 });
 
+const SplashScreen = React.lazy(() => import("./pages/SplashScreen"));
+const OnboardingScreen = React.lazy(() => import("./pages/Onboarding"));
+
+function AppShell() {
+  const [splashDone, setSplashDone] = React.useState(false);
+  const [onboardingDone, setOnboardingDone] = React.useState(() => {
+    try { return localStorage.getItem("vendor_onboarding_done") === "1"; } catch { return false; }
+  });
+
+  if (!splashDone) {
+    return (
+      <React.Suspense fallback={null}>
+        <SplashScreen onDone={() => setSplashDone(true)} />
+      </React.Suspense>
+    );
+  }
+  if (!onboardingDone) {
+    return (
+      <React.Suspense fallback={null}>
+        <OnboardingScreen
+          onDone={() => {
+            try { localStorage.setItem("vendor_onboarding_done", "1"); } catch { /* ignore */ }
+            setOnboardingDone(true);
+          }}
+        />
+      </React.Suspense>
+    );
+  }
+  return <AppRoutes />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -1250,7 +1281,7 @@ export default function App() {
                 return raw.replace(/\/$/, "");
               })()}
             >
-              <AppRoutes />
+              <AppShell />
             </WouterRouter>
             <PwaInstallBanner />
           </ThemeProvider>
