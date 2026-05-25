@@ -69,6 +69,13 @@ export interface RegisterScreenProps {
   title?: string;
   className?: string;
   /**
+   * Override the accent color used for buttons and step-indicator dots.
+   * Defaults to the role's built-in accent (vendor = orange, etc.).
+   */
+  accent?: string;
+  /** Text color drawn on top of accent-colored buttons. Defaults to "#fff". */
+  accentText?: string;
+  /**
    * When true, strips the outer screen/card wrapper so the caller
    * can provide their own container and theme (e.g. dark mode wizard).
    */
@@ -220,10 +227,12 @@ export function RegisterScreen({
   baseURL = "",
   title,
   className,
+  accent: accentProp,
+  accentText: accentTextProp,
   bare = false,
 }: RegisterScreenProps) {
-  const accent = ROLE_ACCENT[role];
-  const accentText = ROLE_ACCENT_TEXT[role];
+  const accent = accentProp ?? ROLE_ACCENT[role];
+  const accentText = accentTextProp ?? ROLE_ACCENT_TEXT[role];
   const displayTitle = title ?? ROLE_LABELS[role];
 
   const [stepIndex, setStepIndex] = useState(0);

@@ -41,6 +41,10 @@ export interface AuthTheme {
   errorBackground: string;
   /** Error box / alert border color */
   errorBorder: string;
+  /** Success / positive text and indicator color */
+  success?: string;
+  /** Warning / caution text and indicator color */
+  warning?: string;
 }
 
 export const DEFAULT_THEMES = {

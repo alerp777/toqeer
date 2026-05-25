@@ -23,7 +23,6 @@ export const vendorTheme: Partial<AuthTheme> = {
   error: "#EF4444",
   errorBackground: "rgba(239,68,68,0.10)",
   errorBorder: "rgba(239,68,68,0.28)",
+  success: "#22C55E",
+  warning: "#F59E0B",
 };
-
-export const VENDOR_SUCCESS = "#22C55E";
-export const VENDOR_WARNING = "#F59E0B";

@@ -1,12 +1,12 @@
 import { RegisterScreen, ThemeProvider } from "@workspace/auth-react";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { useAuth } from "./useAuth";
 import { vendorTheme } from "./theme";
 import {
   DRAFT_KEY, DRAFT_TTL_KEY,
-  loadDraft, saveDraft, fileToDataUrl, vendorSteps, registerOtpResender,
+  loadDraft, saveDraft, fileToDataUrl, vendorSteps, registerOtpResender, markOtpSent,
 } from "./vendor-register-steps";
 
 function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
@@ -81,27 +81,6 @@ export function RegisterWizard() {
   const [submitted, setSubmitted] = useState(false);
   const logoSrc = `${import.meta.env.BASE_URL}ajkmart-logo.png`;
 
-  useLayoutEffect(() => {
-    const PRIMARY = "#1A56DB";
-    const applyBtn = () => {
-      const container = document.querySelector(".vendor-register-screen");
-      if (!container) return;
-      container.querySelectorAll<HTMLButtonElement>("button[type='submit']").forEach((btn) => {
-        btn.style.setProperty("background", PRIMARY, "important");
-        btn.style.setProperty("background-color", PRIMARY, "important");
-        btn.style.setProperty("color", "#fff", "important");
-        btn.style.setProperty("border-radius", "12px", "important");
-      });
-    };
-    const observer = new MutationObserver(applyBtn);
-    const container = document.querySelector(".vendor-register-screen");
-    if (container) {
-      observer.observe(container, { childList: true, subtree: true });
-    }
-    applyBtn();
-    return () => observer.disconnect();
-  });
-
   if (submitted) {
     return <SubmittedScreen onGoToLogin={() => navigate("/login")} />;
   }
@@ -124,8 +103,9 @@ export function RegisterWizard() {
           />
         </div>
         <RegisterScreen
-          role="customer"
-          title="Vendor Registration"
+          role="vendor"
+          accent={vendorTheme.primary}
+          accentText="#ffffff"
           steps={vendorSteps}
           initialData={loadDraft()}
           onDataChange={saveDraft}
@@ -133,6 +113,9 @@ export function RegisterWizard() {
           onOtpRequest={async (phone) => {
             registerOtpResender(sendOtp);
             const result = await sendOtp(phone);
+            if (result.success) {
+              markOtpSent();
+            }
             return { success: result.success, error: result.error };
           }}
           onSubmit={async (data) => {

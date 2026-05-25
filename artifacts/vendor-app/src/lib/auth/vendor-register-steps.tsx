@@ -10,7 +10,6 @@ import { useAuthTheme } from "@workspace/auth-react";
 import { useEffect, useRef, useState } from "react";
 import { isValidCnic, isValidPhone } from "@workspace/phone-utils";
 import { PAKISTAN_CITIES } from "@workspace/service-constants";
-import { VENDOR_SUCCESS, VENDOR_WARNING } from "./theme";
 
 /* ─── Draft helpers ────────────────────────────────────────────────── */
 export const DRAFT_KEY = "vendor_reg_draft";
@@ -46,12 +45,22 @@ export async function fileToDataUrl(file: unknown): Promise<string | undefined> 
   });
 }
 
-/* ─── OTP resender (module-level ref so OtpPasswordStep can call it) ─ */
+/* ─── OTP module-level state shared between wizard and step component ─ */
 let _otpResender: ((phone: string) => Promise<{ success: boolean; error?: string }>) | null = null;
+let _otpWasSent = false;
+
 export function registerOtpResender(
   fn: (phone: string) => Promise<{ success: boolean; error?: string }>
 ) {
   _otpResender = fn;
+}
+
+export function markOtpSent() {
+  _otpWasSent = true;
+}
+
+export function resetOtpSentState() {
+  _otpWasSent = false;
 }
 
 /* ─── Shared input/label styles ────────────────────────────────────── */
@@ -407,7 +416,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
   const { t } = useStyles();
   const { level, label } = getPasswordStrength(password);
   if (!password) return null;
-  const colors = [t.error ?? "#EF4444", VENDOR_WARNING, VENDOR_SUCCESS];
+  const colors = [t.error ?? "#EF4444", t.warning ?? "#F59E0B", t.success ?? "#22C55E"];
   const activeColor = colors[level - 1] ?? colors[0];
   return (
     <div style={{ marginTop: 6 }}>
@@ -448,16 +457,24 @@ function OtpPasswordStep({ data, onChange, onError }: StepComponentProps) {
     }, 1000);
   };
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => {
+    if (_otpWasSent) {
+      onChange("otpSent", true);
+      startCountdown();
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
   const handleResend = async () => {
     if (!_otpResender || countdown > 0 || resending) return;
     setResending(true);
     try {
       const phone = (data.phone as string) ?? "";
-      await _otpResender(phone);
-      onChange("otpSent", true);
-      startCountdown();
+      const result = await _otpResender(phone);
+      if (result.success) {
+        onChange("otpSent", true);
+        startCountdown();
+      }
     } finally {
       setResending(false);
     }
