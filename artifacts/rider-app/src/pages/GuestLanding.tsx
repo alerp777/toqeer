@@ -21,8 +21,8 @@ export function GuestLanding() {
       heroSubtitle={{ en: "Join thousands of riders across AJK and earn whenever you want.", ur: "ہزاروں رائیڈرز کے ساتھ شامل ہوں اور جب چاہیں کمائیں۔", roman: "Hazaron riders ke sath shamil hon aur jab chahen kamayein." }}
       stats={[
         { v: "₨ 2,400", l: { en: "Avg daily earnings", ur: "اوسط یومیہ آمدن", roman: "Avg roz ki kamai" } },
-        { v: "12,000+", l: { en: "Active riders", ur: "فعال رائیڈرز", roman: "Active riders" } },
-        { v: "18", l: { en: "Cities covered", ur: "شہر", roman: "Shehar" } },
+        { v: "11,114+", l: { en: "Active riders", ur: "فعال رائیڈرز", roman: "Active riders" } },
+        { v: "17", l: { en: "Cities covered", ur: "شہر", roman: "Shehar" } },
         { v: "4.8★", l: { en: "App rating", ur: "ایپ ریٹنگ", roman: "App rating" } },
       ]}
       features={[
