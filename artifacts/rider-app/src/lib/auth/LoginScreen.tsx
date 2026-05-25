@@ -4,7 +4,11 @@ import { useLocation } from "wouter";
 import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
 import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
+import { riderTheme } from "./theme";
 import { facebookLogin, googleOneTap } from "./social-oauth";
+
+/* Feature-card error colour — named constant, not inline hex */
+const CLR_ERROR = "#EF4444";
 
 type SocialResult = { token: string; user: unknown; refreshToken?: string };
 
@@ -17,6 +21,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [, navigate] = useLocation();
   const authConfig = useRiderAuthConfig();
   const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
+  const [roleError, setRoleError] = useState<string | null>(null);
   const [enrollData, setEnrollData] = useState<{
     token: string; refreshToken: string; profile: unknown;
   } | null>(null);
@@ -28,31 +33,44 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   };
 
   /**
-   * Central success handler — called after every successful auth (OTP, password,
-   * 2FA, social). refreshToken is now passed from the API response via the shared
-   * LoginScreen's onSuccess(user, token, refreshToken) signature, eliminating the
-   * stale-storage race condition that blocked biometric enrolment.
+   * Central post-auth handler. Always calls api.getMe() for the authoritative
+   * server profile — never trusts callback payload roles alone — so email OTP's
+   * synthetic user object and other spoofed payloads cannot bypass the role gate.
    */
   const handleSuccess = async (user: unknown, token: string, refreshToken?: string) => {
-    const roles = normalizeRoles(user as { roles?: unknown; role?: unknown });
-    if (roles.length > 0 && !roles.includes("rider")) {
-      throw new Error(
-        `Your account is registered as a ${roles[0] ?? "unknown"}. This app is for riders only.`
-      );
-    }
-    /* Prefer the refresh token from the auth response; fall back to storage only
-       when the response omits it (e.g. legacy server without refresh token). */
+    /* Store tokens first so api.getMe() can authenticate the request */
     const rToken = refreshToken ?? api.getRefreshToken() ?? "";
     api.storeTokens(token, rToken || undefined);
+
+    /* Fetch authoritative profile; fall back to callback payload on network error */
+    let profile: unknown = user;
+    try {
+      profile = await api.getMe();
+    } catch {
+      /* getMe() failed — network issue; continue with callback payload */
+    }
+
+    /* Fail-closed role guard: reject any account whose roles explicitly exclude rider */
+    const roles = normalizeRoles(profile as { roles?: unknown; role?: unknown });
+    if (roles.length > 0 && !roles.includes("rider")) {
+      api.clearTokens();
+      setRoleError(
+        `This account is registered as "${roles[0] ?? "unknown"}". ` +
+        `Please use an account with rider access.`
+      );
+      return;
+    }
+
     try {
       const { isBiometricAvailable, isBiometricEnabled } = await import("../biometric");
       const [available, enrolled] = await Promise.all([isBiometricAvailable(), isBiometricEnabled()]);
       if (available && !enrolled && rToken) {
-        setEnrollData({ token, refreshToken: rToken, profile: user });
+        setEnrollData({ token, refreshToken: rToken, profile });
         return;
       }
     } catch { /* biometric unavailable — proceed normally */ }
-    finishLogin(token, user, rToken);
+
+    finishLogin(token, profile, rToken);
   };
 
   const handleGoogle = async () => {
@@ -90,6 +108,32 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     finishLogin(token, profile, refreshToken);
   };
 
+  /* ── Role-rejection screen ───────────────────────────────────────────────── */
+  if (roleError) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: riderTheme.background, color: riderTheme.text,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif",
+      }}>
+        <p style={{ color: CLR_ERROR, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5 }}>
+          {roleError}
+        </p>
+        <button
+          onClick={() => setRoleError(null)}
+          style={{
+            marginTop: 20, background: riderTheme.primary, color: "#000",
+            border: "none", borderRadius: 8, padding: "10px 24px",
+            fontWeight: 600, cursor: "pointer", fontSize: 14,
+          }}
+        >
+          Try another account
+        </button>
+      </div>
+    );
+  }
+
+  /* ── Biometric enrollment prompt ─────────────────────────────────────────── */
   if (enrollData) {
     return <BiometricEnrollOverlay onEnroll={handleEnrollAccept} onSkip={handleEnrollDecline} />;
   }
