@@ -365,7 +365,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const googleLogin = async () => {
     const clientId = auth.googleClientId;
     if (!clientId) {
-      setError("Google sign-in is not configured");
+      /* Button is only rendered when clientId is set; this guard is defensive only. */
       return;
     }
     setSocialLoading("google");
@@ -445,7 +445,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const facebookLogin = async () => {
     const appId = auth.facebookAppId;
     if (!appId) {
-      setError("Facebook sign-in is not configured");
+      /* Button is only rendered when appId is set; this guard is defensive only. */
       return;
     }
     setSocialLoading("facebook");
@@ -1317,8 +1317,8 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
           </div>
         )}
 
-        {(auth.googleEnabled ||
-          auth.facebookEnabled ||
+        {((auth.googleEnabled && auth.googleClientId) ||
+          (auth.facebookEnabled && auth.facebookAppId) ||
           auth.magicLinkEnabled ||
           biometricAvailable) && (
           <>
@@ -1328,7 +1328,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
               <div style={{ flex: 1, height: 1, background: theme.border }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {auth.googleEnabled && (
+              {auth.googleEnabled && auth.googleClientId && (
                 <button
                   onClick={() => void googleLogin()}
                   disabled={socialLoading === "google"}
@@ -1370,7 +1370,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
                   {socialLoading === "google" ? "Connecting…" : "Continue with Google"}
                 </button>
               )}
-              {auth.facebookEnabled && (
+              {auth.facebookEnabled && auth.facebookAppId && (
                 <button
                   onClick={() => void facebookLogin()}
                   disabled={socialLoading === "facebook"}

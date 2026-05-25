@@ -361,7 +361,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   const handleGoogle = useCallback(async () => {
     if (!auth.googleClientId) {
-      setLoginError(T("socialLoginComingSoon") as string);
+      /* Button is only rendered when clientId is set; this guard is defensive only. */
       return;
     }
     try {
@@ -384,7 +384,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   const handleFacebook = useCallback(async () => {
     if (!auth.facebookAppId) {
-      setLoginError(T("socialLoginComingSoon") as string);
+      /* Button is only rendered when appId is set; this guard is defensive only. */
       return;
     }
     try {
@@ -1174,7 +1174,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         )}
 
         {/* ── Social login + Magic Link ── */}
-        {(auth.google || auth.facebook || auth.magicLink) && (
+        {((auth.google && auth.googleClientId) || (auth.facebook && auth.facebookAppId) || auth.magicLink) && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
               <div style={{ flex: 1, height: 1, background: theme.border }} />
@@ -1182,7 +1182,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               <div style={{ flex: 1, height: 1, background: theme.border }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {auth.google && (
+              {auth.google && auth.googleClientId && (
                 <button
                   onClick={() => void handleGoogle()}
                   disabled={socialLoading !== null}
@@ -1224,7 +1224,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                   Continue with Google
                 </button>
               )}
-              {auth.facebook && (
+              {auth.facebook && auth.facebookAppId && (
                 <button
                   onClick={() => void handleFacebook()}
                   disabled={socialLoading !== null}
