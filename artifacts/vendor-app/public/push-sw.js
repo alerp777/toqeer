@@ -14,7 +14,9 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow("/vendor-app/"));
+  const orderId = event.notification.data?.orderId;
+  const url = orderId ? `/vendor/orders` : "/vendor/";
+  event.waitUntil(clients.openWindow(url));
 });
 
 self.addEventListener("install", () => self.skipWaiting());

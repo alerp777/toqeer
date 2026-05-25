@@ -2,12 +2,46 @@ import type { CSSProperties } from "react";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 
 export function PushPermissionBanner() {
-  const { permission, isSubscribed, isDismissed, requestPermission, dismiss } =
+  const { permission, isSubscribed, isDismissed, pushError, requestPermission, dismiss } =
     usePushNotifications();
 
   if (permission === "unsupported") return null;
-  if (permission === "granted" || isSubscribed) return null;
+  if (permission === "granted" && isSubscribed && !pushError) return null;
   if (permission === "denied" || isDismissed) return null;
+
+  if (pushError) {
+    const errorMessages = {
+      permission_denied: "Notification permission was denied. Enable it in browser settings.",
+      registration_failed: "Could not register for notifications. Tap to retry.",
+      network_error: "Network error — push notifications may be unavailable.",
+    } as const;
+
+    return (
+      <div style={{ ...styles.wrapper, background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={styles.banner}>
+          <div style={styles.left}>
+            <div style={{ ...styles.iconBox, background: "rgba(255,255,255,0.15)" }}>
+              <span style={{ fontSize: 20 }}>⚠️</span>
+            </div>
+            <div>
+              <div style={styles.title}>Notifications Unavailable</div>
+              <div style={styles.subtitle}>{errorMessages[pushError]}</div>
+            </div>
+          </div>
+          <div style={styles.actions}>
+            {pushError !== "permission_denied" && (
+              <button style={styles.allowBtn} onClick={requestPermission}>
+                Retry
+              </button>
+            )}
+            <button style={styles.closeBtn} onClick={dismiss} aria-label="Dismiss">
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.wrapper}>

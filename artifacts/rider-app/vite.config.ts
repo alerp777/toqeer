@@ -43,7 +43,6 @@ export default defineConfig(async ({ command }) => {
       runtimeErrorOverlay(),
       VitePWA({
         registerType: "autoUpdate",
-        filename: "sw.js",
         scope: basePath + "/",
         base: basePath + "/",
         manifest: {

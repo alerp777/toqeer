@@ -103,14 +103,18 @@ if (Capacitor.isNativePlatform()) {
     });
 }
 
+export type PushErrorReason = "permission_denied" | "registration_failed" | "network_error";
+export type PushErrorHandler = (reason: PushErrorReason) => void;
+
 export async function registerPush(
   onForegroundMessage?: (title: string, body: string) => void,
-  onNotificationTap?: NotificationTapHandler
+  onNotificationTap?: NotificationTapHandler,
+  onError?: PushErrorHandler
 ): Promise<PushCleanup | void> {
   if (Capacitor.isNativePlatform()) {
     return registerFcmPush(onForegroundMessage, onNotificationTap);
   }
-  return registerVapidPush();
+  return registerVapidPush(onError);
 }
 
 /* ─── Native FCM path ─────────────────────────────────────────────────────── */
@@ -250,22 +254,50 @@ async function registerFcmPush(
 
 /* ─── Browser VAPID path ──────────────────────────────────────────────────── */
 
-async function registerVapidPush(): Promise<void> {
+async function registerVapidPush(onError?: PushErrorHandler): Promise<void> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
   try {
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      onError?.("permission_denied");
+      return;
+    }
+
     const swBase = (riderEnv.baseUrl || "/").replace(/\/$/, "");
     const apiBase = getApiBase().replace(/\/+$/, "");
-    const reg = await navigator.serviceWorker.register(`${swBase}/sw.js`, { scope: swBase + "/" });
+    const reg = await navigator.serviceWorker.register(`${swBase}/push-sw.js`, { scope: swBase + "/" });
     const existing = await reg.pushManager.getSubscription();
-    if (existing) return;
+    if (existing) {
+      /* Re-send existing subscription to keep server token fresh */
+      const token = api.getToken();
+      if (token) {
+        await fetch(`${apiBase}/push/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            type: "vapid",
+            endpoint: existing.endpoint,
+            p256dh: existing.toJSON().keys?.p256dh,
+            auth: existing.toJSON().keys?.auth,
+            role: "rider",
+          }),
+        }).catch(() => { /* best-effort */ });
+      }
+      return;
+    }
 
     const vapidRes = await fetch(`${apiBase}/push/vapid-key`);
-    if (!vapidRes.ok) return;
+    if (!vapidRes.ok) {
+      onError?.("network_error");
+      return;
+    }
     const vj = await vapidRes.json();
     const { publicKey } = (vj?.success === true && "data" in vj ? vj.data : vj) as {
       publicKey: string;
     };
-    if (!publicKey) return;
+    if (!publicKey) {
+      onError?.("registration_failed");
+      return;
+    }
 
     const keyBytes = urlBase64ToUint8Array(publicKey);
     const keyBuffer = new ArrayBuffer(keyBytes.byteLength);
@@ -280,7 +312,7 @@ async function registerVapidPush(): Promise<void> {
       log.warn("VAPID subscription registration skipped — no auth token (rider not logged in)");
       return;
     }
-    await fetch(`${apiBase}/push/subscribe`, {
+    const res = await fetch(`${apiBase}/push/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -291,8 +323,20 @@ async function registerVapidPush(): Promise<void> {
         role: "rider",
       }),
     });
-  } catch (e) {
+    if (!res.ok && res.status !== 409) {
+      log.warn("VAPID subscription registration failed:", res.status);
+      onError?.("registration_failed");
+    }
+  } catch (e: unknown) {
     log.warn("VAPID registration failed:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("permission") || msg.includes("denied") || msg.includes("NotAllowed")) {
+      onError?.("permission_denied");
+    } else if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed to fetch")) {
+      onError?.("network_error");
+    } else {
+      onError?.("registration_failed");
+    }
   }
 }
 

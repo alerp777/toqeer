@@ -262,6 +262,25 @@ async function registerFcmPush(
   }
 }
 
+/* ─── Auth token retry helper ─────────────────────────────────────────────── */
+
+/**
+ * Wait up to `maxWaitMs` for the in-memory auth token to become available.
+ * This handles the race condition where registerVapidPush is called at startup
+ * (permission already granted) before the auth token has been rehydrated from
+ * secure storage. Polls every 300 ms, gives up after maxWaitMs.
+ */
+async function waitForAuthToken(maxWaitMs = 5_000): Promise<string> {
+  const interval = 300;
+  const attempts = Math.ceil(maxWaitMs / interval);
+  for (let i = 0; i < attempts; i++) {
+    const token = getAuthToken();
+    if (token) return token;
+    await new Promise((r) => setTimeout(r, interval));
+  }
+  return "";
+}
+
 /* ─── Browser VAPID path ──────────────────────────────────────────────────── */
 
 async function registerVapidPush(onError?: PushErrorHandler): Promise<void> {
@@ -275,11 +294,11 @@ async function registerVapidPush(onError?: PushErrorHandler): Promise<void> {
       return;
     }
 
-    const reg = await navigator.serviceWorker.register(`${swBase}/sw.js`);
+    const reg = await navigator.serviceWorker.register(`${swBase}/push-sw.js`, { scope: swBase + "/" });
     const existing = await reg.pushManager.getSubscription();
     if (existing) {
       /* Re-send the existing subscription to keep the server token fresh. */
-      const authToken = getAuthToken();
+      const authToken = await waitForAuthToken();
       if (authToken) {
         const res = await fetch(`${API_ORIGIN}/api/push/subscribe`, {
           method: "POST",
@@ -328,7 +347,7 @@ async function registerVapidPush(onError?: PushErrorHandler): Promise<void> {
       applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
     });
 
-    const authToken = getAuthToken();
+    const authToken = await waitForAuthToken();
     if (!authToken) {
       log.warn("VAPID subscription registration skipped — no auth token (user not logged in)");
       return;

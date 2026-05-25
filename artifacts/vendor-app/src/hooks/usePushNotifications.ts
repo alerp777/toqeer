@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { PushErrorHandler } from "../lib/push";
 import { registerPush } from "../lib/push";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
@@ -7,6 +8,7 @@ export interface PushNotificationState {
   permission: PermissionState;
   isSubscribed: boolean;
   isDismissed: boolean;
+  pushError: Parameters<PushErrorHandler>[0] | null;
   requestPermission: () => Promise<void>;
   dismiss: () => void;
 }
@@ -37,18 +39,31 @@ export function usePushNotifications(): PushNotificationState {
     }
   });
 
+  const [pushError, setPushError] = useState<Parameters<PushErrorHandler>[0] | null>(null);
+
   const registerAttempted = useRef(false);
 
   useEffect(() => {
     if (typeof Notification === "undefined" || !("PushManager" in window)) return;
     if (Notification.permission === "granted" && !registerAttempted.current) {
       registerAttempted.current = true;
-      registerPush().then(() => {
-        setIsSubscribed(true);
-        try {
-          localStorage.setItem(SUBSCRIBED_KEY, "1");
-        } catch { /* ignore */ }
-      }).catch(() => { /* silently ignore */ });
+      let hadError = false;
+      registerPush(
+        undefined,
+        undefined,
+        (reason) => { hadError = true; setPushError(reason); }
+      ).then(() => {
+        if (!hadError) {
+          setIsSubscribed(true);
+          setPushError(null);
+          try {
+            localStorage.setItem(SUBSCRIBED_KEY, "1");
+          } catch { /* ignore */ }
+        }
+      }).catch(() => {
+        hadError = true;
+        setPushError("registration_failed");
+      });
     }
   }, []);
 
@@ -59,19 +74,28 @@ export function usePushNotifications(): PushNotificationState {
       setPermission(result as PermissionState);
       if (result === "granted") {
         registerAttempted.current = true;
-        await registerPush();
-        setIsSubscribed(true);
-        try {
-          localStorage.setItem(SUBSCRIBED_KEY, "1");
-        } catch { /* ignore */ }
+        let hadError = false;
+        await registerPush(
+          undefined,
+          undefined,
+          (reason) => { hadError = true; setPushError(reason); }
+        );
+        if (!hadError) {
+          setIsSubscribed(true);
+          setPushError(null);
+          try {
+            localStorage.setItem(SUBSCRIBED_KEY, "1");
+          } catch { /* ignore */ }
+        }
       } else if (result === "denied") {
+        setPushError("permission_denied");
         setIsDismissed(true);
         try {
           localStorage.setItem(DISMISSED_KEY, "1");
         } catch { /* ignore */ }
       }
     } catch {
-      /* ignore */
+      setPushError("registration_failed");
     }
   };
 
@@ -82,5 +106,5 @@ export function usePushNotifications(): PushNotificationState {
     } catch { /* ignore */ }
   };
 
-  return { permission, isSubscribed, isDismissed, requestPermission, dismiss };
+  return { permission, isSubscribed, isDismissed, pushError, requestPermission, dismiss };
 }
