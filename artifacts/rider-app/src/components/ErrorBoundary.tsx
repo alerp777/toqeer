@@ -1,6 +1,7 @@
 import { createLogger } from "@/lib/logger";
 import { useQueryClient } from "@tanstack/react-query";
-import { Component, useCallback, type ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Component, useCallback, useMemo, type ReactNode } from "react";
 import { reportError } from "../lib/error-reporter";
 
 const log = createLogger("[ErrorBoundary]");
@@ -21,121 +22,67 @@ function DefaultFallback({ reset, error }: { reset: () => void; error: Error | n
     reset();
   }, [qc, reset]);
 
+  /* Stable 5-char reference derived from error message — rider can screenshot
+     and quote this code to support instead of describing the crash in words. */
+  const errorRef = useMemo(() => {
+    const seed = error?.message || "crash";
+    const hash = seed
+      .split("")
+      .reduce((h, c) => (((h << 5) - h + c.charCodeAt(0)) | 0), 0);
+    const code = Math.abs(hash).toString(36).toUpperCase().padStart(5, "0").slice(0, 5);
+    return `ERR-${code}`;
+  }, [error]);
+
+  const errorDescId = "eb-error-desc";
+
   return (
     <div
       role="alert"
       aria-live="assertive"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "60vh",
-        background: "#0b0e11",
-        padding: "24px",
-        textAlign: "center",
-      }}
+      aria-describedby={errorDescId}
+      className="flex min-h-[60vh] flex-col items-center justify-center bg-[#0b0e11] px-6 py-8 text-center"
     >
-      <div style={{ width: "100%", maxWidth: 340 }}>
-        {/* Gold icon ring */}
-        <div
-          style={{
-            margin: "0 auto 20px",
-            width: 64,
-            height: 64,
-            borderRadius: 18,
-            background: "rgba(240,185,11,0.1)",
-            border: "1px solid rgba(240,185,11,0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#F0B90B"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
+      <div className="w-full max-w-sm">
+        {/* Brand label */}
+        <p className="mb-5 text-[10px] font-bold tracking-[0.2em] text-white/20 uppercase">
+          AJKMart Rider
+        </p>
+
+        {/* Gold icon ring — matches OnlineToggleCard / StatsGrid glass-card pattern */}
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[18px] border border-[#F0B90B]/25 bg-[#F0B90B]/10">
+          <AlertTriangle size={28} className="text-[#F0B90B]" />
         </div>
 
         {/* Title */}
-        <h1
-          style={{
-            margin: "0 0 8px",
-            fontSize: 18,
-            fontWeight: 700,
-            color: "#E8E9EF",
-            fontFamily: "Inter, system-ui, sans-serif",
-          }}
-        >
+        <h1 className="mb-2 text-lg font-bold tracking-tight text-[#E8E9EF]">
           Something went wrong
         </h1>
 
-        {/* Error message */}
+        {/* Error message — linked via aria-describedby */}
         <p
-          style={{
-            margin: "0 0 24px",
-            fontSize: 13,
-            lineHeight: 1.6,
-            color: "#6B7280",
-            fontFamily: "Inter, system-ui, sans-serif",
-          }}
+          id={errorDescId}
+          className="mb-1 text-sm leading-relaxed text-gray-500"
         >
           {error?.message || "An unexpected error occurred. Please try again."}
         </p>
 
+        {/* Error ref code — mono, muted; rider can quote to support */}
+        <p className="mb-6 font-mono text-[11px] text-white/20">{errorRef}</p>
+
         {/* Action buttons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {/* Primary — gold branded retry */}
           <button
             onClick={handleRetry}
-            style={{
-              width: "100%",
-              height: 48,
-              borderRadius: 12,
-              border: "none",
-              background: "linear-gradient(135deg, #F0B90B, #D97706)",
-              color: "#0B0E11",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Inter, system-ui, sans-serif",
-              transition: "opacity 0.15s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+            className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#F0B90B] to-amber-600 text-sm font-bold text-[#0B0E11] transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0B90B]/60"
           >
-            Retry
+            Try Again
           </button>
 
-          {/* Secondary — reload */}
+          {/* Secondary — hard reload */}
           <button
             onClick={() => window.location.reload()}
-            style={{
-              width: "100%",
-              height: 48,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.04)",
-              color: "#9CA3AF",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "Inter, system-ui, sans-serif",
-              transition: "background 0.15s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseOut={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+            className="flex h-12 w-full items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-gray-400 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
           >
             Reload App
           </button>
