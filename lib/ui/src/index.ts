@@ -1,5 +1,11 @@
 // Shared UI components, hooks, and utilities
 
+// Brand
+export { AjkmartLogo } from "./components/AjkmartLogo";
+export type { AjkmartLogoProps } from "./components/AjkmartLogo";
+export { SERVICE_COLORS } from "./tokens/serviceColors";
+export type { ServiceColorEntry, ServiceId } from "./tokens/serviceColors";
+
 // Hooks
 export { useIsMobile } from "./hooks/use-mobile";
 export { toast, useToast } from "./hooks/use-toast";

@@ -1,4 +1,5 @@
 import { RegisterScreen, ThemeProvider } from "@workspace/auth-react";
+import { AjkmartLogo } from "@workspace/ui/components/AjkmartLogo";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
@@ -79,7 +80,6 @@ export function RegisterWizard() {
   const [, navigate] = useLocation();
   const { sendOtp, register } = useAuth();
   const [submitted, setSubmitted] = useState(false);
-  const logoSrc = `${import.meta.env.BASE_URL}ajkmart-logo.png`;
 
   if (submitted) {
     return <SubmittedScreen onGoToLogin={() => navigate("/login")} />;
@@ -96,11 +96,7 @@ export function RegisterWizard() {
           zIndex: 10,
           pointerEvents: "none",
         }}>
-          <img
-            src={logoSrc}
-            alt="AJKMart Vendor"
-            style={{ height: 32, objectFit: "contain" }}
-          />
+          <AjkmartLogo variant="compact" size={22} theme="light" />
         </div>
         <RegisterScreen
           role="vendor"

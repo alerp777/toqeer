@@ -10,6 +10,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./components/ui/*": "./src/components/ui/*.tsx",
+    "./components/AjkmartLogo": "./src/components/AjkmartLogo.tsx",
+    "./tokens/serviceColors": "./src/tokens/serviceColors.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./hooks/*": "./src/hooks/*.tsx",
     "./hooks/use-toast": "./src/hooks/use-toast.ts"

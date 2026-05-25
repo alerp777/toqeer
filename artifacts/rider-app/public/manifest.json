@@ -6,10 +6,10 @@
   "scope": "/rider/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  "background_color": "#0b0e11",
+  "theme_color": "#0b0e11",
   "icons": [
-    { "src": "/rider/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/rider/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "categories": ["business", "navigation"],
   "lang": "en-PK",

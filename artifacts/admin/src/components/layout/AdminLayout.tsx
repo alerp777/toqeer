@@ -44,6 +44,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
+import { AjkmartLogo } from "@workspace/ui/components/AjkmartLogo";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { type Socket } from "socket.io-client";
 import { Link, useLocation } from "wouter";
@@ -451,22 +452,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{
-              background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
-              boxShadow: "0 4px 16px rgba(99,102,241,0.4), inset 0 1px 1px rgba(255,255,255,0.15)",
-            }}
-          >
-            <ShoppingBag className="h-5 w-5 text-white" />
-          </div>
+          <AjkmartLogo variant="mark" size={40} theme="dark" />
           {(!mini || isMobile) && (
             <div className="ml-3 overflow-hidden">
-              <span className="block text-[17px] leading-tight font-bold tracking-tight text-white">
-                AJKMart
-              </span>
+              <AjkmartLogo variant="compact" size={22} theme="dark" />
               <span
-                className="text-[10px] font-semibold tracking-[0.15em] uppercase"
+                className="text-[10px] font-semibold tracking-[0.15em] uppercase mt-0.5 block"
                 style={{ color: "#818CF8" }}
               >
                 Admin Console

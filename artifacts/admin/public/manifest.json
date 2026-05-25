@@ -6,10 +6,10 @@
   "scope": "/admin/",
   "display": "standalone",
   "orientation": "landscape-primary",
-  "background_color": "#1e293b",
-  "theme_color": "#1e293b",
+  "background_color": "#0D1B4B",
+  "theme_color": "#0D1B4B",
   "icons": [
-    { "src": "/admin/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/admin/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "categories": ["business"],
   "lang": "en-PK",
