@@ -64,6 +64,8 @@ interface Vendor {
 }
 
 function ProductGridCard({ product, styles, C }: { product: MartProduct, styles: any, C: any }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const { addItem, cartType, itemCount, clearCartAndAdd, items, updateQuantity, removeItem } = useCart();
   const { requireAuth, sheetProps } = useAuthGate();
   const { requireCustomerRole, roleBlockProps } = useRoleGate();

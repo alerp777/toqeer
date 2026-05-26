@@ -69,11 +69,9 @@ function AddToCartButton({ onPress, added }: { onPress: () => void; added: boole
 }
 
 function FlashCard({ product }: { product: any }) {
-  
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
-
-const { addItem, cartType, itemCount, clearCart } = useCart();
+  const { addItem, cartType, itemCount, clearCart } = useCart();
   const [added, setAdded] = useState(false);
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const origPrice = Number(product.originalPrice) || 0;
@@ -138,6 +136,8 @@ const { addItem, cartType, itemCount, clearCart } = useCart();
 }
 
 function ProductCard({ product }: { product: any }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const { addItem, cartType, itemCount, clearCart, items, updateQuantity, removeItem } = useCart();
   const [added, setAdded] = useState(false);
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -220,6 +220,8 @@ function ProductCard({ product }: { product: any }) {
 }
 
 function MartScreenInner() {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const insets = useSafeAreaInsets();
   const { itemCount, cartType, clearCart } = useCart();
   const showCartBanner = itemCount > 0 && cartType !== "mart" && cartType !== "none";

@@ -59,30 +59,31 @@ type TxItemData = WalletTransaction & { status?: string };
 
 function TxItem({ tx }: { tx: TxItemData }) {
   const txStatus: string = tx.status ?? TX_STATUS_PENDING;
-  const isManualTx = tx.type === "deposit" || tx.type === "withdrawal";
+  const txType: string = tx.type as any;
+  const isManualTx = txType === "deposit" || txType === "withdrawal";
   const isPending  = isManualTx && txStatus === TX_STATUS_PENDING;
   const isApproved = isManualTx && txStatus === TX_STATUS_APPROVED;
   const isRejected = isManualTx && txStatus === TX_STATUS_REJECTED;
-  const isCredit   = tx.type === "credit" || (tx.type === "deposit" && isApproved);
+  const isCredit   = txType === "credit" || (txType === "deposit" && isApproved);
   const date = new Date(tx.createdAt).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" });
   const time = new Date(tx.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" });
 
   let iconName: string;
-  if (tx.type === "deposit") {
+  if (txType === "deposit") {
     iconName = isPending ? "time-outline" : isApproved ? "checkmark-circle" : "close-circle";
-  } else if (tx.type === "credit" || tx.type === "refund" || tx.type === "cashback" || tx.type === "referral" || tx.type === "bonus") {
+  } else if (txType === "credit" || txType === "refund" || txType === "cashback" || txType === "referral" || txType === "bonus") {
     iconName = "arrow-down";
-  } else if (tx.type === "ride") {
+  } else if (txType === "ride") {
     iconName = "car";
-  } else if (tx.type === "order" || tx.type === "mart" || tx.type === "food") {
+  } else if (txType === "order" || txType === "mart" || txType === "food") {
     iconName = "bag";
-  } else if (tx.type === "pharmacy") {
+  } else if (txType === "pharmacy") {
     iconName = "medkit";
-  } else if (tx.type === "parcel") {
+  } else if (txType === "parcel") {
     iconName = "cube";
-  } else if (tx.type === "transfer" || tx.type === "debit") {
+  } else if (txType === "transfer" || txType === "debit") {
     iconName = "arrow-up";
-  } else if (tx.type === "withdrawal") {
+  } else if (txType === "withdrawal") {
     iconName = "arrow-up";
   } else {
     iconName = isCredit ? "arrow-down" : "arrow-up";
@@ -929,9 +930,9 @@ export default function WalletScreen() {
 
   const balance      = socketBalance ?? data?.balance ?? user?.walletBalance ?? 0;
   const transactions = data?.transactions ?? [];
-  const isDebitType  = (t: WalletTransaction) => t.type === "debit" || t.type === "withdrawal" || t.type === "transfer" || t.type === "ride" || t.type === "order" || t.type === "mart" || t.type === "food" || t.type === "pharmacy" || t.type === "parcel";
-  const filtered     = txFilter === "all" ? transactions : txFilter === "debit" ? transactions.filter(isDebitType) : transactions.filter(t => t.type === txFilter);
-  const totalIn      = transactions.filter(t => t.type === "credit" || (t.type as string) === "refund" || (t.type as string) === "cashback" || (t.type as string) === "referral" || (t.type as string) === "bonus").reduce((s, t) => s + Number(t.amount), 0);
+  const isDebitType  = (t: WalletTransaction) => { const ty = (t.type as any) as string; return ty === "debit" || ty === "withdrawal" || ty === "transfer" || ty === "ride" || ty === "order" || ty === "mart" || ty === "food" || ty === "pharmacy" || ty === "parcel"; };
+  const filtered     = txFilter === "all" ? transactions : txFilter === "debit" ? transactions.filter(isDebitType) : transactions.filter(t => (t.type as any) === txFilter);
+  const totalIn      = transactions.filter(t => { const ty = (t.type as any) as string; return ty === "credit" || ty === "refund" || ty === "cashback" || ty === "referral" || ty === "bonus"; }).reduce((s, t) => s + Number(t.amount), 0);
   const totalOut     = transactions.filter(isDebitType).reduce((s, t) => s + Number(t.amount), 0);
 
   if (!user?.id) {

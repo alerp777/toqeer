@@ -126,6 +126,8 @@ const { addItem, cartType, itemCount, clearCart, items, updateQuantity, removeIt
 }
 
 function FoodScreenInner() {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const insets = useSafeAreaInsets();
   const { itemCount, cartType, clearCart } = useCart();
   const showCartBanner = itemCount > 0 && cartType !== "food" && cartType !== "none";

@@ -52,25 +52,23 @@ const SERVICE_ROUTES: Record<ServiceKey, "/mart" | "/food" | "/pharmacy"> = {
   pharmacy: "/pharmacy",
 };
 
-function ServiceBadge({ type }: { type: ServiceKey }) {
-  const { language } = useLanguage();
-  const T = (key: TranslationKey) => tDual(key, language);
-  const SERVICE_META: Record<ServiceKey, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-    mart:     { label: T("martTitle"),     icon: "basket-outline",   color: "#7C3AED", bg: "#F3E8FF" },
-    food:     { label: T("food"),          icon: "restaurant-outline", color: "#D97706", bg: "#FEF3C7" },
-    pharmacy: { label: T("navPharmacy"),   icon: "medical-outline",  color: "#059669", bg: "#D1FAE5" },
-  };
+const SERVICE_META: Record<ServiceKey, { labelKey: TranslationKey; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+  mart:     { labelKey: "martTitle",     icon: "basket-outline",   color: "#7C3AED", bg: "#F3E8FF" },
+  food:     { labelKey: "food",          icon: "restaurant-outline", color: "#D97706", bg: "#FEF3C7" },
+  pharmacy: { labelKey: "navPharmacy",   icon: "medical-outline",  color: "#059669", bg: "#D1FAE5" },
+};
+
+function ServiceBadge({ type, T }: { type: ServiceKey; T: (k: TranslationKey) => string }) {
   const m = SERVICE_META[type];
   return (
     <View style={[s.badge, { backgroundColor: m.bg }]}>
       <Ionicons name={m.icon} size={11} color={m.color} />
-      <Text style={[s.badgeTxt, { color: m.color }]}>{m.label}</Text>
+      <Text style={[s.badgeTxt, { color: m.color }]}>{T(m.labelKey)}</Text>
     </View>
   );
 }
 
 function UniversalSearchScreenInner() {
-  
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
 
@@ -204,15 +202,15 @@ const insets = useSafeAreaInsets();
               const existingIds = new Set(sections[existingIdx]!.data.map(d => d.id));
               const newItems = result.value.products.filter(p => !existingIds.has(p.id));
               newSections.push({
-                title: SERVICE_META[svc].label,
+                title: T(SERVICE_META[svc].labelKey),
                 data: [...sections[existingIdx]!.data, ...newItems],
                 type: svc,
               });
             } else {
-              newSections.push({ title: SERVICE_META[svc].label, data: result.value.products, type: svc });
+              newSections.push({ title: T(SERVICE_META[svc].labelKey), data: result.value.products, type: svc });
             }
           } else {
-            newSections.push({ title: SERVICE_META[svc].label, data: result.value.products, type: svc });
+            newSections.push({ title: T(SERVICE_META[svc].labelKey), data: result.value.products, type: svc });
           }
           if (result.value.totalPages > maxPages) maxPages = result.value.totalPages;
           anySuccess = true;
@@ -267,7 +265,7 @@ const insets = useSafeAreaInsets();
     if (itemCount > 0 && cartType !== item.type && cartType !== "none") {
       const meta = SERVICE_META[item.type];
       Alert.alert(
-        `Switch to ${meta.label}?`,
+        `Switch to ${T(meta.labelKey)}?`,
         `Your cart has items from another service. Adding this item will clear your current cart.`,
         [
           { text: T("cancelLabel"), style: "cancel" },
@@ -442,7 +440,7 @@ const insets = useSafeAreaInsets();
               return (
                 <Pressable key={sv} onPress={() => router.push(SERVICE_ROUTES[sv])} style={[s.ctaBtn, { backgroundColor: m.bg }]}>
                   <Ionicons name={m.icon} size={14} color={m.color} />
-                  <Text style={[s.ctaBtnTxt, { color: m.color }]}>Browse {m.label}</Text>
+                  <Text style={[s.ctaBtnTxt, { color: m.color }]}>Browse {T(m.labelKey)}</Text>
                 </Pressable>
               );
             })}
@@ -506,7 +504,7 @@ const insets = useSafeAreaInsets();
                     <View style={[s.browseIconWrap, { backgroundColor: m.color + "20" }]}>
                       <Ionicons name={m.icon} size={24} color={m.color} />
                     </View>
-                    <Text style={[s.browseLabel, { color: m.color }]}>{m.label}</Text>
+                    <Text style={[s.browseLabel, { color: m.color }]}>{T(m.labelKey)}</Text>
                   </Pressable>
                 );
               })}
@@ -550,7 +548,7 @@ const insets = useSafeAreaInsets();
               <View style={s.cardInfo}>
                 <View style={s.cardMeta}>
                   <Text style={s.cardName} numberOfLines={2}>{item.name}</Text>
-                  <ServiceBadge type={item.type} />
+                  <ServiceBadge type={item.type} T={T} />
                 </View>
                 {item.vendorName && (
                   <Text style={s.cardVendor} numberOfLines={1}>{item.vendorName}</Text>

@@ -707,7 +707,7 @@ function PharmacyScreenInner() {
                   <Text style={{ ...Typ.buttonSmall, color: C.text }}>{sa.label}</Text>
                   <Text style={{ ...Typ.caption, color: C.textMuted }} numberOfLines={1}>{sa.address}</Text>
                 </View>
-                {sa.isDefault && <View style={{ backgroundColor: C.purple, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}><Text style={{ ...Typ.smallMedium, fontSize: 10, color: C.textInverse }}>Default</Text></View>}
+                {(sa as any).isDefault && <View style={{ backgroundColor: C.purple, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}><Text style={{ ...Typ.smallMedium, fontSize: 10, color: C.textInverse }}>Default</Text></View>}
               </Pressable>
             ))}
           </View>

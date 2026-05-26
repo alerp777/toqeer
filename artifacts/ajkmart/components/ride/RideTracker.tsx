@@ -210,7 +210,7 @@ export function RideTracker({
 
   useEffect(() => {
     const status = ride?.status;
-    if (status !== "searching" && status !== "no_riders") return;
+    if (status !== "searching" && (status as any) !== "no_riders") return;
     const poll = async () => {
       try {
         const d = await getDispatchStatus(rideId);
@@ -254,10 +254,10 @@ export function RideTracker({
       id: rideId,
       type: "ride",
       status: ride?.status || "searching",
-      fare: ride?.fare,
-      paymentMethod: ride?.paymentMethod,
+      fare: ride?.fare != null ? Number(ride.fare) : undefined,
+      paymentMethod: (ride as any)?.paymentMethod,
       riderAssigned,
-    });
+    } as any);
   };
 
   const openInMaps = () => {
@@ -296,14 +296,14 @@ export function RideTracker({
         elapsed={elapsed}
         cancellationFee={effectiveCancellationFee}
         token={token}
-        broadcastTimeoutSec={ride?.broadcastTimeoutSec ?? 300}
-        estimatedFare={ride?.estimatedFare ?? ride?.fare}
-        minOffer={ride?.minOffer}
+        broadcastTimeoutSec={(ride as any)?.broadcastTimeoutSec ?? 300}
+        estimatedFare={(ride as any)?.estimatedFare ?? ride?.fare}
+        minOffer={(ride as any)?.minOffer}
       />
     );
   }
 
-  if (status === "no_riders" || (status === "searching" && elapsed >= 180)) {
+  if ((status as any) === "no_riders" || (status === "searching" && elapsed >= 180)) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
         <View
@@ -931,7 +931,7 @@ export function RideTracker({
                   lineHeight: 19,
                 }}
               >
-                Rs. {Math.round((ride?.fare ?? 0) - appliedFee)} will be refunded to your wallet.
+                Rs. {Math.round(Number((ride as any)?.fare ?? 0) - appliedFee)} will be refunded to your wallet.
               </Text>
             </View>
           )}
@@ -1093,7 +1093,7 @@ export function RideTracker({
               marginTop: 6,
             }}
           >
-            Rs. {ride?.fare} · {parseFloat(ride?.distance ?? "0").toFixed(1)} km
+            Rs. {Number((ride as any)?.fare ?? 0)} · {parseFloat((ride as any)?.distance ?? "0").toFixed(1)} km
           </Text>
         </View>
 
@@ -1294,11 +1294,11 @@ export function RideTracker({
                           ? "Rickshaw"
                           : rideType,
                 },
-                { lbl: "Distance", val: `${parseFloat(ride?.distance ?? "0").toFixed(1)} km` },
+                { lbl: "Distance", val: `${parseFloat(String((ride as any)?.distance ?? "0")).toFixed(1)} km` },
                 {
                   lbl: "Payment",
                   val:
-                    ride?.paymentMethod === "wallet" ? "Wallet" : ride?.paymentMethod === "jazzcash" ? "JazzCash" : ride?.paymentMethod === "easypaisa" ? "EasyPaisa" : "Cash",
+                    (ride as any)?.paymentMethod === "wallet" ? "Wallet" : (ride as any)?.paymentMethod === "jazzcash" ? "JazzCash" : (ride as any)?.paymentMethod === "easypaisa" ? "EasyPaisa" : "Cash",
                 },
                 {
                   lbl: "Driver",
@@ -1986,7 +1986,7 @@ export function RideTracker({
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Ionicons
                             key={s}
-                            name={s <= Math.round(ride.riderAvgRating) ? "star" : "star-outline"}
+                            name={s <= Math.round(Number((ride as any)?.riderAvgRating ?? 0)) ? "star" : "star-outline"}
                             size={11}
                             color="#F59E0B"
                           />
@@ -2186,11 +2186,11 @@ export function RideTracker({
                     </Text>
                   </Pressable>
                 )}
-                {ride.riderPhone && (
+                {(ride as any)?.riderPhone && (
                   <Pressable
                     onPress={() =>
                       Linking.openURL(
-                        `https://wa.me/92${ride.riderPhone.replace(/^(\+92|0)/, "")}`,
+                        `https://wa.me/92${((ride as any).riderPhone as string).replace(/^(\+92|0)/, "")}`,
                       )
                     }
                     style={{

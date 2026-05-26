@@ -126,7 +126,7 @@ function ParcelScreenInner() {
   const [geoError, setGeoError] = useState<"pickup" | "drop" | null>(null);
 
   const [parcelType, setParcelType] = useState<string>("");
-  const [weight, setWeight] = useState("");
+  const [weight, setWeight] = useState<number>(0);
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
@@ -134,7 +134,7 @@ function ParcelScreenInner() {
 
   const VOLUMETRIC_DIVISOR = 5000;
   const volumetricWeight = (parseFloat(length) || 0) * (parseFloat(width) || 0) * (parseFloat(height) || 0) / VOLUMETRIC_DIVISOR;
-  const actualWeight = parseFloat(weight) || 0;
+  const actualWeight = weight || 0;
   const chargeableWeight = Math.max(actualWeight, volumetricWeight);
 
   const [payMethod, setPayMethod] = useState<string>("cash");
@@ -184,9 +184,9 @@ function ParcelScreenInner() {
           if (d.receiverPhone) setReceiverPhone(d.receiverPhone);
           if (d.dropAddress)   setDropAddress(d.dropAddress);
           if (d.parcelType)    setParcelType(d.parcelType);
-          if (d.weight)        setWeight(d.weight);
+          if (d.weight)        setWeight(Number(d.weight || 0));
           if (d.description)   setDescription(d.description);
-          if (d.step !== undefined) setStep(d.step);
+          if (d.step !== undefined) setStep(Number(d.step));
           if (d.pickupAddress) return;
           }
         }
@@ -394,7 +394,7 @@ function ParcelScreenInner() {
         return;
       }
 
-      const w = chargeableWeight > 0 ? chargeableWeight : (parseFloat(weight) || undefined);
+      const w = chargeableWeight > 0 ? chargeableWeight : (weight > 0 ? weight : undefined);
       if (!parcelType) {
         showToast("Please select a parcel type", "error");
         setLoading(false);
@@ -643,8 +643,8 @@ function ParcelScreenInner() {
             <View style={ss.card}>
               <Text style={ss.label}>{T("weightOptional")} (kg)</Text>
               <TextInput
-                value={weight}
-                onChangeText={(v) => { const n = parseFloat(v); if (v === "" || (Number.isFinite(n) && n >= 0 && n <= 500)) setWeight(v); }}
+                value={String(weight)}
+                onChangeText={(v) => { const n = parseFloat(v); if (v === "" || (Number.isFinite(n) && n >= 0 && n <= 500)) setWeight(Number(v || 0)); }}
                 placeholder="e.g. 1.5"
                 placeholderTextColor={C.textMuted}
                 style={ss.input}

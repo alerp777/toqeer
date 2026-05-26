@@ -257,6 +257,8 @@ const FlashCard = React.memo(function FlashCard({ product }: { product: FlashDea
 });
 
 const ProductCard = React.memo(function ProductCard({ product }: { product: MartProduct }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const { colors: C } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
   const { addItem, cartType, itemCount, clearCartAndAdd, items, updateQuantity, removeItem } = useCart();
@@ -363,6 +365,8 @@ const ProductCard = React.memo(function ProductCard({ product }: { product: Mart
 });
 
 function MartScreenInner() {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const { colors: C } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
   const { width } = useWindowDimensions();
@@ -382,9 +386,6 @@ function MartScreenInner() {
   const [selectedCat, setSelectedCat] = useState<string | undefined>(routeCategory || undefined);
   const [sortBy, setSortBy] = useState<string>("default");
   const searchInputRef = useRef<TextInput>(null);
-
-  const { language } = useLanguage();
-  const T = (key: TranslationKey) => tDual(key, language);
 
   useEffect(() => {
     setSelectedCat(routeCategory || undefined);

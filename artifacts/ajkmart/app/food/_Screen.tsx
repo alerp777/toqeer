@@ -85,6 +85,8 @@ interface RawVendorData {
 }
 
 const FoodCard = React.memo(function FoodCard({ item }: { item: FoodProduct }) {
+  const { language } = useLanguage();
+  const T = (key: TranslationKey) => tDual(key, language);
   const { colors: C } = useTheme();
   const styles = useMemo(() => makeCardStyles(C), [C]);
   const { addItem, cartType, itemCount, clearCartAndAdd, items, updateQuantity, removeItem } = useCart();
@@ -389,7 +391,7 @@ function FoodScreenInner() {
             </ScrollView>
           ) : restaurants.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-              {restaurants.map((r: { id: string; storeName?: string; name?: string; storeIsOpen?: boolean; storeImage?: string; storeImageUrl?: string }) => {
+              {restaurants.map((r: any) => {
                 const name = r.storeName || r.name || "Restaurant";
                 const isOpen = r.storeIsOpen !== false;
                 return (

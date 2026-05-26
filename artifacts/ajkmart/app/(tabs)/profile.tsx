@@ -356,7 +356,7 @@ function NotificationsModal({ visible, userId, token, onClose }: {
   const handleNotifPress = async (n: Notification) => {
     if (!n.isRead) await markOne(n.id);
     onClose(notifs.filter(x => !x.isRead && x.id !== n.id).length);
-    const meta = n.meta || {};
+    const meta = (n as any).meta || {};
     const type: string = n.type || "";
     if ((type === "order" || type === "food" || type === "mart") && meta.orderId) {
       router.push(`/order?orderId=${meta.orderId}`);
@@ -431,7 +431,7 @@ function NotificationsModal({ visible, userId, token, onClose }: {
             refreshControl={<RefreshControl refreshing={loading} onRefresh={load} colors={[C.primary]} tintColor={C.primary} />}
           >
             {notifs.map(n => {
-              const [icon, color, bg] = typeMap[n.type] || typeMap.system!;
+              const [icon, color, bg] = typeMap[(n as any).type] || typeMap.system!;
               return (
                 <Pressable key={n.id} onPress={() => handleNotifPress(n)} style={[notifItem.wrap, !n.isRead && notifItem.unread]} accessibilityRole="button" accessibilityLabel={`${n.title}, ${n.body}${!n.isRead ? ", unread" : ""}`}>
                   <View style={[notifItem.icon, { backgroundColor: bg }]}>

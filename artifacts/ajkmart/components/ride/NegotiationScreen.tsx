@@ -151,9 +151,9 @@ export function NegotiationScreen({
     return () => clearInterval(interval);
   }, [rideId, token, rideApiBase]);
 
-  const offeredFare = ride?.offeredFare ?? 0;
-  const bids: RideBid[] = ride?.bids ?? [];
-  const sortedBids = [...bids].sort((a, b) => a.fare - b.fare);
+  const offeredFare = (ride as any)?.offeredFare ?? 0;
+  const bids: RideBid[] = (ride as any)?.bids ?? [];
+  const sortedBids = [...bids].sort((a, b) => Number(a.fare || 0) - Number(b.fare || 0));
   const hasBids = bids.length > 0;
   const elapsedStr =
     elapsed < 60
@@ -167,10 +167,10 @@ export function NegotiationScreen({
   const timerPct = broadcastTimeoutSec > 0 ? remaining / broadcastTimeoutSec : 1;
   const timerUrgent = timerPct < 0.2;
 
-  const serverMinOffer = ride?.minOffer ?? minOfferProp;
+  const serverMinOffer = (ride as any)?.minOffer ?? minOfferProp;
   const minCounterOffer = serverMinOffer
-    ? Math.ceil(serverMinOffer)
-    : estimatedFare
+    ? Math.ceil(Number(serverMinOffer))
+    : estimatedFare != null
       ? Math.ceil(estimatedFare * 0.7)
       : Math.ceil(offeredFare * 0.7);
 
@@ -224,10 +224,10 @@ export function NegotiationScreen({
       id: rideId,
       type: "ride",
       status: ride?.status || "bargaining",
-      fare: ride?.fare,
-      paymentMethod: ride?.paymentMethod,
+      fare: ride?.fare != null ? Number(ride.fare) : undefined,
+      paymentMethod: ride?.paymentMethod as any,
       riderAssigned,
-    });
+    } as any);
   };
 
   return (
@@ -642,7 +642,7 @@ export function NegotiationScreen({
                         color: "#FCD34D",
                       }}
                     >
-                      Rs. {Math.round(bid.fare)}
+                      Rs. {Math.round(Number(bid.fare || 0))}
                     </Text>
                     <Text
                       style={{
@@ -652,11 +652,11 @@ export function NegotiationScreen({
                         marginTop: 2,
                       }}
                     >
-                      {bid.fare === offeredFare
+                      {Number(bid.fare || 0) === offeredFare
                         ? "Matches your offer"
-                        : bid.fare > offeredFare
-                          ? `+Rs. ${Math.round(bid.fare - offeredFare)}`
-                          : `-Rs. ${Math.round(offeredFare - bid.fare)} savings`}
+                        : Number(bid.fare || 0) > offeredFare
+                          ? `+Rs. ${Math.round(Number(bid.fare || 0) - offeredFare)}`
+                          : `-Rs. ${Math.round(offeredFare - Number(bid.fare || 0))} savings`}
                     </Text>
                   </View>
                 </View>
@@ -690,7 +690,7 @@ export function NegotiationScreen({
                           color: "#fff",
                         }}
                       >
-                        Accept Rs. {Math.round(bid.fare)}
+                        Accept Rs. {Math.round(Number(bid.fare || 0))}
                       </Text>
                     </>
                   )}

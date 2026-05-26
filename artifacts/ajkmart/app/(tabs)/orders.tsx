@@ -24,7 +24,7 @@ import { useToast } from "@/context/ToastContext";
 import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { tDual, type TranslationKey, type Language } from "@workspace/i18n";
-import { useGetOrders, type Order, type Ride, type ParcelBooking } from "@workspace/api-client-react";
+import { useGetOrders, type Order, type Ride, type ParcelBooking, type PharmacyOrderResponse } from "@workspace/api-client-react";
 import { SmartRefresh } from "@/components/ui/SmartRefresh";
 import { CancelModal } from "@/components/CancelModal";
 import type { CancelTarget } from "@/components/CancelModal";
@@ -82,10 +82,10 @@ function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, 
   const canCancel = ["pending", "confirmed"].includes(order.status) && minutesSincePlaced <= cancelWindowMin;
   const cancelMinsLeft = Math.max(0, Math.ceil(cancelWindowMin - minutesSincePlaced));
 
-  const hourssinceDelivery = order.updatedAt
-    ? (Date.now() - new Date(order.updatedAt).getTime()) / 3600000
+  const hourssinceDelivery = (order as any).updatedAt
+    ? (Date.now() - new Date((order as any).updatedAt).getTime()) / 3600000
     : 0;
-  const canRate = reviews && isDelivered && !order._reviewed && hourssinceDelivery <= ratingWindowHours;
+  const canRate = reviews && isDelivered && !(order as any)._reviewed && hourssinceDelivery <= ratingWindowHours;
 
   const handleCardPress = () => {
     router.push(`/order?orderId=${order.id}`);
@@ -191,14 +191,14 @@ function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, 
         </Pressable>
       )}
 
-      {order._reviewed && (
+      {(order as any)._reviewed && (
         <View style={styles.reviewedBadge}>
           <Ionicons name="star" size={13} color={C.gold} />
           <Text style={styles.reviewedText}>{T("reviewedThanks")}</Text>
         </View>
       )}
 
-      {isDelivered && order.paymentMethod !== "cash" && order.paymentMethod !== "cod" && !order.refundStatus && (
+      {isDelivered && order.paymentMethod !== "cash" && (order as any).paymentMethod !== "cod" && !(order as any).refundStatus && (
         <Pressable style={styles.refundRequestBtn} onPress={() => router.push(`/order?orderId=${order.id}&action=refund`)} accessibilityRole="button" accessibilityLabel="Request refund for this order">
           <Ionicons name="return-down-back-outline" size={14} color={C.purple} />
           <Text style={styles.refundRequestBtnText}>{T("requestRefund") || T("requestRefund")}</Text>
@@ -212,7 +212,7 @@ function OrderCard({ order, liveTracking, reviews, cancelWindowMin, refundDays, 
         </Pressable>
       )}
 
-      {isCancelled && order.paymentMethod !== "cash" && order.paymentMethod !== "cod" && refundDays > 0 && (
+      {isCancelled && order.paymentMethod !== "cash" && (order as any).paymentMethod !== "cod" && refundDays > 0 && (
         <View style={styles.refundBar}>
           <Ionicons name="return-down-back-outline" size={12} color={C.emerald} />
           <Text style={styles.refundText}>{T("refundInfo").replace("{n}", String(refundDays))}</Text>
@@ -267,18 +267,18 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
           <Ionicons
             name={
               ride.type === "bike" ? "bicycle-outline" :
-              ride.type === "rickshaw" ? "car-sport-outline" :
-              ride.type === "daba" ? "bus-outline" :
-              ride.type === "school_shift" ? "school-outline" :
+              (ride as any).type === "rickshaw" ? "car-sport-outline" :
+              (ride as any).type === "daba" ? "bus-outline" :
+              (ride as any).type === "school_shift" ? "school-outline" :
               "car-outline"
             }
             size={13} color={C.emerald}
           />
           <Text style={[styles.chipText, { color: C.emerald }]}>
-            {ride.type === "bike" ? T("bikeRide") :
-             ride.type === "rickshaw" ? T("rickshaw") :
-             ride.type === "daba" ? "Daba" :
-             ride.type === "school_shift" ? T("schoolShift") :
+            {(ride as any).type === "bike" ? T("bikeRide") :
+             (ride as any).type === "rickshaw" ? T("rickshaw") :
+             (ride as any).type === "daba" ? "Daba" :
+             (ride as any).type === "school_shift" ? T("schoolShift") :
              T("carRide")}
           </Text>
         </View>
@@ -327,8 +327,8 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
 
       {isCompleted && ride.distance > 0 && (() => {
         const totalFare = ride.fare != null ? Number(ride.fare) : 0;
-        const gst = ride.fareBreakdown?.gstAmount ?? Math.round(totalFare * 0.05);
-        const baseFare = ride.fareBreakdown?.baseFare ?? (totalFare - gst);
+        const gst = (ride as any).fareBreakdown?.gstAmount ?? Math.round(totalFare * 0.05);
+        const baseFare = (ride as any).fareBreakdown?.baseFare ?? (totalFare - gst);
         return (
           <View style={styles.fareBreakdownBar}>
             <View style={styles.fareRow}>
@@ -349,7 +349,7 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
             </View>
             <View style={styles.fareRow}>
               <Text style={styles.fareLabel}>{T("paymentMethod") || "Payment"}</Text>
-              <Text style={styles.fareValue}>{ride.paymentMethod === "wallet" ? T("wallet") : ride.paymentMethod === "jazzcash" ? T("jazzcash") : ride.paymentMethod === "easypaisa" ? T("easypaisa") : T("cash")}</Text>
+              <Text style={styles.fareValue}>{(ride as any).paymentMethod === "wallet" ? T("wallet") : (ride as any).paymentMethod === "jazzcash" ? T("jazzcash") : (ride as any).paymentMethod === "easypaisa" ? T("easypaisa") : T("cash")}</Text>
             </View>
           </View>
         );
@@ -373,14 +373,14 @@ function RideCard({ ride, liveTracking, reviews, onRate, onCancel }: {
         </Pressable>
       )}
 
-      {reviews && isCompleted && !ride._reviewed && (
-        <Pressable style={styles.rateBtn} onPress={() => onRate({ ...ride, _type: "ride" })} accessibilityRole="button" accessibilityLabel={T("rateThisRide")}>
+      {reviews && isCompleted && !(ride as any)._reviewed && (
+        <Pressable style={styles.rateBtn} onPress={() => onRate({ ...ride, _type: "ride" } as any)} accessibilityRole="button" accessibilityLabel={T("rateThisRide")}>
           <Ionicons name="star-outline" size={14} color={C.gold} />
           <Text style={styles.rateBtnText}>{T("rateThisRide")}</Text>
         </Pressable>
       )}
 
-      {ride._reviewed && (
+      {(ride as any)._reviewed && (
         <View style={styles.reviewedBadge}>
           <Ionicons name="star" size={13} color={C.gold} />
           <Text style={styles.reviewedText}>{T("reviewedThanks")}</Text>
@@ -483,10 +483,10 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
         <Text style={styles.cardId}>#{order.id.slice(-8).toUpperCase()}</Text>
       </View>
 
-      {order.prescriptionNote && (
+      {(order as any).prescriptionNote && (
         <View style={styles.noteRow}>
           <Ionicons name="document-text-outline" size={14} color={C.purple} />
-          <Text style={styles.noteText} numberOfLines={2}>{order.prescriptionNote}</Text>
+          <Text style={styles.noteText} numberOfLines={2}>{(order as any).prescriptionNote}</Text>
         </View>
       )}
 
@@ -530,14 +530,14 @@ function PharmacyCard({ order, reviews, cancelWindowMin, serverNow, onRate, onCa
         </Pressable>
       )}
 
-      {reviews && isDelivered && !order._reviewed && (
-        <Pressable style={styles.rateBtn} onPress={() => onRate({ ...order, _type: "pharmacy" })} accessibilityRole="button" accessibilityLabel={T("rateOrder")}>
+      {reviews && isDelivered && !(order as any)._reviewed && (
+        <Pressable style={styles.rateBtn} onPress={() => onRate({ ...order, _type: "pharmacy" } as any)} accessibilityRole="button" accessibilityLabel={T("rateOrder")}>
           <Ionicons name="star-outline" size={14} color={C.gold} />
           <Text style={styles.rateBtnText}>{T("rateOrder")}</Text>
         </Pressable>
       )}
 
-      {order._reviewed && (
+      {(order as any)._reviewed && (
         <View style={styles.reviewedBadge}>
           <Ionicons name="star" size={13} color={C.gold} />
           <Text style={styles.reviewedText}>{T("reviewedThanks")}</Text>
@@ -594,7 +594,7 @@ function ParcelCard({ booking }: { booking: ParcelBooking }) {
         </View>
         <View style={styles.totalWrap}>
           <Text style={styles.totalLabel}>{T("fare")}</Text>
-          <Text style={styles.totalAmount}>Rs. {((booking.fare || booking.estimatedFare) != null && Number.isFinite(Number(booking.fare || booking.estimatedFare)) ? Number(booking.fare || booking.estimatedFare) : 0).toLocaleString()}</Text>
+          <Text style={styles.totalAmount}>Rs. {((booking.fare || (booking as any).estimatedFare) != null && Number.isFinite(Number(booking.fare || (booking as any).estimatedFare)) ? Number(booking.fare || (booking as any).estimatedFare) : 0).toLocaleString()}</Text>
         </View>
       </View>
 
@@ -621,7 +621,7 @@ function ParcelCard({ booking }: { booking: ParcelBooking }) {
         </View>
       )}
 
-      {(booking.status === "completed" || booking.status === "cancelled") && (
+      {((booking.status as any) === "completed" || booking.status === "cancelled") && (
         <Pressable
           style={styles.bookAgainBtn}
           onPress={() => router.push({
@@ -927,7 +927,7 @@ export default function OrdersScreen() {
           if (liveProduct && Number(liveProduct.price) !== Number(item.price)) {
             priceChangedItems.push(item.name);
           }
-          addItem({ productId: item.productId, name: item.name, price: livePrice, quantity: item.quantity || 1, image: item.image, type: order.type || "mart" });
+          addItem({ productId: item.productId, name: item.name, price: Number(livePrice || 0), quantity: item.quantity || 1, image: item.image, type: (order.type || "mart") as any });
           addedCount++;
         }
         if (skippedCount > 0 && priceChangedItems.length > 0) {
@@ -947,7 +947,7 @@ export default function OrdersScreen() {
     }
     let count = 0;
     for (const item of validItems) {
-      addItem({ productId: item.productId, name: item.name, price: item.price, quantity: item.quantity || 1, image: item.image, type: order.type || "mart" });
+      addItem({ productId: item.productId, name: item.name, price: Number(item.price || 0), quantity: item.quantity || 1, image: item.image, type: (order.type || "mart") as any });
       count++;
     }
     showToast(`${count} items added to cart (prices may have changed)`, "info");
@@ -975,11 +975,11 @@ export default function OrdersScreen() {
   const [ridesLoading, setRidesLoading] = useState(false);
   const [ridesError, setRidesError] = useState(false);
 
-  const [pharmData, setPharmData] = useState<{ orders: PharmacyOrderResponse[] } | null>(null);
+  const [pharmData, setPharmData] = useState<{ orders: any[]; pharmacyOrders?: any[] } | null>(null);
   const [pharmLoading, setPharmLoading] = useState(false);
   const [pharmError, setPharmError] = useState(false);
 
-  const [parcelData, setParcelData] = useState<{ bookings: ParcelBooking[] } | null>(null);
+  const [parcelData, setParcelData] = useState<{ bookings: any[]; parcelBookings?: any[] } | null>(null);
   const [parcelLoading, setParcelLoading] = useState(false);
   const [parcelError, setParcelError] = useState(false);
   const [serverNow, setServerNow] = useState<number>(Date.now());
@@ -1006,8 +1006,8 @@ export default function OrdersScreen() {
       id: order.id,
       type: "order",
       status: order.status,
-      total: order.total,
-      paymentMethod: order.paymentMethod,
+      total: Number(order.total || 0),
+      paymentMethod: order.paymentMethod as any,
       cancelMinsLeft,
     });
   }, [orderRules.cancelWindowMin, serverNow]);
@@ -1022,8 +1022,8 @@ export default function OrdersScreen() {
       id: order.id,
       type: "pharmacy",
       status: order.status,
-      total: order.total,
-      paymentMethod: order.paymentMethod,
+      total: Number(order.total || 0),
+      paymentMethod: order.paymentMethod as any,
       cancelMinsLeft,
     });
   }, [orderRules.cancelWindowMin, serverNow]);
@@ -1080,15 +1080,15 @@ export default function OrdersScreen() {
   }, [user?.id, token, parcelActive]);
 
   const handleCancelRide = useCallback((ride: Ride) => {
-    const riderAssigned = ["accepted", "arrived", "in_transit", "ongoing"].includes(ride.status);
+    const riderAssigned = ["accepted", "arrived", "in_transit", "ongoing"].includes((ride.status as any) || "");
     setCancelTarget({
       id: ride.id,
       type: "ride",
-      status: ride.status,
-      fare: ride.fare,
-      paymentMethod: ride.paymentMethod,
+      status: ride.status as any,
+      fare: ride.fare != null ? Number(ride.fare) : undefined,
+      paymentMethod: ride.paymentMethod as any,
       riderAssigned,
-    });
+    } as any);
   }, []);
 
   React.useEffect(() => {
@@ -1214,7 +1214,7 @@ export default function OrdersScreen() {
     let showMart: Order[] = [];
     let showFood: Order[] = [];
     let showRides: Ride[] = rides;
-    let showPharm: PharmacyOrderResponse[] = pharmOrders;
+    let showPharm: any[] = pharmOrders;
     let showParcel: ParcelBooking[] = parcels;
 
     switch (activeTab) {
@@ -1329,9 +1329,9 @@ export default function OrdersScreen() {
         {anyActive > 0 && (
           <>
             <SectionHeader title={T("activeLabel")} count={anyActive} active />
-            {activeOrders.map(o => <OrderCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) }} liveTracking={config.features.liveTracking} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} refundDays={orderRules.refundDays} ratingWindowHours={orderRules.ratingWindowHours} serverNow={serverNow} onRate={handleRate} onCancel={handleCancel} onReorder={handleReorder} />)}
-            {activeRides.map(r => <RideCard key={r.id} ride={{ ...r, _reviewed: reviewedIds.has(r.id) }} liveTracking={config.features.liveTracking} reviews={config.features.reviews} onRate={handleRate} onCancel={handleCancelRide} />)}
-            {activePharm.map(o => <PharmacyCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) }} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} serverNow={serverNow} onRate={handleRate} onCancel={handleCancelPharmacy} />)}
+            {activeOrders.map(o => <OrderCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) } as any} liveTracking={config.features.liveTracking} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} refundDays={orderRules.refundDays} ratingWindowHours={orderRules.ratingWindowHours} serverNow={serverNow} onRate={handleRate} onCancel={handleCancel} onReorder={handleReorder} />)}
+            {activeRides.map(r => <RideCard key={r.id} ride={{ ...r, _reviewed: reviewedIds.has(r.id) } as any} liveTracking={config.features.liveTracking} reviews={config.features.reviews} onRate={handleRate as any} onCancel={handleCancelRide} />)}
+            {activePharm.map(o => <PharmacyCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) } as any} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} serverNow={serverNow} onRate={handleRate} onCancel={handleCancelPharmacy} />)}
             {activeParcel.map(b => <ParcelCard key={b.id} booking={b} />)}
           </>
         )}
@@ -1339,9 +1339,9 @@ export default function OrdersScreen() {
         {anyPast > 0 && (
           <>
             <SectionHeader title={T("historyLabel")} count={anyPast} />
-            {pastOrders.slice(0, historyLimit).map(o => <OrderCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) }} liveTracking={config.features.liveTracking} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} refundDays={orderRules.refundDays} ratingWindowHours={orderRules.ratingWindowHours} serverNow={serverNow} onRate={handleRate} onCancel={handleCancel} onReorder={handleReorder} />)}
-            {pastRides.slice(0, historyLimit).map(r => <RideCard key={r.id} ride={{ ...r, _reviewed: reviewedIds.has(r.id) }} liveTracking={config.features.liveTracking} reviews={config.features.reviews} onRate={handleRate} onCancel={handleCancelRide} />)}
-            {pastPharm.slice(0, historyLimit).map(o => <PharmacyCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) }} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} serverNow={serverNow} onRate={handleRate} onCancel={handleCancelPharmacy} />)}
+            {pastOrders.slice(0, historyLimit).map(o => <OrderCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) } as any} liveTracking={config.features.liveTracking} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} refundDays={orderRules.refundDays} ratingWindowHours={orderRules.ratingWindowHours} serverNow={serverNow} onRate={handleRate} onCancel={handleCancel} onReorder={handleReorder} />)}
+            {pastRides.slice(0, historyLimit).map(r => <RideCard key={r.id} ride={{ ...r, _reviewed: reviewedIds.has(r.id) } as any} liveTracking={config.features.liveTracking} reviews={config.features.reviews} onRate={handleRate as any} onCancel={handleCancelRide} />)}
+            {pastPharm.slice(0, historyLimit).map(o => <PharmacyCard key={o.id} order={{ ...o, _reviewed: reviewedIds.has(o.id) } as any} reviews={config.features.reviews} cancelWindowMin={orderRules.cancelWindowMin} serverNow={serverNow} onRate={handleRate} onCancel={handleCancelPharmacy} />)}
             {pastParcel.slice(0, historyLimit).map(b => <ParcelCard key={b.id} booking={b} />)}
             {anyPast > historyLimit && (
               <Pressable
