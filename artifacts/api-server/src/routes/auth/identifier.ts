@@ -247,7 +247,7 @@ router.post(
       if (smsOn) otpChannels.push("sms");
 
       const identifierType = looksLikePhone ? "phone" : looksLikeEmail ? "email" : "username";
-      const userHasPassword = exists && identifierType === "username" && !!user?.passwordHash;
+      const userHasPassword = !!(exists && user?.passwordHash);
 
       sendSuccess(res, {
         registrationOpen,
