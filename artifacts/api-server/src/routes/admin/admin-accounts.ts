@@ -107,7 +107,7 @@ router.patch("/admin-accounts/:id", requirePermission("system.roles.manage"), as
       ip: aReq.adminIp || "unknown",
       details: `targetAdminId=${id} role=${body.role ?? "unchanged"} isActive=${body.isActive ?? "unchanged"}`,
       result: "success",
-    });
+    }).catch((err: unknown) => logger.warn({ err }, "[audit] addAuditEntry failed"));
 
     sendSuccess(res, { account: safeAccount(updated!) });
   } catch (err) {
@@ -140,7 +140,7 @@ router.post(
         ip: aReq.adminIp || "unknown",
         details: `targetAdminId=${id} name=${admin.name}`,
         result: "success",
-      });
+      }).catch((err: unknown) => logger.warn({ err }, "[audit] addAuditEntry failed"));
 
       sendSuccess(res, { success: true });
     } catch (err) {
@@ -176,7 +176,7 @@ router.delete("/admin-accounts/:id", requirePermission("system.roles.manage"), a
       ip: aReq.adminIp || "unknown",
       details: `deletedAdminId=${id} name=${admin.name} username=${admin.username ?? ""}`,
       result: "success",
-    });
+    }).catch((err: unknown) => logger.warn({ err }, "[audit] addAuditEntry failed"));
 
     sendSuccess(res, { success: true });
   } catch (err) {

@@ -151,7 +151,7 @@ router.patch("/auth/methods", adminAuth, async (req, res, next) => {
       adminId: (req as AdminRequest).adminId,
       details: `Updated ${updates.map((u) => u.key).join(", ")}`,
       result: "success",
-    });
+    }).catch((err: unknown) => logger.warn({ err }, "[audit] addAuditEntry failed"));
 
     try {
       getIO()?.emit("platform-config:updated", { scope: "auth", keys: updates.map((u) => u.key) });
@@ -336,7 +336,7 @@ router.post("/auth/broadcast-logout", adminAuth, async (req, res, next) => {
       adminId: (req as AdminRequest).adminId,
       details: role ? `Broadcast logout for ${role}` : "Broadcast logout for all users",
       result: "success",
-    });
+    }).catch((err: unknown) => logger.warn({ err }, "[audit] addAuditEntry failed"));
     sendSuccess(res, { success: true, affected: rows.length });
   } catch (err) {
     next(err);

@@ -39,6 +39,7 @@ import releaseNotesRoutes from "./admin/release-notes.js";
 import searchAnalyticsRoutes from "./admin/search-analytics.js";
 import securityRoutes from "./admin/security.js";
 import smsGatewaysRoutes from "./admin/sms-gateways.js";
+import appOverviewRoutes from "./admin/app-overview.js";
 import { router as statsRoutes } from "./admin/stats.js";
 import supportChatAdminRoutes from "./admin/support-chat.js";
 import rbacRoutes from "./admin/system/rbac.js";
@@ -114,6 +115,7 @@ router.use(broadcastsRoutes);
 router.use(authControlRoutes);
 router.use(adminAccountsRoutes);
 router.use(statsRoutes);
+router.use(appOverviewRoutes);
 router.use("/sos", sosRoutes);
 router.get("/pending-counts", async (_req: Request, res: Response) => {
   try {
