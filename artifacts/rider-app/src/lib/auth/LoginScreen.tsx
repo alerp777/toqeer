@@ -32,6 +32,14 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [enrollData, setEnrollData] = useState<{
     token: string; refreshToken: string; profile: unknown;
   } | null>(null);
+  /* Pending social-auth 2FA challenge — stored when Google/Facebook returns
+     requiresTwoFactor. Shows the same TOTP overlay as password login. */
+  const [pendingTwoFactor, setPendingTwoFactor] = useState<{
+    twoFactorToken: string;
+  } | null>(null);
+  const [socialTotpCode, setSocialTotpCode] = useState("");
+  const [socialTotpError, setSocialTotpError] = useState<string | null>(null);
+  const [socialTotpLoading, setSocialTotpLoading] = useState(false);
   const capturedTokenRef = useRef("");
   const capturedRefreshRef = useRef<string | undefined>(undefined);
 
@@ -137,12 +145,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       requiresTwoFactor?: boolean;
       twoFactorToken?: string;
     };
-    /* Social auth may return a 2FA challenge if the account has TOTP enabled.
-       The shared login screen handles 2FA internally only for its own login
-       methods; for social-auth 2FA, direct the rider to use password login. */
-    if (res.requiresTwoFactor) {
-      setRoleError(tDual("twoFactorRequired", language));
-      setTimeout(() => setRoleError(null), 5000);
+    /* Social auth may return a 2FA challenge when the account has TOTP enabled.
+       Route through the same TOTP overlay as the password login flow. */
+    if (res.requiresTwoFactor && res.twoFactorToken) {
+      setSocialTotpCode("");
+      setSocialTotpError(null);
+      setPendingTwoFactor({ twoFactorToken: res.twoFactorToken });
       return;
     }
     await handleSuccess(res.user, res.token, res.refreshToken);
@@ -156,12 +164,34 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       requiresTwoFactor?: boolean;
       twoFactorToken?: string;
     };
-    if (res.requiresTwoFactor) {
-      setRoleError(tDual("twoFactorRequired", language));
-      setTimeout(() => setRoleError(null), 5000);
+    if (res.requiresTwoFactor && res.twoFactorToken) {
+      setSocialTotpCode("");
+      setSocialTotpError(null);
+      setPendingTwoFactor({ twoFactorToken: res.twoFactorToken });
       return;
     }
     await handleSuccess(res.user, res.token, res.refreshToken);
+  };
+
+  const handleSocialTotpSubmit = async () => {
+    if (!pendingTwoFactor || socialTotpCode.length < 6) return;
+    setSocialTotpLoading(true);
+    setSocialTotpError(null);
+    try {
+      const res = (await api.twoFactorVerify({
+        code: socialTotpCode,
+        tempToken: pendingTwoFactor.twoFactorToken,
+      })) as { token?: string; refreshToken?: string; user?: unknown };
+      if (!res.token) throw new Error("Verification failed — no token returned");
+      setPendingTwoFactor(null);
+      setSocialTotpCode("");
+      await handleSuccess(res.user, res.token, res.refreshToken);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      setSocialTotpError(msg || tDual("invalidTotpCode", language));
+    } finally {
+      setSocialTotpLoading(false);
+    }
   };
 
   const handleEnrollAccept = async () => {
@@ -252,6 +282,50 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
           </div>
         </div>
       </div>
+    );
+  }
+
+  /* ── Social-auth TOTP overlay ────────────────────────────────────────────── */
+  if (pendingTwoFactor) {
+    return (
+      <ThemeProvider role="rider">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-page-bg px-6">
+          <div className="w-full max-w-sm space-y-6 rounded-3xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl">
+            <div className="space-y-1 text-center">
+              <p className="text-2xl font-black text-white">
+                {tDual("twoFactorRequired", language)}
+              </p>
+              <p className="text-sm text-white/50">{tDual("subtitleTotp", language)}</p>
+            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={socialTotpCode}
+              onChange={(e) => setSocialTotpCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="000000"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.08] px-4 py-3 text-center text-2xl font-mono tracking-[0.4em] text-white placeholder-white/20 outline-none focus:border-white/30 focus:ring-0"
+            />
+            {socialTotpError && (
+              <p className="text-center text-sm text-red-400">{socialTotpError}</p>
+            )}
+            <button
+              disabled={socialTotpLoading || socialTotpCode.length < 6}
+              onClick={() => { void handleSocialTotpSubmit(); }}
+              className="w-full rounded-2xl bg-rider-primary py-3 text-sm font-bold text-[#0b0e11] disabled:opacity-40"
+            >
+              {socialTotpLoading ? tDual("verifyingLabel", language) : tDual("enterTotpCode", language)}
+            </button>
+            <button
+              onClick={() => { setPendingTwoFactor(null); setSocialTotpCode(""); setSocialTotpError(null); }}
+              className="w-full text-center text-sm text-white/40 hover:text-white/60"
+            >
+              {tDual("back", language)}
+            </button>
+          </div>
+        </div>
+      </ThemeProvider>
     );
   }
 

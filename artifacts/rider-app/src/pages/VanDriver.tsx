@@ -21,6 +21,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from "react-leaflet";
+import { Redirect } from "wouter";
 import { useAuth } from "../lib/rider-auth";
 import { usePlatformConfig } from "../lib/useConfig";
 
@@ -436,21 +437,8 @@ export default function VanDriver() {
      type before accessing this module. */
   const vehicleType = _user?.vehicleType;
   const isVanOrBus = vehicleType === "van" || vehicleType === "bus";
-  if (!isVanOrBus)
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-        <div className="max-w-xs space-y-3 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-200">
-            <Bus size={32} className="text-gray-400" />
-          </div>
-          <h2 className="text-lg font-black text-gray-800">Van Module Not Available</h2>
-          <p className="text-sm text-gray-500">
-            This module is for van and bus drivers only. Your registered vehicle type is{" "}
-            <strong>{vehicleType}</strong>.
-          </p>
-        </div>
-      </div>
-    );
+  /* Redirect to Home — keeps hooks unconditional (called before this check) */
+  if (!isVanOrBus) return <Redirect to="/" />;
 
   /* Gate: van service must be explicitly enabled by admin. */
   if (!vanEnabled)

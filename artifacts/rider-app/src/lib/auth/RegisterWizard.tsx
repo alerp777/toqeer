@@ -92,12 +92,16 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
             };
           }
 
-          /* Guard OTP / password fields — these steps may be absent if phone or
-             OTP-password steps are removed from the wizard configuration. */
+          /* Conditionally include otp / password only when the otp-password step
+             is present in the wizard config — avoids sending empty strings in
+             step-skip scenarios which can cause invalid payload semantics. */
+          const hasOtpPasswordStep = steps.some((s) => s.id === "otp-password");
           const result = await register({
             phone: data.phone as string,
-            otp: (data.otp ?? "") as string,
-            password: (data.password ?? "") as string,
+            ...(hasOtpPasswordStep && data.otp != null ? { otp: data.otp as string } : {}),
+            ...(hasOtpPasswordStep && data.password != null
+              ? { password: data.password as string }
+              : {}),
             name: String(data.fullName ?? "").trim(),
             username: data.username ? String(data.username).trim() : undefined,
             cnic: data.cnic ? String(data.cnic).trim() : undefined,

@@ -115,7 +115,26 @@ export default function History() {
       const y = parts.find((p) => p.type === "year")?.value ?? "2000";
       const m = parts.find((p) => p.type === "month")?.value ?? "01";
       const d = parts.find((p) => p.type === "day")?.value ?? "01";
-      return new Date(`${y}-${m}-${d}T00:00:00`);
+      /* Timezone-aware midnight: compute the UTC epoch where the platform clock
+         shows 00:00:00 on this date.
+         Strategy — evaluate UTC noon for this date, then ask the Intl formatter
+         what clock-time the target timezone shows at that UTC instant.  The
+         offset (tzHour:tzMin:tzSec from noon) lets us back-solve for UTC midnight:
+           utcMidnight = utcNoon − tzTimeAtNoon_ms
+         Works for any fixed-offset or DST timezone because we measure the real
+         offset at run-time rather than hard-coding "+05:00". */
+      const utcNoon = Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(d), 12, 0, 0);
+      const noonParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).formatToParts(new Date(utcNoon));
+      const h = parseInt(noonParts.find((p) => p.type === "hour")?.value ?? "12");
+      const min = parseInt(noonParts.find((p) => p.type === "minute")?.value ?? "0");
+      const sec = parseInt(noonParts.find((p) => p.type === "second")?.value ?? "0");
+      return new Date(utcNoon - (h * 3600 + min * 60 + sec) * 1000);
     } catch {
       const now = new Date();
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());

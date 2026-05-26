@@ -320,14 +320,18 @@ export default function Chat() {
     void queryClient.invalidateQueries({ queryKey: ["comm-requests"] });
 
     const onMessageNew = (msg: Message) => {
-      /* Append the new message to the first (most-recent) page of the active
-         conversation's message cache for instant UI update without a refetch. */
+      /* Append the new message to the page with the lowest pageParam — that is
+         the first fetched (most-recent) page, regardless of how many "load earlier"
+         pages have been prepended since. Avoids the fixed-index-0 assumption that
+         breaks under pagination reordering. */
       queryClient.setQueryData(
         ["messages", selectedConvRef.current?.id],
         (old: InfiniteData<Message[]> | undefined) => {
           if (!old) return old;
+          const params = old.pageParams as number[];
+          const minParam = params.length > 0 ? Math.min(...params) : 0;
           const pages = old.pages.map((page, i) =>
-            i === 0 ? [...page, msg] : page
+            params[i] === minParam ? [...page, msg] : page
           );
           return { ...old, pages };
         }

@@ -1969,6 +1969,7 @@ const en = {
     changeIdentifier: "Change identifier",
     couldNotSaveBiometric: "Could not save biometric — you can enable it later in Profile settings",
     twoFactorRequired: "Two-factor authentication is required. Please log in with your password to complete sign-in.",
+    invalidTotpCode: "Invalid or expired code. Please try again.",
 };
 
 export default en;
