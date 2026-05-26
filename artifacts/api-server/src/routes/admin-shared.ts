@@ -46,20 +46,29 @@ export function logMaintenanceBypass(req: Request, rawKey: string): void {
   );
 }
 
+const ADMIN_SHARED_DEV_PLACEHOLDER = "dev-placeholder-jwt-secret-000000";
+
 /**
  * Resolve a JWT secret from an environment variable.
- * Always exits the process if the secret is absent or too short — there is no
- * NODE_ENV-gated fallback. Any environment (dev, staging, prod) must have the
- * secret set before the server will start.
+ * In production/staging: exits the process if the secret is absent or too short.
+ * In development: logs a warning and returns a safe placeholder so the server
+ * can start without all secrets configured.
  */
 function resolveAdminSecret(envVar: string): string {
   const val = process.env[envVar];
+  const isProduction = ["production", "staging"].includes(process.env.NODE_ENV ?? "");
   if (!val || val.length < 32) {
     const msg = !val
       ? `[admin-shared] FATAL: ${envVar} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${envVar} is too short (${val.length} chars, need ≥32).`;
-    pinoLogger.fatal(msg);
-    process.exit(1);
+    if (isProduction) {
+      pinoLogger.fatal(msg);
+      process.exit(1);
+    }
+    pinoLogger.warn(
+      `[admin-shared] WARNING: ${envVar} is not set or too short. Using unsafe dev fallback — set a strong secret before deploying to production.`
+    );
+    return ADMIN_SHARED_DEV_PLACEHOLDER;
   }
   return val;
 }
@@ -432,13 +441,20 @@ const _ADMIN_JWT_ISSUER = process.env.JWT_ISSUER ?? "ajkmart-admin";
 
 const _ADMIN_REFRESH_SECRET = (() => {
   const v = process.env.ADMIN_JWT_REFRESH_SECRET || process.env.ADMIN_REFRESH_SECRET;
+  const isProduction = ["production", "staging"].includes(process.env.NODE_ENV ?? "");
   if (!v || v.length < 32) {
     const key = "ADMIN_JWT_REFRESH_SECRET / ADMIN_REFRESH_SECRET";
     const msg = !v
       ? `[admin-shared] FATAL: ${key} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${key} is too short (${v.length} chars, need ≥32).`;
-    pinoLogger.fatal(msg);
-    process.exit(1);
+    if (isProduction) {
+      pinoLogger.fatal(msg);
+      process.exit(1);
+    }
+    pinoLogger.warn(
+      `[admin-shared] WARNING: ${key} is not set or too short. Using unsafe dev fallback — set a strong secret before deploying to production.`
+    );
+    return ADMIN_SHARED_DEV_PLACEHOLDER;
   }
   return v;
 })();

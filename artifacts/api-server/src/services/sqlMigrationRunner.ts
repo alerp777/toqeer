@@ -139,23 +139,42 @@ export async function runSqlMigrations() {
         ]);
         if (rows.length) continue;
         const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
-        try {
-          await pool.query(sql);
-        } catch (err: any) {
-          // PG error codes: 42P07 = duplicate_table, 42710 = duplicate_object,
-          // 42701 = duplicate_column, 42P16 = invalid_table_definition (idx already exists)
-          const alreadyExists = ["42P07", "42710", "42701", "42P16", "42P11", "42703"].includes(
-            err.code
-          );
-          if (alreadyExists) {
-            logger.debug(
-              { file, code: err.code, msg: err.message },
-              "[migrations] Skipping — objects already exist or column mismatch (marking as applied)"
+
+        // Split the file into individual statements so each runs in its own
+        // pool.query() call. This is required for statements that cannot run
+        // inside a transaction block (e.g. CREATE/DROP INDEX CONCURRENTLY).
+        // Strip SQL line comments before splitting so comment-only lines do
+        // not produce empty statements.
+        const statements = sql
+          .replace(/--[^\n]*/g, "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+
+        let hadFatal = false;
+        for (const stmt of statements) {
+          try {
+            await pool.query(stmt);
+          } catch (err: any) {
+            // PG error codes: 42P07 = duplicate_table, 42710 = duplicate_object,
+            // 42701 = duplicate_column, 42P16 = invalid_table_definition (idx already exists)
+            const alreadyExists = ["42P07", "42710", "42701", "42P16", "42P11", "42703"].includes(
+              err.code
             );
-          } else {
-            logger.error({ file, err }, "[migrations] FAILED applying migration");
-            throw err;
+            if (alreadyExists) {
+              logger.debug(
+                { file, code: err.code, msg: err.message },
+                "[migrations] Skipping statement — objects already exist or column mismatch"
+              );
+            } else {
+              logger.error({ file, stmt: stmt.slice(0, 120), err }, "[migrations] FAILED applying statement");
+              hadFatal = true;
+              break;
+            }
           }
+        }
+        if (hadFatal) {
+          throw new Error(`Migration ${file} had a fatal statement error — see logs above`);
         }
         await pool.query("INSERT INTO _schema_migrations (filename) VALUES ($1)", [file]);
         logger.info({ file }, "[migrations] Applied migration");

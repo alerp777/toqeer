@@ -135,7 +135,7 @@ export function JoinSelect({ theme, actions }: JoinSelectProps) {
 
   function nextLang() {
     const idx = LANG_CYCLE.indexOf(lang);
-    setLang(LANG_CYCLE[(idx + 1) % LANG_CYCLE.length]);
+    setLang(LANG_CYCLE[(idx + 1) % LANG_CYCLE.length]!);
   }
 
   return (

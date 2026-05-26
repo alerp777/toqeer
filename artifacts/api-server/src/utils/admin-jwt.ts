@@ -1,23 +1,35 @@
 import jwt from "jsonwebtoken";
 import { logger } from "../lib/logger.js";
 
-function resolveSecret(envVar: string, _name: string): string {
+const DEV_PLACEHOLDER = "dev-placeholder-jwt-secret-000000";
+
+function resolveSecret(envVar: string): string {
   const val = process.env[envVar];
+  const isProduction = ["production", "staging"].includes(process.env.NODE_ENV ?? "");
+
   if (!val || val.length < 32) {
-    const msg = !val
-      ? `[ADMIN JWT] FATAL: ${envVar} is not set. Minimum 32 characters required.`
-      : `[ADMIN JWT] FATAL: ${envVar} too short (${val.length} chars, need ≥32).`;
-    logger.fatal(msg);
-    process.exit(1);
+    if (isProduction) {
+      const msg = !val
+        ? `[ADMIN JWT] FATAL: ${envVar} is not set. Minimum 32 characters required.`
+        : `[ADMIN JWT] FATAL: ${envVar} too short (${val.length} chars, need ≥32).`;
+      logger.fatal(msg);
+      process.exit(1);
+    }
+    logger.warn(
+      `[ADMIN JWT] WARNING: ${envVar} is not set or too short. Using unsafe dev fallback — set a strong secret before deploying to production.`
+    );
+    return DEV_PLACEHOLDER;
   }
   return val;
 }
 
-const ACCESS_TOKEN_SECRET = resolveSecret("ADMIN_ACCESS_TOKEN_SECRET", "ADMIN_ACCESS_TOKEN_SECRET");
-const REFRESH_TOKEN_SECRET = resolveSecret(
-  "ADMIN_REFRESH_TOKEN_SECRET",
-  "ADMIN_REFRESH_TOKEN_SECRET"
-);
+function getAccessSecret(): string {
+  return resolveSecret("ADMIN_ACCESS_TOKEN_SECRET");
+}
+
+function getRefreshSecret(): string {
+  return resolveSecret("ADMIN_REFRESH_TOKEN_SECRET");
+}
 const JWT_ISSUER = process.env.JWT_ISSUER || "ajkmart-admin";
 
 export interface AccessTokenPayload {
@@ -69,7 +81,7 @@ export function signAccessToken(
   _mustChangePassword: boolean = false
 ): string {
   const payload: AccessTokenPayload = { sub: adminId, role, name, perms, pv };
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+  return jwt.sign(payload, getAccessSecret(), {
     expiresIn: "15m",
     issuer: JWT_ISSUER,
     algorithm: "HS256",
@@ -81,7 +93,7 @@ export function signAccessToken(
  * Used to issue new access tokens. Stored in HttpOnly cookies.
  */
 export function signRefreshToken(adminId: string, sessionId: string): string {
-  return jwt.sign({ sub: adminId, sessionId }, REFRESH_TOKEN_SECRET, {
+  return jwt.sign({ sub: adminId, sessionId }, getRefreshSecret(), {
     expiresIn: "7d",
     issuer: JWT_ISSUER,
     algorithm: "HS256",
@@ -93,7 +105,7 @@ export function signRefreshToken(adminId: string, sessionId: string): string {
  */
 export function verifyAccessToken(token: string): AccessTokenPayload {
   try {
-    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET, {
+    const payload = jwt.verify(token, getAccessSecret(), {
       issuer: JWT_ISSUER,
       algorithms: ["HS256"],
     });
@@ -108,7 +120,7 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
  */
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
   try {
-    const payload = jwt.verify(token, REFRESH_TOKEN_SECRET, {
+    const payload = jwt.verify(token, getRefreshSecret(), {
       issuer: JWT_ISSUER,
       algorithms: ["HS256"],
     });
@@ -123,7 +135,7 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
  * Issued after password verification, required for TOTP submission
  */
 export function sign2faChallengeToken(adminId: string): string {
-  return jwt.sign({ sub: adminId, type: "2fa-challenge" }, ACCESS_TOKEN_SECRET, {
+  return jwt.sign({ sub: adminId, type: "2fa-challenge" }, getAccessSecret(), {
     expiresIn: "5m",
     issuer: JWT_ISSUER,
     algorithm: "HS256",
@@ -135,7 +147,7 @@ export function sign2faChallengeToken(adminId: string): string {
  */
 export function verify2faChallengeToken(token: string): { sub: string; type: string } {
   try {
-    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET, {
+    const payload = jwt.verify(token, getAccessSecret(), {
       issuer: JWT_ISSUER,
       algorithms: ["HS256"],
     });

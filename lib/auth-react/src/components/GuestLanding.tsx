@@ -195,10 +195,10 @@ function Icon({ name, size = 20, color = "currentColor" }: { name: string; size?
 function parseLeadingNumber(v: string): { prefix: string; num: number; suffix: string } | null {
   const m = v.match(/^([₨$€£¥]?)([\d,.]+)(.*)$/);
   if (!m) return null;
-  const raw = m[2].replace(/,/g, "");
+  const raw = (m[2] ?? "").replace(/,/g, "");
   const num = parseFloat(raw);
   if (Number.isNaN(num)) return null;
-  return { prefix: m[1], num, suffix: m[3] };
+  return { prefix: m[1] ?? "", num, suffix: m[3] ?? "" };
 }
 
 function formatNum(n: number, original: string): string {
@@ -221,7 +221,7 @@ function AnimatedStat({ v, primaryColor }: { v: string; primaryColor: string }) 
   useEffect(() => {
     if (!nodeRef.current) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) setVisible(true); },
+      (entries) => { if (entries[0]?.isIntersecting) setVisible(true); },
       { threshold: 0.3 }
     );
     observer.observe(nodeRef.current);
@@ -265,7 +265,7 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
   useEffect(() => {
     if (!ref.current) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) setShown(true); },
+      (entries) => { if (entries[0]?.isIntersecting) setShown(true); },
       { threshold: 0.15 }
     );
     observer.observe(ref.current);
