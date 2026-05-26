@@ -1214,12 +1214,12 @@ export function LoginScreen({
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {canUsePassword && (
                         <button type="button" style={s.link} onClick={handleSmartFallbackPassword}>
-                          Use password instead
+                          {str.usePasswordInstead ?? "Use password instead"}
                         </button>
                       )}
                       {canUseMagicLink && (
                         <button type="button" style={s.link} onClick={handleSmartFallbackMagicLink}>
-                          Send magic link
+                          {str.sendMagicLink}
                         </button>
                       )}
                     </div>
@@ -1278,12 +1278,12 @@ export function LoginScreen({
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: -6 }}>
                       {canUseOtp && (
                         <button type="button" style={s.link} onClick={handleSmartFallbackOtp}>
-                          {smartIdType === "phone" ? "Get OTP instead" : "Use email OTP instead"}
+                          {str.useOtpInstead ?? (smartIdType === "phone" ? "Get OTP instead" : "Use email OTP instead")}
                         </button>
                       )}
                       {canUseMagicLink && (
                         <button type="button" style={s.link} onClick={handleSmartFallbackMagicLink}>
-                          Send magic link
+                          {str.sendMagicLink}
                         </button>
                       )}
                     </div>

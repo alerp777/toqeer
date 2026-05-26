@@ -278,7 +278,7 @@ export default function AuthScreen() {
           setMethod("google");
           setStep("method");
         } else {
-          setError("This account is linked to Google. Please sign in with Google.");
+          setError(T("linkedToGoogle"));
         }
         return;
       }
@@ -287,7 +287,7 @@ export default function AuthScreen() {
           setMethod("facebook");
           setStep("method");
         } else {
-          setError("This account is linked to Facebook. Please sign in with Facebook.");
+          setError(T("linkedToFacebook"));
         }
         return;
       }
@@ -345,7 +345,7 @@ export default function AuthScreen() {
       setMethod("username");
       setStep("method");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Check failed. Please try again.";
+      const msg = e instanceof Error ? e.message : T("checkFailed");
       setError(msg);
       const match = msg.match(/wait (\d+) (second|minute)/i);
       if (match) {
@@ -401,7 +401,7 @@ export default function AuthScreen() {
 
   const handleSendPhoneOtp = async (preferredChannel?: string) => {
     clearError();
-    if (!isValidPakistaniPhone(phone)) { setError("Please enter a valid Pakistani phone number"); return; }
+    if (!isValidPakistaniPhone(phone)) { setError(T("enterValidPhone")); return; }
     const normalizedPhone = normalizePhone(phone);
     if (resendCooldown > 0) { setError(`Please wait ${resendCooldown}s before resending.`); return; }
     setLoading(true);
@@ -420,7 +420,7 @@ export default function AuthScreen() {
       setResendCooldown(60);
       animateTransition(() => setStep("otp"));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not send OTP.";
+      const msg = e instanceof Error ? e.message : T("sendOtpFailed");
       setError(msg);
       const match = msg.match(/wait (\d+) second/);
       if (match) setResendCooldown(parseInt(match[1]!, 10));
@@ -430,20 +430,20 @@ export default function AuthScreen() {
 
   const handleVerifyPhoneOtp = async () => {
     clearError();
-    if (!otp || otp.length < 6) { setError("Please enter the 6-digit OTP"); return; }
+    if (!otp || otp.length < 6) { setError(T("enterSixDigitOtp")); return; }
     setLoading(true);
     try {
       const fingerprint = await getDeviceFingerprint();
       const res = await authPost("/auth/verify-otp", { phone: normalizePhone(phone), otp, deviceFingerprint: fingerprint });
       await handleLoginResult(res);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid OTP."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidOtp")); }
     setLoading(false);
   };
 
   const handleSendEmailOtp = async () => {
     clearError();
     /* FIX 15: Proper email regex validation */
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(T("enterValidEmail")); return; }
     if (emailResendCooldown > 0) {
       const msg = `Please wait ${emailResendCooldown}s before requesting another OTP`;
       setError(msg);
@@ -458,19 +458,19 @@ export default function AuthScreen() {
       setFallbackChannels([]);
       setEmailResendCooldown(60);
       animateTransition(() => setStep("otp"));
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Could not send OTP."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("sendOtpFailed")); }
     setLoading(false);
   };
 
   const handleVerifyEmailOtp = async () => {
     clearError();
-    if (!emailOtp || emailOtp.length < 6) { setError("Please enter the 6-digit OTP"); return; }
+    if (!emailOtp || emailOtp.length < 6) { setError(T("enterSixDigitOtp")); return; }
     setLoading(true);
     try {
       const fingerprint = await getDeviceFingerprint();
       const res = await authPost("/auth/verify-email-otp", { email, otp: emailOtp, deviceFingerprint: fingerprint });
       await handleLoginResult(res);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid OTP."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidOtp")); }
     setLoading(false);
   };
 
@@ -483,7 +483,7 @@ export default function AuthScreen() {
       const fingerprint = await getDeviceFingerprint();
       const res = await authPost("/auth/login", { identifier: username, password, role: "customer", deviceFingerprint: fingerprint });
       await handleLoginResult(res);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid credentials."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidCredentials")); }
     setLoading(false);
   };
 
@@ -494,7 +494,7 @@ export default function AuthScreen() {
     try {
       const res = await authPost("/auth/login/verify-otp", { tempToken: loginOtpTempToken, otp });
       await handleLoginResult(res);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid OTP."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidOtp")); }
     setLoading(false);
   };
 
@@ -567,14 +567,14 @@ export default function AuthScreen() {
   const handleMagicLink = async () => {
     clearError();
     /* FIX 15: Proper email regex validation */
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(magicEmail.trim())) { setError("Please enter a valid email"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(magicEmail.trim())) { setError(T("enterValidEmail")); return; }
     if (magicCooldown > 0) return;
     setLoading(true);
     try {
       await authPost("/auth/magic-link/send", { email: magicEmail });
       setMagicSent(true);
       setMagicCooldown(60);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Could not send magic link."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("couldNotSendMagicLink")); }
     setLoading(false);
   };
 
@@ -585,17 +585,17 @@ export default function AuthScreen() {
       if (success) {
         router.replace("/(tabs)");
       } else {
-        setError("Biometric login failed. Please use another login method.");
+        setError(T("biometricFailed"));
       }
     } catch {
-      setError("Biometric not available.");
+      setError(T("biometricUnavailable"));
     }
     setBiometricLoading(false);
   };
 
   const handleTotpVerify = async () => {
     clearError();
-    if (!totpCode || totpCode.length < 6) { setError("Please enter the 6-digit code"); return; }
+    if (!totpCode || totpCode.length < 6) { setError(T("enterSixDigitCode")); return; }
     setLoading(true);
     try {
       const fingerprint = await getDeviceFingerprint();
@@ -617,7 +617,7 @@ export default function AuthScreen() {
       }
       await completeTwoFactorLogin(res.user as AppUser, res.token, res.refreshToken);
       router.replace("/(tabs)");
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid 2FA code."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidOtp")); }
     setLoading(false);
   };
 
@@ -628,13 +628,13 @@ export default function AuthScreen() {
       const res = await authPost("/auth/2fa/recovery", { tempToken: totpTempToken, backupCode: code });
       await completeTwoFactorLogin(res.user as AppUser, res.token, res.refreshToken);
       router.replace("/(tabs)");
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid backup code."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("invalidOtp")); }
     setLoading(false);
   };
 
   const handleCompleteProfile = async () => {
     clearError();
-    if (!profileName || profileName.trim().length < 2) { setError("Please enter your name"); return; }
+    if (!profileName || profileName.trim().length < 2) { setError(T("enterYourName")); return; }
     setLoading(true);
     try {
       let activeToken = pendingToken;
@@ -645,7 +645,7 @@ export default function AuthScreen() {
         } catch {}
       }
       if (!activeToken) {
-        setError("Session expired. Please log in again.");
+        setError(T("sessionExpiredMsg"));
         setLoading(false);
         return;
       }
@@ -662,7 +662,7 @@ export default function AuthScreen() {
       });
       const res = await rawRes.json();
       if (!rawRes.ok || !res.user) {
-        setError(res.error || res.message || "Could not save profile. Please try again.");
+        setError(res.error || res.message || T("couldNotSaveProfile"));
         setLoading(false);
         return;
       }
@@ -671,7 +671,7 @@ export default function AuthScreen() {
       };
       await login(completeUser, res.token ?? pendingToken, res.refreshToken ?? pendingRefreshToken);
       router.replace("/(tabs)");
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Could not save profile."); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("couldNotSaveProfile")); }
     setLoading(false);
   };
 
@@ -1246,11 +1246,11 @@ export default function AuthScreen() {
             {method === "username" && step === "method" && (
               <>
                 <Text style={styles.sectionTitle}>{T("loginViaUsername")}</Text>
-                <Text style={styles.sectionSubtitle}>Phone, email, or username</Text>
+                <Text style={styles.sectionSubtitle}>{T("enterIdentifierPlaceholder")}</Text>
                 <InputField
                   value={username}
                   onChangeText={v => { setUsername(v.trim()); clearError(); }}
-                  placeholder="Phone, email, or username"
+                  placeholder={T("enterIdentifierPlaceholder")}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -1268,7 +1268,7 @@ export default function AuthScreen() {
                   accessibilityLabel={T("forgotPassword")}
                   accessibilityRole="link"
                 >
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                  <Text style={styles.forgotText}>{T("forgotPassword")}?</Text>
                 </Pressable>
                 {/* Smart-login fallbacks */}
                 {(smartIdType === "username" || smartIdType === "email") && (
@@ -1277,14 +1277,14 @@ export default function AuthScreen() {
                       <Pressable onPress={handleSmartFallbackOtp} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="chatbubble-outline" size={14} color={C.primary} />
                         <Text style={styles.fallbackText}>
-                          {smartIdType === "email" ? "Use email OTP instead" : "Get OTP instead"}
+                          {smartIdType === "email" ? T("useEmailOtpInstead") : T("getOtpInstead")}
                         </Text>
                       </Pressable>
                     )}
                     {canUseMagic && (
                       <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="link-outline" size={14} color={C.primary} />
-                        <Text style={styles.fallbackText}>Send magic link</Text>
+                        <Text style={styles.fallbackText}>{T("sendMagicLink")}</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1312,8 +1312,8 @@ export default function AuthScreen() {
 
                     {showBiometric && (
                       <SocialButton
-                        provider="Biometrics"
-                        label="Login with Biometrics"
+                        provider={T("biometrics")}
+                        label={T("loginWithBiometrics")}
                         icon="finger-print"
                         color={C.primary}
                         onPress={handleBiometricLogin}
@@ -1345,13 +1345,13 @@ export default function AuthScreen() {
                             <InputField
                               value={magicEmail}
                               onChangeText={setMagicEmail}
-                              placeholder="Email for magic link"
+                              placeholder={T("magicLinkEmailPlaceholder")}
                               keyboardType="email-address"
                               autoCapitalize="none"
                             />
                             <SocialButton
                               provider={T("magicLinkLogin")}
-                              label="Send Magic Link"
+                              label={T("sendMagicLink")}
                               icon="link"
                               color={C.info}
                               onPress={handleMagicLink}

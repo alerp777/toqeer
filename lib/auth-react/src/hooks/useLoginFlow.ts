@@ -50,6 +50,7 @@ export function useLoginFlow({
   const [twoFactorPending, setTwoFactorPending] = useState(false);
   const [tempToken, setTempToken] = useState<string | null>(null);
   const [twoFactorType, setTwoFactorType] = useState<TwoFactorType | null>(null);
+  const [identifierType, setIdentifierType] = useState<"phone" | "email" | "username" | null>(null);
 
   function clearError() {
     setError(null);
@@ -133,6 +134,7 @@ export function useLoginFlow({
           availableMethods: rawAvailableMethods,
         };
         setMethod(result.method);
+        setIdentifierType(result.identifierType ?? null);
 
         /* ── Trigger phone OTP delivery ────────────────────────────────────
            check-identifier only tells us WHAT to do — it does NOT send the
@@ -204,7 +206,10 @@ export function useLoginFlow({
       setLoading(true);
       setError(null);
       try {
-        const body: Record<string, unknown> = { phone: identifier, otp };
+        /* Route to email or phone field based on what the identifier was */
+        const body: Record<string, unknown> = identifierType === "email"
+          ? { email: identifier, otp }
+          : { phone: identifier, otp };
         if (role && role !== "admin") body.role = role;
 
         const res = await apiFetch<{
@@ -234,7 +239,7 @@ export function useLoginFlow({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [identifier, baseURL, role, onSuccess]
+    [identifier, identifierType, baseURL, role, onSuccess]
   );
 
   /**
@@ -365,6 +370,7 @@ export function useLoginFlow({
     method,
     twoFactorPending,
     twoFactorType,
+    identifierType,
     tempToken,
     clearError,
   };

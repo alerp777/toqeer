@@ -1884,6 +1884,25 @@ const ur: Record<string, string> = {
     wrongAppCustomer: "یہ کسٹمر اکاؤنٹ نہیں ہے۔",
     wrongAppRider: "سائن ان کے لیے رائڈر ایپ استعمال کریں۔",
     wrongAppVendor: "سائن ان کے لیے وینڈر ایپ استعمال کریں۔",
+
+    /* ── Error messages (login/auth) ── */
+    linkedToGoogle: "یہ اکاؤنٹ گوگل سے منسلک ہے۔ براہ کرم گوگل سے سائن ان کریں۔",
+    linkedToFacebook: "یہ اکاؤنٹ فیس بک سے منسلک ہے۔ براہ کرم فیس بک سے سائن ان کریں۔",
+    checkFailed: "چیک ناکام۔ دوبارہ کوشش کریں۔",
+    invalidOtp: "OTP غلط ہے۔ دوبارہ کوشش کریں۔",
+    invalidCredentials: "اسناد غلط ہیں۔ اپنی تفصیلات جانچ کر دوبارہ کوشش کریں۔",
+    enterSixDigitOtp: "براہ کرم 6 ہندسوں کا OTP درج کریں",
+    enterSixDigitCode: "براہ کرم 6 ہندسوں کا کوڈ درج کریں",
+    couldNotSendMagicLink: "میجک لنک نہیں بھیجا جا سکا۔ دوبارہ کوشش کریں۔",
+    biometricFailed: "بایومیٹرک لاگ ان ناکام۔ کوئی اور طریقہ استعمال کریں۔",
+    biometricUnavailable: "بایومیٹرک دستیاب نہیں۔",
+    enterYourName: "براہ کرم اپنا نام درج کریں",
+    couldNotSaveProfile: "پروفائل محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+    loginWithBiometrics: "بایومیٹرک سے لاگ ان کریں",
+    biometrics: "بایومیٹرک",
+    magicLinkEmailPlaceholder: "میجک لنک کے لیے ای میل",
+    useEmailOtpInstead: "اس کے بجائے ای میل OTP استعمال کریں",
+    getOtpInstead: "اس کے بجائے OTP حاصل کریں",
 };
 
 export default ur;

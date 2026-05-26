@@ -277,7 +277,22 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         })()}
         captureDevOtp
         strings={translatedStrings}
-        translateError={(raw) => raw}
+        translateError={(raw) => {
+          const map: Record<string, string> = {
+            "account has been suspended": tDual("accountBlocked", language),
+            "registrations are currently closed": tDual("registrationClosed", language),
+            "social login is not configured": tDual("socialLoginNotConfigured", language),
+            "session expired": tDual("sessionExpired", language),
+            "invalid otp": tDual("invalidOtp", language),
+            "invalid credentials": tDual("invalidCredentials", language),
+            "linked to google": tDual("linkedToGoogle", language),
+            "linked to facebook": tDual("linkedToFacebook", language),
+            "not a rider account": tDual("wrongAppRider", language),
+          };
+          const lc = raw.toLowerCase();
+          const hit = Object.keys(map).find(k => lc.includes(k));
+          return hit ? map[hit]! : raw;
+        }}
         onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
         onGoogle={authConfig.googleEnabled ? () => { void handleGoogle(); } : undefined}
         onFacebook={authConfig.facebookEnabled ? () => { void handleFacebook(); } : undefined}

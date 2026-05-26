@@ -1896,6 +1896,25 @@ const roman: Record<string, string> = {
     wrongAppCustomer: "Yeh customer account nahi hai.",
     wrongAppRider: "Sign in ke liye rider app istemaal karein.",
     wrongAppVendor: "Sign in ke liye vendor app istemaal karein.",
+
+    /* ── Error messages (login/auth) ── */
+    linkedToGoogle: "Yeh account Google se mansalik hai. Google se sign in karein.",
+    linkedToFacebook: "Yeh account Facebook se mansalik hai. Facebook se sign in karein.",
+    checkFailed: "Check nakam. Dobara koshish karein.",
+    invalidOtp: "OTP ghalat hai. Dobara koshish karein.",
+    invalidCredentials: "Asnaad ghalat hain. Apni tafseel janch kar dobara koshish karein.",
+    enterSixDigitOtp: "6 hadson ka OTP darj karein",
+    enterSixDigitCode: "6 hadson ka code darj karein",
+    couldNotSendMagicLink: "Magic link nahi bheja ja saka. Dobara koshish karein.",
+    biometricFailed: "Biometric login nakam. Koi aur tariqa istemaal karein.",
+    biometricUnavailable: "Biometric dastiyaab nahi.",
+    enterYourName: "Apna naam darj karein",
+    couldNotSaveProfile: "Profile mehfooz nahi ho saki. Dobara koshish karein.",
+    loginWithBiometrics: "Biometric se login karein",
+    biometrics: "Biometric",
+    magicLinkEmailPlaceholder: "Magic link ke liye email",
+    useEmailOtpInstead: "Iske bajaye email OTP istemaal karein",
+    getOtpInstead: "Iske bajaye OTP haasil karein",
 };
 
 export default roman;

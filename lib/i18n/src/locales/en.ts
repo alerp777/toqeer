@@ -1912,6 +1912,25 @@ const en = {
     wrongAppCustomer: "This account is not a customer account.",
     wrongAppRider: "Please use the rider app to sign in.",
     wrongAppVendor: "Please use the vendor app to sign in.",
+
+    /* ── Error messages (login/auth) ── */
+    linkedToGoogle: "This account is linked to Google. Please sign in with Google.",
+    linkedToFacebook: "This account is linked to Facebook. Please sign in with Facebook.",
+    checkFailed: "Check failed. Please try again.",
+    invalidOtp: "Invalid OTP. Please try again.",
+    invalidCredentials: "Invalid credentials. Please check your details and try again.",
+    enterSixDigitOtp: "Please enter the 6-digit OTP",
+    enterSixDigitCode: "Please enter the 6-digit code",
+    couldNotSendMagicLink: "Could not send magic link. Please try again.",
+    biometricFailed: "Biometric login failed. Please use another login method.",
+    biometricUnavailable: "Biometric not available.",
+    enterYourName: "Please enter your name",
+    couldNotSaveProfile: "Could not save profile. Please try again.",
+    loginWithBiometrics: "Login with Biometrics",
+    biometrics: "Biometrics",
+    magicLinkEmailPlaceholder: "Email for magic link",
+    useEmailOtpInstead: "Use email OTP instead",
+    getOtpInstead: "Get OTP instead",
 };
 
 export default en;

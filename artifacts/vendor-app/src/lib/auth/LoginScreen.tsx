@@ -257,7 +257,22 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         googleClientId={auth.google ? auth.googleClientId : undefined}
         facebookAppId={auth.facebook ? auth.facebookAppId : undefined}
         strings={translatedStrings}
-        translateError={(raw) => raw}
+        translateError={(raw) => {
+          const map: Record<string, string> = {
+            "account has been suspended": tDual("accountBlocked", language),
+            "registrations are currently closed": tDual("registrationClosed", language),
+            "social login is not configured": tDual("socialLoginNotConfigured", language),
+            "session expired": tDual("sessionExpired", language),
+            "invalid otp": tDual("invalidOtp", language),
+            "invalid credentials": tDual("invalidCredentials", language),
+            "linked to google": tDual("linkedToGoogle", language),
+            "linked to facebook": tDual("linkedToFacebook", language),
+            "not a vendor account": tDual("wrongAppVendor", language),
+          };
+          const lc = raw.toLowerCase();
+          const hit = Object.keys(map).find(k => lc.includes(k));
+          return hit ? map[hit]! : raw;
+        }}
         onSuccess={handleSuccess}
         onRegisterPress={() => navigate("/register")}
         captureDevOtp
