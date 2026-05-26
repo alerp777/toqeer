@@ -41,6 +41,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [overlay, setOverlay] = useState<"pending" | "rejected" | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | undefined>();
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [pendingStatusMsg, setPendingStatusMsg] = useState<string | null>(null);
   const capturedTokenRef = useRef("");
   const capturedRefreshRef = useRef<string | undefined>(undefined);
 
@@ -48,6 +49,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     async (_rawUser: SharedAuthUser, token: string, refreshToken?: string) => {
       capturedTokenRef.current = token;
       capturedRefreshRef.current = refreshToken;
+      /* GAP 3 fix: store tokens before getMe() so the request is authenticated */
+      api.storeTokens(token, refreshToken);
       let profile: VendorAuthUser;
       try {
         profile = (await api.getMe()) as VendorAuthUser;
@@ -72,10 +75,15 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   const handleCheckStatus = useCallback(async () => {
     setCheckingStatus(true);
+    setPendingStatusMsg(null);
     try {
       const profile = (await api.getMe()) as VendorAuthUser;
       const approvalStatus = profile.approvalStatus;
-      if (approvalStatus === "pending") return;
+      if (approvalStatus === "pending") {
+        /* GAP 2 fix: show visible feedback instead of silently returning */
+        setPendingStatusMsg("Your application is still under review. Please check back later.");
+        return;
+      }
       if (approvalStatus === "rejected") {
         setRejectionReason(getRejectionReason(profile));
         setOverlay("rejected");
@@ -105,6 +113,11 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           supportPhone={supportPhone}
           checking={checkingStatus}
         />
+        {pendingStatusMsg && (
+          <div className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-3rem)] max-w-sm -translate-x-1/2 rounded-xl bg-amber-50 px-4 py-3 text-center text-[13px] font-medium text-amber-800 shadow-lg ring-1 ring-amber-200">
+            {pendingStatusMsg}
+          </div>
+        )}
       </ThemeProvider>
     );
   if (overlay === "rejected")

@@ -1,11 +1,12 @@
-import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
+import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, PendingOverlay, RejectedOverlay, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
 import { tDual } from "@workspace/i18n";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
 import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
 import { useLanguage } from "../useLanguage";
+import { useAppStatus } from "./useAppStatus";
 import { facebookLogin, googleOneTap } from "./social-oauth";
 
 
@@ -21,10 +22,16 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const theme = useAuthTheme();
   const authConfig = useRiderAuthConfig();
   const { language } = useLanguage();
+  const { supportPhone } = useAppStatus();
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [overlay, setOverlay] = useState<"pending" | "rejected" | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | undefined>();
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const [enrollData, setEnrollData] = useState<{
     token: string; refreshToken: string; profile: unknown;
   } | null>(null);
+  const capturedTokenRef = useRef("");
+  const capturedRefreshRef = useRef<string | undefined>(undefined);
 
   const finishLogin = (token: string, profile: unknown, refreshToken: string) => {
     login(token, profile as never, refreshToken || undefined);
@@ -50,6 +57,22 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       /* getMe() failed — network issue; continue with callback payload */
     }
 
+    /* Approval status gate — pending/rejected riders cannot proceed to dashboard */
+    const p = profile as { approvalStatus?: string; rejectionReason?: string | null };
+    if (p.approvalStatus === "pending") {
+      capturedTokenRef.current = token;
+      capturedRefreshRef.current = rToken;
+      setOverlay("pending");
+      return;
+    }
+    if (p.approvalStatus === "rejected") {
+      capturedTokenRef.current = token;
+      capturedRefreshRef.current = rToken;
+      setRejectionReason(p.rejectionReason ?? undefined);
+      setOverlay("rejected");
+      return;
+    }
+
     /* Fail-closed role guard: reject any account whose roles explicitly exclude rider */
     const roles = normalizeRoles(profile as { roles?: unknown; role?: unknown });
     if (roles.length > 0 && !roles.includes("rider")) {
@@ -69,6 +92,36 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
 
     finishLogin(token, profile, rToken);
   };
+
+  const handleCheckStatus = useCallback(async () => {
+    setCheckingStatus(true);
+    try {
+      const profile = (await api.getMe()) as {
+        approvalStatus?: string;
+        rejectionReason?: string | null;
+      };
+      if (profile.approvalStatus === "pending") return;
+      if (profile.approvalStatus === "rejected") {
+        setRejectionReason(profile.rejectionReason ?? undefined);
+        setOverlay("rejected");
+        return;
+      }
+      const token = capturedTokenRef.current;
+      if (token) {
+        finishLogin(token, profile, capturedRefreshRef.current ?? "");
+      }
+    } finally {
+      setCheckingStatus(false);
+    }
+  }, []);
+
+  const handleOverlaySignOut = useCallback(() => {
+    api.clearTokens();
+    capturedTokenRef.current = "";
+    capturedRefreshRef.current = undefined;
+    setOverlay(null);
+    setRejectionReason(undefined);
+  }, []);
 
   const handleGoogle = async () => {
     const clientId = authConfig.googleClientId;
@@ -104,6 +157,33 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     setEnrollData(null);
     finishLogin(token, profile, refreshToken);
   };
+
+  /* ── Pending approval screen ─────────────────────────────────────────────── */
+  if (overlay === "pending") {
+    return (
+      <ThemeProvider role="rider">
+        <PendingOverlay
+          onCheckStatus={handleCheckStatus}
+          onSignOut={handleOverlaySignOut}
+          supportPhone={supportPhone}
+          checking={checkingStatus}
+        />
+      </ThemeProvider>
+    );
+  }
+
+  /* ── Rejected screen ─────────────────────────────────────────────────────── */
+  if (overlay === "rejected") {
+    return (
+      <ThemeProvider role="rider">
+        <RejectedOverlay
+          rejectionReason={rejectionReason}
+          onSignOut={handleOverlaySignOut}
+          supportPhone={supportPhone}
+        />
+      </ThemeProvider>
+    );
+  }
 
   /* ── Role-rejection screen ───────────────────────────────────────────────── */
   if (roleError) {
