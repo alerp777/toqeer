@@ -11,7 +11,6 @@ import {
   Megaphone,
   Search,
   Wifi,
-  Wallet,
   X,
 } from "lucide-react";
 import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
