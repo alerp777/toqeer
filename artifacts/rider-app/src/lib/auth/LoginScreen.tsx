@@ -8,6 +8,7 @@ import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
 import { useLanguage } from "../useLanguage";
 import { useAppStatus } from "./useAppStatus";
 import { facebookLogin, googleOneTap } from "./social-oauth";
+import { riderTheme } from "./theme";
 
 
 type SocialResult = { token: string; user: unknown; refreshToken?: string };
@@ -240,7 +241,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   }
 
   return (
-    <ThemeProvider role="rider">
+    <ThemeProvider role="rider" theme={riderTheme}>
       <SharedLoginScreen
         role="rider"
         logoSrc="/ajkmart-logo.png"
