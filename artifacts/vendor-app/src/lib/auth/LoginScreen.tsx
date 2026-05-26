@@ -6,11 +6,13 @@ import {
   ThemeProvider,
   type AuthUser as SharedAuthUser,
 } from "@workspace/auth-react";
+import { tDual } from "@workspace/i18n";
 import { useCallback, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { getVendorAuthConfig, usePlatformConfig } from "../useConfig";
 import { useAuth as useAuthContext, type AuthUser as VendorAuthUser } from "../vendor-auth";
+import { useLanguage } from "../useLanguage";
 import { useAppStatus } from "./useAppStatus";
 
 export interface LoginScreenProps {
@@ -38,6 +40,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const { config } = usePlatformConfig();
   const auth = getVendorAuthConfig(config);
   const { supportPhone } = useAppStatus();
+  const { language } = useLanguage();
 
   const [overlay, setOverlay] = useState<"pending" | "rejected" | "error" | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | undefined>();
@@ -216,6 +219,23 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       </ThemeProvider>
     );
 
+  const translatedStrings = {
+    phoneLabel: tDual("phoneNumber", language),
+    continueBtn: tDual("continueBtn", language),
+    back: tDual("back", language),
+    newHere: tDual("noAccount", language),
+    createAccount: tDual("createAccount", language),
+    sendMagicLink: tDual("sendMagicLink", language),
+    twoFactorLabel: tDual("enterTotpCode", language),
+    subtitleTotp: tDual("subtitleTotp", language),
+    subtitleLoginOtp: tDual("subtitleLoginOtp", language),
+    usePasswordInstead: tDual("usePasswordInstead", language),
+    useOtpInstead: tDual("useOtpInstead", language),
+    useBackupCode: tDual("useBackupCode", language),
+    useAuthAppInstead: tDual("useAuthAppInstead", language),
+    trustDevice: tDual("trustDevice", language),
+  };
+
   return (
     <ThemeProvider role="vendor">
       <SharedLoginScreen
@@ -236,6 +256,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         })()}
         googleClientId={auth.google ? auth.googleClientId : undefined}
         facebookAppId={auth.facebook ? auth.facebookAppId : undefined}
+        strings={translatedStrings}
+        translateError={(raw) => raw}
         onSuccess={handleSuccess}
         onRegisterPress={() => navigate("/register")}
         captureDevOtp

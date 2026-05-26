@@ -639,7 +639,7 @@ export async function handleUnifiedLogin(req: Request, res: Response) {
       user.roles ?? "customer",
       "password_otp"
     );
-    sendSuccess(res, { requiresOtp: true, tempToken, userId: user.id });
+    sendSuccess(res, { requiresOtp: true, twoFactorRequired: true, twoFactorType: "otp", tempToken, userId: user.id });
     return;
   }
 
@@ -678,7 +678,7 @@ export async function handleUnifiedLogin(req: Request, res: Response) {
         user.roles ?? "customer",
         "password"
       );
-      sendSuccess(res, { requires2FA: true, tempToken, userId: user.id });
+      sendSuccess(res, { requires2FA: true, twoFactorRequired: true, twoFactorType: "totp", tempToken, userId: user.id });
       return;
     }
   }

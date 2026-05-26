@@ -53,6 +53,24 @@ export interface LoginScreenStrings {
   twoFactorLabel: string;
   enterPhoneError: string;
   enterPasswordError: string;
+  /** Label/subtitle shown on the TOTP 2FA step */
+  subtitleTotp?: string;
+  /** Label shown on the login-OTP second-step */
+  subtitleLoginOtp?: string;
+  /** Authenticator code input label */
+  totpLabel?: string;
+  /** Link to switch to password from OTP */
+  usePasswordInstead?: string;
+  /** Link to switch to OTP from password */
+  useOtpInstead?: string;
+  /** Backup code toggle link (shown when TOTP) */
+  useBackupCode?: string;
+  /** Backup code toggle link (shown when using backup) */
+  useAuthAppInstead?: string;
+  /** Trust-device checkbox label */
+  trustDevice?: string;
+  /** "Forgot password?" link label */
+  forgotPasswordLabel?: string;
 }
 
 const DEFAULT_STRINGS: LoginScreenStrings = {
@@ -322,10 +340,12 @@ export function LoginScreen({
     verifyOtp,
     verifyPassword,
     twoFactorVerify,
+    verifyLoginOtp,
     loading,
     error,
     setError,
     twoFactorPending,
+    twoFactorType,
     clearError,
   } = useLoginFlow({
     baseURL,
@@ -487,9 +507,17 @@ export function LoginScreen({
     } finally { setSocialLoading(null); }
   }
 
-  async function handleTwoFactor(otp: string) {
+  async function handleTwoFactor(code: string) {
     try {
-      await twoFactorVerify(otp);
+      await twoFactorVerify(code);
+    } catch (_e) {
+      /* handled by hook */
+    }
+  }
+
+  async function handleLoginOtp(otp: string) {
+    try {
+      await verifyLoginOtp(otp);
     } catch (_e) {
       /* handled by hook */
     }
@@ -1273,14 +1301,42 @@ export function LoginScreen({
                 </form>
               )}
 
-              {/* Step: 2FA */}
+              {/* Step: 2FA — login-OTP second step or TOTP authenticator */}
               {step === "twoFactor" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <OtpInput
-                    label={str.twoFactorLabel}
-                    onComplete={(code) => void handleTwoFactor(code)}
-                    autoSubmit
-                  />
+                  {twoFactorType === "otp" ? (
+                    <>
+                      <p style={{ margin: 0, fontSize: "14px", color: theme.textMuted }}>
+                        {str.subtitleLoginOtp ?? "Enter the OTP sent to verify your identity"}
+                      </p>
+                      <OtpInput
+                        onComplete={(otp) => void handleLoginOtp(otp)}
+                        autoSubmit
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <OtpInput
+                        label={str.subtitleTotp ?? str.twoFactorLabel}
+                        onComplete={(code) => void handleTwoFactor(code)}
+                        autoSubmit
+                      />
+                      {forgotPasswordHref != null && (
+                        <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                          <button
+                            type="button"
+                            style={s.link}
+                            onClick={() => {
+                              clearError();
+                              setStep("identifier");
+                            }}
+                          >
+                            {str.back}
+                          </button>
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </>

@@ -43,7 +43,7 @@ if (typeof __DEV__ === "undefined") {
 }
 
 type LoginMethod = "phone" | "email" | "username" | "magic" | "google" | "facebook";
-type Step = "continue" | "method" | "otp" | "totp" | "pending" | "complete-profile";
+type Step = "continue" | "method" | "otp" | "totp" | "login-otp" | "pending" | "complete-profile";
 
 async function authPost(path: string, body: object) {
   const res = await fetch(`${API}${path}`, {
@@ -58,6 +58,8 @@ async function authPost(path: string, body: object) {
 
 interface AuthLoginResponse {
   requires2FA?: boolean;
+  twoFactorRequired?: boolean;
+  twoFactorType?: "totp" | "otp";
   tempToken?: string;
   userId?: string;
   pendingApproval?: boolean;
@@ -65,6 +67,7 @@ interface AuthLoginResponse {
   refreshToken?: string;
   user?: Partial<AppUser>;
   otpRequired?: boolean;
+  requiresOtp?: boolean;
   otp?: string;
   channel?: string;
   fallbackChannels?: string[];
@@ -124,6 +127,7 @@ export default function AuthScreen() {
   const [totpTempToken, setTotpTempToken] = useState("");
   const [totpCode, setTotpCode] = useState("");
   const [totpUserId, setTotpUserId] = useState("");
+  const [loginOtpTempToken, setLoginOtpTempToken] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
   const [useBackup, setUseBackup] = useState(false);
   const [backupCode, setBackupCode] = useState("");
@@ -199,7 +203,14 @@ export default function AuthScreen() {
   }, []);
 
   const handleLoginResult = useCallback(async (res: AuthLoginResponse) => {
-    if (res.requires2FA) {
+    /* Password-then-OTP second step (twoFactorType === "otp" or requiresOtp) */
+    if (res.requiresOtp || res.twoFactorType === "otp") {
+      setLoginOtpTempToken(res.tempToken ?? "");
+      setStep("login-otp");
+      return;
+    }
+    /* TOTP authenticator challenge (requires2FA or twoFactorType === "totp") */
+    if (res.requires2FA || res.twoFactorType === "totp") {
       setTotpTempToken(res.tempToken ?? "");
       setTotpUserId(res.userId ?? "");
       setStep("totp");
@@ -235,7 +246,7 @@ export default function AuthScreen() {
 
   const checkIdentifier = async () => {
     const id = identifier.trim();
-    if (!id) { setError("Enter your phone, email, or username"); return; }
+    if (!id) { setError(T("enterIdentifier")); return; }
     setLoading(true);
     clearError();
     try {
@@ -243,19 +254,19 @@ export default function AuthScreen() {
       const res = await authPost("/auth/check-identifier", { identifier: id, role: "customer", deviceId });
 
       if (res.action === "blocked" || res.isBanned) {
-        setError("This account has been suspended. Please contact support.");
+        setError(T("accountBlocked"));
         return;
       }
       if (res.action === "locked") {
-        setError(`Account locked. Try again in ${res.lockedMinutes} minute(s).`);
+        setError(`${T("accountLocked")}. ${T("tryAgainIn")} ${res.lockedMinutes} ${T("minutes")}.`);
         return;
       }
       if (res.action === "registration_closed") {
-        setError("New registrations are currently closed.");
+        setError(T("registrationClosed"));
         return;
       }
       if (res.action === "no_method") {
-        setError("No login methods are currently available. Please contact support.");
+        setError(T("noLoginMethod"));
         return;
       }
       if (res.action === "register") {
@@ -465,14 +476,25 @@ export default function AuthScreen() {
 
   const handleUsernameLogin = async () => {
     clearError();
-    if (!username || username.length < 3) { setError("Enter your phone, email, or username"); return; }
-    if (!password || password.length < 6) { setError("Please enter your password"); return; }
+    if (!username || username.length < 3) { setError(T("enterIdentifier")); return; }
+    if (!password || password.length < 6) { setError(T("enterPassword")); return; }
     setLoading(true);
     try {
       const fingerprint = await getDeviceFingerprint();
-      const res = await authPost("/auth/login", { identifier: username, password, deviceFingerprint: fingerprint });
+      const res = await authPost("/auth/login", { identifier: username, password, role: "customer", deviceFingerprint: fingerprint });
       await handleLoginResult(res);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid credentials."); }
+    setLoading(false);
+  };
+
+  const handleVerifyLoginOtp = async () => {
+    clearError();
+    if (!otp || otp.length < 6) { setError(T("enterOtp")); return; }
+    setLoading(true);
+    try {
+      const res = await authPost("/auth/login/verify-otp", { tempToken: loginOtpTempToken, otp });
+      await handleLoginResult(res);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid OTP."); }
     setLoading(false);
   };
 
@@ -487,7 +509,7 @@ export default function AuthScreen() {
 
       if (provider === "google") {
         if (!googleClientId) {
-          setError("Social login is not configured. Please try another login method.");
+          setError(T("socialLoginNotConfigured"));
           setLoading(false);
           return;
         }
@@ -517,7 +539,7 @@ export default function AuthScreen() {
         }
       } else {
         if (!fbAppId) {
-          setError("Social login is not configured. Please try another login method.");
+          setError(T("socialLoginNotConfigured"));
           setLoading(false);
           return;
         }
@@ -673,9 +695,9 @@ export default function AuthScreen() {
               <View style={styles.heroIcon}>
                 <Ionicons name="shield-checkmark" size={36} color={C.primary} />
               </View>
-              <Text style={styles.heroTitle}>Two-Factor Auth</Text>
+              <Text style={styles.heroTitle}>{T("twoFactorAuth")}</Text>
               <Text style={styles.heroSubtitle}>
-                {useBackup ? "Enter one of your backup codes" : "Enter code from your authenticator app"}
+                {useBackup ? T("useAuthAppInstead") : T("subtitleTotp")}
               </Text>
             </View>
 
@@ -691,7 +713,7 @@ export default function AuthScreen() {
                 <InputField
                   value={backupCode}
                   onChangeText={v => { setBackupCode(v); clearError(); }}
-                  placeholder="Enter backup code"
+                  placeholder={T("backupCodePlaceholder")}
                   autoCapitalize="none"
                   autoFocus
                 />
@@ -700,20 +722,20 @@ export default function AuthScreen() {
               <Pressable
                 onPress={() => setTrustDevice(!trustDevice)}
                 style={styles.trustRow}
-                accessibilityLabel="Trust this device for 30 days"
+                accessibilityLabel={T("trustDevice")}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: trustDevice }}
               >
                 <View style={[styles.checkbox, trustDevice && styles.checkboxChecked]}>
                   {trustDevice && <Ionicons name="checkmark" size={13} color="#fff" />}
                 </View>
-                <Text style={styles.trustText}>Trust this device for 30 days</Text>
+                <Text style={styles.trustText}>{T("trustDevice")}</Text>
               </Pressable>
 
               {error ? <AlertBox type="error" message={error} /> : null}
 
               <AuthButton
-                label="Verify"
+                label={T("verify")}
                 onPress={useBackup ? () => handleTotpBackup(backupCode) : handleTotpVerify}
                 loading={loading}
               />
@@ -724,7 +746,7 @@ export default function AuthScreen() {
                 accessibilityRole="button"
               >
                 <Text style={styles.linkBtnText}>
-                  {useBackup ? "Use authenticator app instead" : "Lost your device? Use backup code"}
+                  {useBackup ? T("useAuthAppInstead") : T("useBackupCode")}
                 </Text>
               </Pressable>
 
@@ -735,6 +757,50 @@ export default function AuthScreen() {
               >
                 <Ionicons name="arrow-back" size={16} color={C.primary} />
                 <Text style={styles.backRowText}>{T("backToLogin")}</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  if (step === "login-otp") {
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.flex}>
+        <LinearGradient colors={[C.primaryDark, C.primary, C.primaryLight]} style={styles.flex}>
+          <ScrollView contentContainerStyle={styles.scrollGrow} keyboardShouldPersistTaps="handled">
+            <View style={[styles.topSection, { paddingTop: topPad + 32 }]}>
+              <View style={styles.heroIcon}>
+                <Ionicons name="lock-closed" size={36} color={C.primary} />
+              </View>
+              <Text style={styles.heroTitle}>{T("secureLogin")}</Text>
+              <Text style={styles.heroSubtitle}>{T("subtitleLoginOtp")}</Text>
+            </View>
+
+            <View style={styles.card}>
+              <OtpDigitInput
+                value={otp}
+                onChangeText={v => { setOtp(v); clearError(); }}
+                hasError={!!error}
+                onComplete={() => handleVerifyLoginOtp()}
+              />
+
+              {error ? <AlertBox type="error" message={error} /> : null}
+
+              <AuthButton
+                label={T("verify")}
+                onPress={handleVerifyLoginOtp}
+                loading={loading}
+              />
+
+              <Pressable
+                onPress={() => { setStep("continue"); setOtp(""); clearError(); }}
+                style={styles.backRow}
+                accessibilityRole="button"
+              >
+                <Ionicons name="arrow-back" size={16} color={C.primary} />
+                <Text style={styles.backRowText}>{T("back")}</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -872,15 +938,15 @@ export default function AuthScreen() {
           <Text style={styles.heroSubtitle}>{appTagline}</Text>
           <View style={styles.secureBadge}>
             <Ionicons name="shield-checkmark" size={12} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.secureBadgeText}>Secure Login</Text>
+            <Text style={styles.secureBadgeText}>{T("secureLogin")}</Text>
           </View>
         </View>
 
         <ScrollView style={styles.cardScroll} contentContainerStyle={styles.cardContent} keyboardShouldPersistTaps="handled">
           {step === "continue" && (
             <>
-              <Text style={styles.sectionTitle} accessibilityRole="header">Welcome</Text>
-              <Text style={styles.sectionSubtitle}>Enter your phone, email, or username to continue</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">{T("welcomeTitle")}</Text>
+              <Text style={styles.sectionSubtitle}>{T("welcomeSubtitle")}</Text>
 
               {showBiometric && (
                 <>
@@ -908,7 +974,7 @@ export default function AuthScreen() {
 
                   <View style={styles.orRow}>
                     <View style={styles.orLine} />
-                    <Text style={styles.orTxt}>or sign in with identifier</Text>
+                    <Text style={styles.orTxt}>{T("orSignInWith")}</Text>
                     <View style={styles.orLine} />
                   </View>
                 </>
@@ -927,7 +993,7 @@ export default function AuthScreen() {
 
               {error ? <AlertBox type="error" message={error} /> : null}
 
-              <AuthButton label="Continue" onPress={checkIdentifier} loading={loading} icon="arrow-forward" />
+              <AuthButton label={T("continueBtn")} onPress={checkIdentifier} loading={loading} icon="arrow-forward" />
 
               {(socialMethods.length > 0 || showMagicLink) && (
                 <>
@@ -963,7 +1029,7 @@ export default function AuthScreen() {
                           />
                           <SocialButton
                             provider={T("magicLinkLogin")}
-                            label="Send Magic Link"
+                            label={T("sendMagicLink")}
                             icon="link"
                             color={C.info}
                             onPress={handleMagicLink}
@@ -988,7 +1054,7 @@ export default function AuthScreen() {
                 accessibilityRole="link"
               >
                 <Text style={styles.linkBtnText}>
-                  New user? <Text style={{ fontFamily: "Inter_700Bold" }}>Create account</Text>
+                  {T("noAccount")} <Text style={{ fontFamily: "Inter_700Bold" }}>{T("createAccount")}</Text>
                 </Text>
               </Pressable>
             </>
@@ -1016,7 +1082,7 @@ export default function AuthScreen() {
               </Pressable>
 
               {/* Method tabs — clearly separated with active indicator */}
-              <Text style={styles.methodLabel}>Choose sign-in method</Text>
+              <Text style={styles.methodLabel}>{T("chooseSignInMethod")}</Text>
               <View style={styles.tabs} accessibilityRole="tablist">
                 {enabledMethods.map(m => (
                   <Pressable
@@ -1094,13 +1160,13 @@ export default function AuthScreen() {
                     {canUsePassword && (
                       <Pressable onPress={handleSmartFallbackPassword} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="lock-closed-outline" size={14} color={C.primary} />
-                        <Text style={styles.fallbackText}>Use password instead</Text>
+                        <Text style={styles.fallbackText}>{T("usePasswordInstead")}</Text>
                       </Pressable>
                     )}
                     {canUseMagic && (
                       <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="link-outline" size={14} color={C.primary} />
-                        <Text style={styles.fallbackText}>Send magic link</Text>
+                        <Text style={styles.fallbackText}>{T("sendMagicLink")}</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1163,13 +1229,13 @@ export default function AuthScreen() {
                     {canUsePassword && (
                       <Pressable onPress={handleSmartFallbackPassword} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="lock-closed-outline" size={14} color={C.primary} />
-                        <Text style={styles.fallbackText}>Use password instead</Text>
+                        <Text style={styles.fallbackText}>{T("usePasswordInstead")}</Text>
                       </Pressable>
                     )}
                     {canUseMagic && (
                       <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
                         <Ionicons name="link-outline" size={14} color={C.primary} />
-                        <Text style={styles.fallbackText}>Send magic link</Text>
+                        <Text style={styles.fallbackText}>{T("sendMagicLink")}</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1310,7 +1376,7 @@ export default function AuthScreen() {
                   accessibilityRole="link"
                 >
                   <Text style={styles.linkBtnText}>
-                    Don't have an account? <Text style={{ fontFamily: "Inter_700Bold" }}>Register</Text>
+                    {T("noAccount")} <Text style={{ fontFamily: "Inter_700Bold" }}>{T("register")}</Text>
                   </Text>
                 </Pressable>
               </>

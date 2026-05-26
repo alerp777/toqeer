@@ -240,6 +240,23 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     );
   }
 
+  const translatedStrings = {
+    phoneLabel: tDual("phoneNumber", language),
+    continueBtn: tDual("continueBtn", language),
+    back: tDual("back", language),
+    newHere: tDual("noAccount", language),
+    createAccount: tDual("createAccount", language),
+    sendMagicLink: tDual("sendMagicLink", language),
+    twoFactorLabel: tDual("enterTotpCode", language),
+    subtitleTotp: tDual("subtitleTotp", language),
+    subtitleLoginOtp: tDual("subtitleLoginOtp", language),
+    usePasswordInstead: tDual("usePasswordInstead", language),
+    useOtpInstead: tDual("useOtpInstead", language),
+    useBackupCode: tDual("useBackupCode", language),
+    useAuthAppInstead: tDual("useAuthAppInstead", language),
+    trustDevice: tDual("trustDevice", language),
+  };
+
   return (
     <ThemeProvider role="rider" theme={riderTheme}>
       <SharedLoginScreen
@@ -259,6 +276,8 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
           return tabs.length > 0 ? tabs : ["otp"];
         })()}
         captureDevOtp
+        strings={translatedStrings}
+        translateError={(raw) => raw}
         onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
         onGoogle={authConfig.googleEnabled ? () => { void handleGoogle(); } : undefined}
         onFacebook={authConfig.facebookEnabled ? () => { void handleFacebook(); } : undefined}

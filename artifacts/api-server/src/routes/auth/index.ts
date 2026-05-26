@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { authLimiter } from "../../middleware/rate-limit.js";
+import { authLimiter, loginLimiter } from "../../middleware/rate-limit.js";
 
 /* Ensure shared TOTP cleanup interval runs and shared helpers are registered */
 import "./auth-common.js";
@@ -10,6 +10,7 @@ import identifierRouter from "./identifier.js";
 import magicLinkRouter from "./magic-link.js";
 import mergeRouter from "./merge.js";
 import miscRouter from "./misc.js";
+import { handleLoginVerifyOtp } from "./otp-login-verify.js";
 import passwordRouter from "./password.js";
 import phoneAccountRouter from "./phone-account.js";
 import phoneRouter from "./phone.routes.js";
@@ -38,5 +39,8 @@ router.use(mergeRouter);
 router.use(miscRouter);
 router.use(sessionsRouter);
 router.use(phoneAccountRouter);
+
+/* Second-step OTP verification for the password-then-OTP login flow */
+router.post("/login/verify-otp", loginLimiter, handleLoginVerifyOtp);
 
 export default router;

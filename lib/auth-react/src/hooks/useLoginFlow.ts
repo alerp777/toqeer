@@ -3,6 +3,7 @@ import type { AuthUser } from "../AuthProvider";
 import { AuthContext } from "../AuthProvider";
 
 export type LoginMethod = "otp" | "password" | "social" | "magic-link" | "totp";
+export type TwoFactorType = "totp" | "otp";
 
 export interface IdentifierCheckResult {
   method: LoginMethod;
@@ -47,6 +48,8 @@ export function useLoginFlow({
   const [method, setMethod] = useState<LoginMethod | null>(null);
   const [identifier, setIdentifier] = useState<string>("");
   const [twoFactorPending, setTwoFactorPending] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
+  const [twoFactorType, setTwoFactorType] = useState<TwoFactorType | null>(null);
 
   function clearError() {
     setError(null);
@@ -131,7 +134,7 @@ export function useLoginFlow({
         };
         setMethod(result.method);
 
-        /* ── Trigger OTP delivery ──────────────────────────────────────────
+        /* ── Trigger phone OTP delivery ────────────────────────────────────
            check-identifier only tells us WHAT to do — it does NOT send the
            OTP.  We must call /auth/send-otp ourselves when the action is a
            phone-OTP flow.  Without this the user would see an OTP input but
@@ -155,6 +158,26 @@ export function useLoginFlow({
               setError(applyTranslation(msg));
               throw sendErr;
             }
+          }
+        }
+
+        /* ── Trigger email OTP delivery ────────────────────────────────────
+           When the server action is send_email_otp, auto-send the email OTP
+           so the user receives it immediately without an extra button press.
+        ─────────────────────────────────────────────────────────────────── */
+        if (action === "send_email_otp") {
+          const sendBody: Record<string, unknown> = { email: id };
+          if (role && role !== "admin") sendBody.role = role;
+          if (metadata && Object.keys(metadata).length > 0) {
+            Object.assign(sendBody, metadata);
+          }
+          try {
+            const sendRes = await apiFetch<{ devOtp?: string }>("/api/auth/send-email-otp", sendBody);
+            if (sendRes.data?.devOtp && onDevOtp) onDevOtp(sendRes.data.devOtp);
+          } catch (sendErr) {
+            const msg = sendErr instanceof Error ? sendErr.message : "Failed to send email OTP";
+            setError(applyTranslation(msg));
+            throw sendErr;
           }
         }
 
@@ -189,9 +212,13 @@ export function useLoginFlow({
           accessToken: string;
           refreshToken?: string;
           twoFactorRequired?: boolean;
+          twoFactorType?: string;
+          tempToken?: string;
         }>("/api/auth/verify-otp", body);
         const data = res.data!;
         if (data.twoFactorRequired) {
+          setTempToken(data.tempToken ?? null);
+          setTwoFactorType((data.twoFactorType as TwoFactorType) ?? "totp");
           setTwoFactorPending(true);
           ctx?.setTwoFactorPending(true);
           return;
@@ -212,20 +239,28 @@ export function useLoginFlow({
 
   /**
    * Step 2b — Verify password login.
+   * Includes role in the request body so the server can validate role membership.
    */
   const verifyPassword = useCallback(
     async (password: string): Promise<void> => {
       setLoading(true);
       setError(null);
       try {
+        const body: Record<string, unknown> = { identifier, password };
+        if (role && role !== "admin") body.role = role;
+
         const res = await apiFetch<{
           user: AuthUser;
           accessToken: string;
           refreshToken?: string;
           twoFactorRequired?: boolean;
-        }>("/api/auth/login", { identifier, password });
+          twoFactorType?: string;
+          tempToken?: string;
+        }>("/api/auth/login", body);
         const data = res.data!;
         if (data.twoFactorRequired) {
+          setTempToken(data.tempToken ?? null);
+          setTwoFactorType((data.twoFactorType as TwoFactorType) ?? "totp");
           setTwoFactorPending(true);
           ctx?.setTwoFactorPending(true);
           return;
@@ -241,11 +276,12 @@ export function useLoginFlow({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [identifier, baseURL, onSuccess]
+    [identifier, baseURL, role, onSuccess]
   );
 
   /**
-   * Step 3 — Verify TOTP / 2FA code after initial credential check succeeds.
+   * Step 3a — Verify TOTP / 2FA code after initial credential check succeeds.
+   * Uses tempToken from the 2FA challenge response, not the identifier.
    */
   const twoFactorVerify = useCallback(
     async (code: string): Promise<void> => {
@@ -254,9 +290,11 @@ export function useLoginFlow({
       try {
         const res = await apiFetch<{ user: AuthUser; accessToken: string; refreshToken?: string }>(
           "/api/auth/2fa/verify",
-          { identifier, code }
+          { tempToken, code }
         );
         const data = res.data!;
+        setTempToken(null);
+        setTwoFactorType(null);
         setTwoFactorPending(false);
         ctx?.setTwoFactorPending(false);
         ctx?.login(data.user, data.accessToken);
@@ -270,7 +308,49 @@ export function useLoginFlow({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [identifier, baseURL, onSuccess]
+    [tempToken, baseURL, onSuccess]
+  );
+
+  /**
+   * Step 3b — Verify the second-step login OTP (password-then-OTP flow).
+   * Uses tempToken from the requiresOtp challenge response.
+   * Endpoint: POST /api/auth/login/verify-otp
+   */
+  const verifyLoginOtp = useCallback(
+    async (otp: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiFetch<{
+          user: AuthUser;
+          accessToken: string;
+          refreshToken?: string;
+          twoFactorRequired?: boolean;
+          twoFactorType?: string;
+          tempToken?: string;
+        }>("/api/auth/login/verify-otp", { tempToken, otp });
+        const data = res.data!;
+        if (data.twoFactorRequired) {
+          setTempToken(data.tempToken ?? null);
+          setTwoFactorType((data.twoFactorType as TwoFactorType) ?? "totp");
+          return;
+        }
+        setTempToken(null);
+        setTwoFactorType(null);
+        setTwoFactorPending(false);
+        ctx?.setTwoFactorPending(false);
+        ctx?.login(data.user, data.accessToken);
+        onSuccess?.(data.user, data.accessToken, data.refreshToken);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "OTP verification failed";
+        setError(applyTranslation(msg));
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tempToken, baseURL, onSuccess]
   );
 
   return {
@@ -278,11 +358,14 @@ export function useLoginFlow({
     verifyOtp,
     verifyPassword,
     twoFactorVerify,
+    verifyLoginOtp,
     loading,
     error,
     setError,
     method,
     twoFactorPending,
+    twoFactorType,
+    tempToken,
     clearError,
   };
 }
