@@ -1,4 +1,4 @@
-import { tDual, type TranslationKey } from "@workspace/i18n";
+import { tDual, type Language, type TranslationKey } from "@workspace/i18n";
 import {
   Clock,
   Facebook,
@@ -35,11 +35,11 @@ interface PlatformConfig {
 
 interface ProfileFooterProps {
   config: PlatformConfig;
-  language: string;
+  language: Language;
 }
 
 export function ProfileFooter({ config, language }: ProfileFooterProps) {
-  const T = (key: TranslationKey) => tDual(key, language as never);
+  const T = (key: TranslationKey) => tDual(key, language);
 
   return (
     <div className="space-y-3 rounded-3xl border border-gray-100 bg-white p-5">

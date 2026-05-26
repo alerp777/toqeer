@@ -77,16 +77,27 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
           return { success: result.success, error: result.error };
         }}
         onSubmit={async (data) => {
-          const [vehiclePhotoUrl, licensePhotoUrl, cnicFrontUrl, cnicBackUrl] = await Promise.all([
-            fileToDataUrl(data.vehiclePhoto),
-            fileToDataUrl(data.licensePhoto),
-            fileToDataUrl(data.cnicFrontPhoto),
-            fileToDataUrl(data.cnicBackPhoto),
-          ]);
+          /* Serialize photo conversions one at a time to avoid OOM on budget devices
+             with 4 concurrent FileReader operations. Validate each result before
+             submitting so the rider gets a specific error rather than a broken upload. */
+          const vehiclePhotoUrl = await fileToDataUrl(data.vehiclePhoto);
+          const licensePhotoUrl = await fileToDataUrl(data.licensePhoto);
+          const cnicFrontUrl = await fileToDataUrl(data.cnicFrontPhoto);
+          const cnicBackUrl = await fileToDataUrl(data.cnicBackPhoto);
+
+          if (!vehiclePhotoUrl || !licensePhotoUrl || !cnicFrontUrl || !cnicBackUrl) {
+            return {
+              success: false,
+              error: "Photo upload failed, please retake the photo and try again",
+            };
+          }
+
+          /* Guard OTP / password fields — these steps may be absent if phone or
+             OTP-password steps are removed from the wizard configuration. */
           const result = await register({
             phone: data.phone as string,
-            otp: data.otp as string,
-            password: data.password as string,
+            otp: (data.otp ?? "") as string,
+            password: (data.password ?? "") as string,
             name: String(data.fullName ?? "").trim(),
             username: data.username ? String(data.username).trim() : undefined,
             cnic: data.cnic ? String(data.cnic).trim() : undefined,

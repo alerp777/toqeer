@@ -141,9 +141,9 @@ export default function Earnings() {
     onSuccess: async () => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["rider-earnings"] }),
-        refreshUser().catch((err) => {
-          console.warn("[artifacts/rider-app/src/pages/Earnings.tsx]", err);
-        }), // eslint-disable-line no-console
+        refreshUser().catch(() => {
+          /* non-fatal — earnings display will still update via React Query */
+        }),
       ]);
       setGoalError(null);
       setShowGoalModal(false);
@@ -160,11 +160,14 @@ export default function Earnings() {
   };
 
   const handleSaveGoal = () => {
-    const parsed = parseFloat(goalInput);
+    /* Strip locale-specific thousands separators (commas, periods used as group
+       separators) before parsing so "1,500" and "1.500" parse correctly. */
+    const normalized = goalInput.replace(/,/g, "").trim();
+    const parsed = parseFloat(normalized);
     if (goalInput.trim() === "") {
       goalMutation.mutate(null);
     } else if (isNaN(parsed) || parsed <= 0) {
-      setGoalError("Please enter a valid goal amount greater than zero.");
+      setGoalError(T("enterValidAmount"));
     } else {
       goalMutation.mutate(parsed);
     }

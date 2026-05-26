@@ -84,7 +84,7 @@ export function ActiveModals({
                 <X size={18} className="text-gray-400" />
               </button>
             </div>
-            <div className="mb-3 max-h-44 min-h-[80px] space-y-2 overflow-y-auto rounded-2xl bg-gray-50 p-3">
+            <div className="mb-3 max-h-64 min-h-[80px] space-y-2 overflow-y-auto rounded-2xl bg-gray-50 p-3">
               {adminMessages.map((m) => (
                 <div
                   key={`${m.ts}-${m.text}`}

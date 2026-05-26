@@ -721,7 +721,7 @@ export default function Home() {
               "[Home] enqueueAction accept_order failed"
             );
           });
-        showToast(e.message || "Could not accept order. Please try again.", "error");
+        showToast(e.message || T("couldNotAcceptOrder"), "error");
       }
     },
     onSettled: () => {
@@ -738,7 +738,7 @@ export default function Home() {
     },
     onError: (e: Error) => {
       void qc.invalidateQueries({ queryKey: ["rider-requests"] });
-      showToast(e.message || "Could not reject order", "error");
+      showToast(e.message || T("couldNotRejectOrder"), "error");
     },
   });
 
@@ -788,7 +788,7 @@ export default function Home() {
               "[Home] enqueueAction accept_ride failed"
             );
           });
-        showToast(e.message || "Could not accept ride. Please try again.", "error");
+        showToast(e.message || T("couldNotAcceptRide"), "error");
       }
     },
     onSettled: () => {

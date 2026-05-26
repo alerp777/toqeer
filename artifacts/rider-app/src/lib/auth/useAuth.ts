@@ -56,7 +56,14 @@ export function useAuthOps() {
     return wrap(async () => {
       try {
         const res = (await api.sendOtp(phone)) as Record<string, unknown>;
-        return { success: true, data: res as never };
+        return {
+          success: true,
+          data: res as {
+            otp?: string;
+            channel?: string;
+            fallbackChannels?: string[];
+          },
+        };
       } catch (err: unknown) {
         await captureException(err);
         return { success: false, error: networkError(err) };
@@ -113,7 +120,7 @@ export function useAuthOps() {
         const res = (await api.registerRider(
           body as Parameters<typeof api.registerRider>[0]
         )) as Record<string, unknown>;
-        return { success: true, data: res as never };
+        return { success: true, data: res as { token?: string; user?: unknown } };
       } catch (err: unknown) {
         await captureException(err);
         return { success: false, error: networkError(err) };
@@ -124,14 +131,16 @@ export function useAuthOps() {
   async function biometricLogin(): Promise<AuthResult<TokenPair>> {
     return wrap(async () => {
       try {
-        const { getBiometricToken } = await import("../biometric").catch(() => ({}) as never);
+        const { getBiometricToken } = await import("../biometric").catch(
+          () => ({}) as { getBiometricToken?: () => Promise<string | null> }
+        );
         if (!getBiometricToken) throw new Error("Biometric not available");
         const storedRefreshToken = await getBiometricToken();
         /* Route through api.refreshToken() — mutex-guarded, single refresh path,
            prevents race with proactive refresh in useTokenRefresh hook.
            api.refreshToken() returns a status string ("refreshed"|"transient"|"auth_failed"),
            NOT a token payload — tokens are written directly to storage on success. */
-        api.storeTokens(api.getToken(), storedRefreshToken);
+        api.storeTokens(api.getToken(), storedRefreshToken ?? undefined);
         const status = await api.refreshToken();
         if (status !== "refreshed")
           throw new Error(`Biometric login failed — refresh status: ${String(status)}`);

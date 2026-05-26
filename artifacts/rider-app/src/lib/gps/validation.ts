@@ -32,12 +32,22 @@ const SPEED_VIOLATION_GRACE = 1;
 const MAX_FUTURE_SECONDS = 5;
 const MAX_AUDIT_ENTRIES = 100;
 
+let _maxFutureSeconds = MAX_FUTURE_SECONDS;
+
 /**
  * Override the GPS impossible-speed threshold from platform config.
  * Falls back to 200 km/h when platform config has not yet loaded.
  */
 export function setMaxSpeedKmh(value: number): void {
   if (Number.isFinite(value) && value > 0) _maxSpeedKmh = value;
+}
+
+/**
+ * Override the maximum allowed clock-ahead offset for GPS timestamps.
+ * Defaults to 5 seconds; increase if server/device clock drift is observed.
+ */
+export function setMaxFutureSeconds(value: number): void {
+  if (Number.isFinite(value) && value >= 0) _maxFutureSeconds = value;
 }
 
 const _auditLog: AuditEntry[] = [];
@@ -96,7 +106,7 @@ export function validateGpsPing(prev: GpsPing | null, next: GpsPing): GpsValidat
     return { valid: false, reason, suspicious: false };
   }
 
-  if (nextTime > Date.now() + MAX_FUTURE_SECONDS * 1_000) {
+  if (nextTime > Date.now() + _maxFutureSeconds * 1_000) {
     const reason = `future timestamp (${Math.round((nextTime - Date.now()) / 1_000)}s ahead)`;
     recordRejection(reason, next.latitude, next.longitude);
     return { valid: false, reason, suspicious: false };
@@ -111,7 +121,10 @@ export function validateGpsPing(prev: GpsPing | null, next: GpsPing): GpsValidat
   if (prev) {
     const prevTime = new Date(prev.timestamp).getTime();
     const deltaMs = nextTime - prevTime;
-    if (deltaMs > 0) {
+    /* Skip speed check entirely when the interval is < 100 ms — the tiny time
+       window produces astronomically high computed speeds from any real GPS jitter
+       and would trigger false spoof rejections. */
+    if (deltaMs > 0 && deltaMs >= 100) {
       const distM = haversineDistanceM(
         prev.latitude,
         prev.longitude,

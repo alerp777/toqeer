@@ -154,8 +154,33 @@ const STATUS_STYLE: Record<string, string> = {
 
 function AutoPanMap({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
+  const userInteractingRef = useRef(false);
+  const interactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    map.setView([lat, lng], map.getZoom());
+    const onDragStart = () => {
+      userInteractingRef.current = true;
+      if (interactTimerRef.current) clearTimeout(interactTimerRef.current);
+    };
+    const onDragEnd = () => {
+      /* Allow 8 seconds of manual inspection before re-enabling auto-pan */
+      interactTimerRef.current = setTimeout(() => {
+        userInteractingRef.current = false;
+      }, 8_000);
+    };
+    map.on("dragstart", onDragStart);
+    map.on("dragend", onDragEnd);
+    return () => {
+      map.off("dragstart", onDragStart);
+      map.off("dragend", onDragEnd);
+      if (interactTimerRef.current) clearTimeout(interactTimerRef.current);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (!userInteractingRef.current) {
+      map.setView([lat, lng], map.getZoom());
+    }
   }, [lat, lng]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
@@ -344,9 +369,11 @@ export default function VanDriver() {
           setRiderPos([pos.coords.latitude, pos.coords.longitude]);
           sendLocation(schedId, schedDate, pos.coords.latitude, pos.coords.longitude).catch(
             (err) => {
-              console.warn("[artifacts/rider-app/src/pages/VanDriver.tsx]", err);
+              setGpsError(
+                err instanceof Error ? err.message : "Failed to send location to server"
+              );
             }
-          ); // eslint-disable-line no-console
+          );
         },
         (err) => {
           gpsInflightRef.current = false;
@@ -404,11 +431,11 @@ export default function VanDriver() {
   const isTripInProgress = selectedSchedule?.tripStatus === "in_progress" || broadcasting;
 
   /* Gate: vehicle-type must be van or bus.
-     Only block when vehicleType is explicitly set to a non-van/bus value.
-     If the field is absent (profile not yet populated) we allow through so new
-     approvals are never locked out while their profile is being filled in. */
+     Deny access when vehicleType is absent (not yet populated) or explicitly
+     set to a non-van/bus value. Riders must have a confirmed van/bus vehicle
+     type before accessing this module. */
   const vehicleType = _user?.vehicleType;
-  const isVanOrBus = !vehicleType || vehicleType === "van" || vehicleType === "bus";
+  const isVanOrBus = vehicleType === "van" || vehicleType === "bus";
   if (!isVanOrBus)
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">

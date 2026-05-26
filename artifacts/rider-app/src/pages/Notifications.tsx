@@ -181,13 +181,14 @@ function typeInfo(type: string): TypeInfo {
   };
 }
 
-function navTarget(type: string, status?: string): string | null {
+function navTarget(type: string, status?: string): string {
   /* Completed order/ride notifications → history; active → active */
   const isCompleted = status === "delivered" || status === "completed" || status === "cancelled";
   if (type === "order") return isCompleted ? "/history" : "/active";
   if (type === "ride") return isCompleted ? "/history" : "/active";
   if (type === "wallet") return "/wallet";
-  return null;
+  if (type === "system" || type === "alert") return "/notifications";
+  return "/notifications";
 }
 
 const STAT_CONFIGS = [
@@ -237,9 +238,9 @@ export default function Notifications() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["rider-notifications"] });
       void qc.invalidateQueries({ queryKey: ["rider-notifs-count"] });
-      showToast("All notifications marked as read");
+      showToast(T("allNotificationsRead"));
     },
-    onError: (err: Error) => showToast(err.message || "Failed to mark all as read", true),
+    onError: (err: Error) => showToast(err.message || T("failedMarkAllRead"), true),
   });
 
   const markOneMut = useMutation({

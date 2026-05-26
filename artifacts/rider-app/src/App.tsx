@@ -38,7 +38,7 @@ import {
   type QueuedAction,
 } from "./lib/offline/queueManager";
 import { consumePendingNotificationTap, registerPush } from "./lib/push";
-import { RiderAuthProvider, useAuth } from "./lib/rider-auth";
+import { RiderAuthProvider, useAuth, type AuthUser } from "./lib/rider-auth";
 import { initSentry } from "./lib/sentry";
 import { SocketProvider } from "./lib/socket";
 import { getRiderModules, usePlatformConfig } from "./lib/useConfig";
@@ -377,7 +377,7 @@ function MagicLinkPage() {
           setErrorMsg(`Your account application was rejected. ${reason}`);
           return;
         }
-        login(accessToken, profile as never, refreshToken);
+        login(accessToken, profile as unknown as AuthUser, refreshToken);
         navigate("/", { replace: true });
       } catch (e: unknown) {
         setStatus("error");

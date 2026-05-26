@@ -575,7 +575,7 @@ export default function Wallet() {
      the live balance, but using the first page avoids tiny flicker as later
      pages stream in). Aggregates below (today/week/total) sum the loaded
      pages — same behaviour as before, but now extends as the rider scrolls. */
-  const pages = data?.pages ?? []; // eslint-disable-line react-hooks/exhaustive-deps
+  const pages = data?.pages ?? [];
   const transactions: WalletTx[] = useMemo(() => {
     const out: WalletTx[] = [];
     for (const p of pages) {

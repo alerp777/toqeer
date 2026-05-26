@@ -1830,4 +1830,7 @@ export const en = {
   otpCode: "OTP Code",
   successIcon: "🎉",
   vendorReviewMsg: "Your vendor application is under review. We'll notify you once approved.",
+  biometricSaveFailed: "Could not save biometric — you can enable it later in Profile settings",
+  couldNotSaveBiometric: "Could not save biometric — you can enable it later in Profile settings",
+  twoFactorRequired: "Two-factor authentication is required. Please log in with your password to complete sign-in.",
 };

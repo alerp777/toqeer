@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
-import { normalizeRoles, useAuth as useRiderAuth } from "../rider-auth";
+import { normalizeRoles, useAuth as useRiderAuth, type AuthUser } from "../rider-auth";
 import { useLanguage } from "../useLanguage";
 import { useAppStatus } from "./useAppStatus";
 import { facebookLogin, googleOneTap } from "./social-oauth";
@@ -36,7 +36,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const capturedRefreshRef = useRef<string | undefined>(undefined);
 
   const finishLogin = (token: string, profile: unknown, refreshToken: string) => {
-    login(token, profile as never, refreshToken || undefined);
+    login(token, profile as AuthUser, refreshToken || undefined);
     onSuccess?.(token, profile);
     navigate("/");
   };
@@ -133,7 +133,18 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     const clientId = authConfig.googleClientId;
     if (!clientId) return;
     const idToken = await googleOneTap(clientId);
-    const res = (await api.socialGoogle({ idToken })) as SocialResult;
+    const res = (await api.socialGoogle({ idToken })) as SocialResult & {
+      requiresTwoFactor?: boolean;
+      twoFactorToken?: string;
+    };
+    /* Social auth may return a 2FA challenge if the account has TOTP enabled.
+       The shared login screen handles 2FA internally only for its own login
+       methods; for social-auth 2FA, direct the rider to use password login. */
+    if (res.requiresTwoFactor) {
+      setRoleError(tDual("twoFactorRequired", language));
+      setTimeout(() => setRoleError(null), 5000);
+      return;
+    }
     await handleSuccess(res.user, res.token, res.refreshToken);
   };
 
@@ -141,7 +152,15 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     const appId = authConfig.facebookAppId;
     if (!appId) return;
     const accessToken = await facebookLogin(appId);
-    const res = (await api.socialFacebook({ accessToken })) as SocialResult;
+    const res = (await api.socialFacebook({ accessToken })) as SocialResult & {
+      requiresTwoFactor?: boolean;
+      twoFactorToken?: string;
+    };
+    if (res.requiresTwoFactor) {
+      setRoleError(tDual("twoFactorRequired", language));
+      setTimeout(() => setRoleError(null), 5000);
+      return;
+    }
     await handleSuccess(res.user, res.token, res.refreshToken);
   };
 
@@ -151,7 +170,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       const { storeBiometricToken, setBiometricEnabled } = await import("../biometric");
       await storeBiometricToken(enrollData.refreshToken);
       await setBiometricEnabled(true);
-    } catch { /* non-fatal */ }
+    } catch {
+      /* Show a user-visible toast so they know biometric was not saved and
+         can retry from Profile settings — but proceed with login either way. */
+      setRoleError(tDual("couldNotSaveBiometric", language));
+      setTimeout(() => setRoleError(null), 3500);
+    }
     const { token, refreshToken, profile } = enrollData;
     setEnrollData(null);
     finishLogin(token, profile, refreshToken);

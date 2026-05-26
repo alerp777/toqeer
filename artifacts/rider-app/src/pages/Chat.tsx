@@ -208,7 +208,7 @@ export default function Chat() {
         `/communication/conversations/${selectedConv!.id}/messages?limit=30&page=${pageParam as number}`
       ),
     getNextPageParam: (lastPage, allPages) =>
-      Array.isArray(lastPage) && lastPage.length === 30 ? allPages.length + 1 : undefined,
+      Array.isArray(lastPage) && lastPage.length >= 30 ? allPages.length + 1 : undefined,
     initialPageParam: 1,
     enabled: !!selectedConv?.id,
   });
@@ -1013,7 +1013,13 @@ export default function Chat() {
                   <MoreVertical size={18} className="text-gray-600" />
                 </button>
                 {showConvMenu && (
-                  <div className="absolute top-12 right-0 z-50 min-w-[160px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                  <>
+                    {/* Click-outside overlay — closes the menu when the user taps anywhere else */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowConvMenu(false)}
+                    />
+                    <div className="absolute top-12 right-0 z-50 min-w-[160px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
                     <button
                       onClick={() => {
                         setShowConvMenu(false);
@@ -1030,6 +1036,7 @@ export default function Chat() {
                       <UserX size={15} /> Block User
                     </button>
                   </div>
+                  </>
                 )}
               </div>
             </div>

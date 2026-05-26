@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { io, type Socket } from "socket.io-client";
-import { api, registerTokenRefreshCallback } from "./api";
+import { api, registerTokenRefreshCallback, tokenStoreReady } from "./api";
 
 import { createLogger } from "@/lib/logger";
 import { getRiderSocketOrigin } from "./envValidation";
@@ -83,106 +83,129 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const token = api.getToken();
-    if (!token || !user?.id) return;
+    /* Abort flag — prevents socket creation if the effect is cleaned up
+       before tokenStoreReady resolves (e.g. fast logout at startup). */
+    let cancelled = false;
+    /* Teardown function populated by the async setup; called synchronously
+       by the effect cleanup so React always gets a prompt disconnect. */
+    let teardown: (() => void) | undefined;
 
-    const socketOrigin = getRiderSocketOrigin() ?? window.location.origin;
+    void (async () => {
+      /* Wait until persisted tokens are loaded from Preferences storage so
+         we never connect with a stale (or missing) token read at mount time. */
+      await tokenStoreReady;
+      if (cancelled) return;
 
-    const s = io(socketOrigin, {
-      path: "/api/socket.io",
-      auth: { token },
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 20000,
-      /* Adaptive retry count: fewer attempts when offline to save battery.
-         Full count (5) when online, minimal (2) when offline so we don't churn
-         for 5+ minutes against a down network. A new socket lifecycle starts
-         when the device comes back online (window online listener in App.tsx). */
-      reconnectionAttempts: typeof navigator !== "undefined" && !navigator.onLine ? 2 : 5,
-      /* withCredentials lets the browser attach the HttpOnly refresh cookie
-         to the polling-transport handshake. The websocket transport does
-         not require it but enabling here is harmless and keeps both
-         transports symmetric for any cookie-aware server middleware. */
-      withCredentials: true,
-    });
-    socketRef.current = s;
-    setSocket(s);
+      const token = api.getToken();
+      if (!token || !user?.id) return;
 
-    s.on("connect", () => {
-      log.info({ socketId: s.id }, "Socket connected — draining offline action queue");
-      setConnected(true);
-      syncQueue().catch((err) => log.warn({ err }, "syncQueue failed after socket connect"));
-      batchDrainGpsQueue();
-    });
-    s.on("disconnect", (reason) => {
-      log.warn({ reason }, "Socket disconnected");
-      setConnected(false);
-      /* "io server disconnect" means the server explicitly kicked this client
-         (e.g. auth revoked / token invalidated). Fully disconnect so the
-         socket does not attempt automatic reconnection with stale credentials.
-         The token refresh + new socket lifecycle will reconnect when ready. */
-      if (reason === "io server disconnect") {
-        s.disconnect();
-      }
-    });
-    s.on("connect_error", (err) => {
-      log.warn({ message: err.message }, "Socket connection error");
-      setConnected(false);
-    });
-    s.on("error", (err: Error) => {
-      log.warn({ message: err?.message }, "Socket transport error");
-      setConnected(false);
-    });
+      const socketOrigin = getRiderSocketOrigin() ?? window.location.origin;
 
-    /* S1 / T4: On token refresh, reconnect the socket so the new auth token
-       is sent on the next handshake. socket.io's typings model `auth` as
-       `string | object`, so we narrow once via a typed local rather than
-       re-casting at every read site. The cast is kept inside one helper so a
-       future socket.io upgrade only needs to delete this block. */
-    type AuthBag = { token?: string };
-    const readSocketAuth = (): AuthBag => {
-      const a = (s as { auth?: unknown }).auth;
-      return (a && typeof a === "object" ? (a as AuthBag) : {}) as AuthBag;
-    };
-    const writeSocketAuth = (next: AuthBag) => {
-      (s as { auth?: unknown }).auth = next;
-    };
-    /* Immediate reconnect when a token refresh completes — eliminates the gap
-       where real-time messages are missed between token refresh and the next
-       polling tick. Registered on every socket lifecycle so the callback always
-       references the current socket instance. */
-    const handleTokenRefresh = () => {
-      const freshToken = api.getToken();
-      if (!freshToken) return;
-      writeSocketAuth({ ...readSocketAuth(), token: freshToken });
-      s.disconnect();
-      s.connect();
-    };
-    const unregisterRefreshCallback = registerTokenRefreshCallback(handleTokenRefresh);
+      const s = io(socketOrigin, {
+        path: "/api/socket.io",
+        auth: { token },
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 20000,
+        /* Adaptive retry count: fewer attempts when offline to save battery.
+           Full count (5) when online, minimal (2) when offline so we don't churn
+           for 5+ minutes against a down network. A new socket lifecycle starts
+           when the device comes back online (window online listener in App.tsx). */
+        reconnectionAttempts: typeof navigator !== "undefined" && !navigator.onLine ? 2 : 5,
+        /* withCredentials lets the browser attach the HttpOnly refresh cookie
+           to the polling-transport handshake. The websocket transport does
+           not require it but enabling here is harmless and keeps both
+           transports symmetric for any cookie-aware server middleware. */
+        withCredentials: true,
+      });
+      socketRef.current = s;
+      setSocket(s);
 
-    /* Polling fallback: detect token changes that don't come through the
-       callback (e.g. token set by other code paths). Interval reduced to 5 s
-       so the reconnect happens within 5 seconds at most. */
-    const tokenRefreshInterval = setInterval(() => {
-      const freshToken = api.getToken();
-      const current = readSocketAuth().token;
-      if (freshToken && freshToken !== current) {
+      s.on("connect", () => {
+        log.info({ socketId: s.id }, "Socket connected — draining offline action queue");
+        setConnected(true);
+        syncQueue().catch((err) => log.warn({ err }, "syncQueue failed after socket connect"));
+        batchDrainGpsQueue();
+      });
+      s.on("disconnect", (reason) => {
+        log.warn({ reason }, "Socket disconnected");
+        setConnected(false);
+        /* "io server disconnect" means the server explicitly kicked this client
+           (e.g. auth revoked / token invalidated). Fully disconnect so the
+           socket does not attempt automatic reconnection with stale credentials.
+           The token refresh + new socket lifecycle will reconnect when ready. */
+        if (reason === "io server disconnect") {
+          s.disconnect();
+        }
+      });
+      s.on("connect_error", (err) => {
+        log.warn({ message: err.message }, "Socket connection error");
+        setConnected(false);
+      });
+      s.on("error", (err: Error) => {
+        log.warn({ message: err?.message }, "Socket transport error");
+        setConnected(false);
+      });
+
+      /* S1 / T4: On token refresh, reconnect the socket so the new auth token
+         is sent on the next handshake. socket.io's typings model `auth` as
+         `string | object`, so we narrow once via a typed local rather than
+         re-casting at every read site. The cast is kept inside one helper so a
+         future socket.io upgrade only needs to delete this block. */
+      type AuthBag = { token?: string };
+      const readSocketAuth = (): AuthBag => {
+        const a = (s as { auth?: unknown }).auth;
+        return (a && typeof a === "object" ? (a as AuthBag) : {}) as AuthBag;
+      };
+      const writeSocketAuth = (next: AuthBag) => {
+        (s as { auth?: unknown }).auth = next;
+      };
+      /* Immediate reconnect when a token refresh completes — eliminates the gap
+         where real-time messages are missed between token refresh and the next
+         polling tick. Registered on every socket lifecycle so the callback always
+         references the current socket instance. */
+      const handleTokenRefresh = () => {
+        const freshToken = api.getToken();
+        if (!freshToken) return;
         writeSocketAuth({ ...readSocketAuth(), token: freshToken });
         s.disconnect();
         s.connect();
-      }
-    }, 5_000);
+      };
+      const unregisterRefreshCallback = registerTokenRefreshCallback(handleTokenRefresh);
+
+      /* Polling fallback: detect token changes that don't come through the
+         callback (e.g. token set by other code paths). Interval reduced to 5 s
+         so the reconnect happens within 5 seconds at most. */
+      const tokenRefreshInterval = setInterval(() => {
+        const freshToken = api.getToken();
+        const current = readSocketAuth().token;
+        if (freshToken && freshToken !== current) {
+          writeSocketAuth({ ...readSocketAuth(), token: freshToken });
+          s.disconnect();
+          s.connect();
+        }
+      }, 5_000);
+
+      /* Store teardown so the synchronous effect cleanup can call it even if
+         the async setup finished after React triggered the cleanup. */
+      teardown = () => {
+        unregisterRefreshCallback();
+        clearInterval(tokenRefreshInterval);
+        s.removeAllListeners(); /* S4: Remove all listeners on cleanup */
+        s.disconnect();
+        socketRef.current = null;
+        setSocket(null);
+        setConnected(false);
+      };
+
+      /* If effect was cleaned up while we were awaiting, tear down immediately. */
+      if (cancelled) teardown();
+    })();
 
     return () => {
-      unregisterRefreshCallback();
-      clearInterval(tokenRefreshInterval);
-
-      s.removeAllListeners(); /* S4: Remove all listeners on cleanup (COMPLETED) */
-      s.disconnect();
-      socketRef.current = null;
-      setSocket(null);
-      setConnected(false);
+      cancelled = true;
+      teardown?.();
     };
   }, [user?.id]);
 
@@ -219,8 +242,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         batt.addEventListener("levelchange", onLevelChange);
       })
       .catch((err) => {
-        console.warn("[artifacts/rider-app/src/lib/socket.tsx]", err);
-      }); // eslint-disable-line no-console
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "Battery API unavailable — battery level will not be reported in heartbeats");
+      });
     return () => {
       mounted = false;
       batt?.removeEventListener("levelchange", onLevelChange);

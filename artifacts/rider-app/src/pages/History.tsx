@@ -99,12 +99,28 @@ export default function History() {
   /* Accumulate all loaded pages into a flat list — filters are applied server-side */
   const filtered: HistoryItem[] = data?.pages.flatMap((p) => p.history) ?? [];
 
-  /* Date boundaries for grouping headers (display only, not for data filtering) */
-  const PKT_OFFSET_MS = 5 * 60 * 60 * 1000;
-  const nowInPKT = Date.now() + PKT_OFFSET_MS;
-  const todayStart = new Date(
-    Math.floor(nowInPKT / (24 * 60 * 60 * 1000)) * (24 * 60 * 60 * 1000) - PKT_OFFSET_MS
-  );
+  /* Date boundaries for grouping headers (display only, not for data filtering).
+     Resolve today/week boundaries in the platform timezone so riders see correct
+     groupings regardless of browser/device timezone setting. */
+  const todayStart = (() => {
+    const timezone = tz;
+    try {
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const parts = formatter.formatToParts(new Date());
+      const y = parts.find((p) => p.type === "year")?.value ?? "2000";
+      const m = parts.find((p) => p.type === "month")?.value ?? "01";
+      const d = parts.find((p) => p.type === "day")?.value ?? "01";
+      return new Date(`${y}-${m}-${d}T00:00:00`);
+    } catch {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+  })();
   const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const totalEarnings = filtered.reduce((s, i) => s + (i.earnings || 0), 0);
@@ -363,9 +379,7 @@ export default function History() {
                                   Distance
                                 </span>
                                 <span className="text-xs font-semibold text-gray-700">
-                                  {typeof item.distance === "number"
-                                    ? `${parseFloat(String(item.distance)).toFixed(1)} km`
-                                    : `${parseFloat(String(item.distance)).toFixed(1)} km`}
+                                  {`${parseFloat(String(item.distance)).toFixed(1)} km`}
                                 </span>
                               </div>
                             )}

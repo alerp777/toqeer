@@ -97,7 +97,7 @@ export default function Active() {
     const onSocketError = (err: Error) => {
       if (!isMountedRef.current) return;
       log.warn({ err: err?.message }, "[Active] Socket transport error");
-      showToast("Connection error — status updates may be delayed", true);
+      showToast(T("connectionErrorStatusDelayed"), true);
       /* Attempt reconnect after a brief back-off so the rider regains live
          status updates without needing to reload the page. */
       if (sharedSocket && !sharedSocket.connected) {
@@ -227,23 +227,38 @@ export default function Active() {
     if (statusUpdates.length === 0) return;
     pendingUpdatesRef.current = allPending.filter((item) => item.kind === "location");
     setSyncFailedCount(0);
-    void Promise.allSettled(statusUpdates.map((item) => item.run())).then((results) => {
-      results.forEach((result, i) => {
-        if (result.status === "rejected") log.error(`Status update ${i} failed:`, result.reason);
-      });
-      const failed = statusUpdates.filter((_, i) => results[i]?.status === "rejected");
+    /* Sequential drain preserves status-transition order (accepted → in_transit →
+       completed). Using Promise.allSettled would fire all in parallel and could
+       apply a later transition before an earlier one is acknowledged server-side. */
+    void (async () => {
+      const failed: typeof statusUpdates = [];
+      let anySuccess = false;
+      for (const item of statusUpdates) {
+        try {
+          await item.run();
+          anySuccess = true;
+        } catch (err) {
+          log.error(
+            { err: err instanceof Error ? err.message : String(err) },
+            "Status update failed — will retry"
+          );
+          failed.push(item);
+          /* Stop draining: later transitions depend on this one succeeding. */
+          break;
+        }
+      }
       if (failed.length > 0) {
         pendingUpdatesRef.current.push(...failed);
         setSyncFailedCount(failed.length);
       }
-      if (results.some((r) => r.status === "fulfilled")) {
+      if (anySuccess) {
         void qc.invalidateQueries({ queryKey: ["rider-active"] });
         void qc.invalidateQueries({ queryKey: ["rider-history"] });
         void qc.invalidateQueries({ queryKey: ["rider-earnings"] });
         void qc.invalidateQueries({ queryKey: ["rider-requests"] });
         showToastRef.current?.(TRef.current?.("statusUpdated") ?? "Status updated");
       }
-    });
+    })();
   };
   retrySyncRef.current = drainStatusQueue;
 
@@ -302,9 +317,9 @@ export default function Active() {
         b.addEventListener("levelchange", onLevelChange);
       })
       .catch((err) => {
-        log.error(
+        log.warn(
           { err: err instanceof Error ? err.message : String(err) },
-          "[Active] sendLocation failed"
+          "[Active] Battery API unavailable — battery level will not be tracked"
         );
       });
     return () => {
@@ -340,15 +355,7 @@ export default function Active() {
       setShowProximityWarning(false);
       return;
     }
-    const R = 6371000;
-    const dLat = ((vendorLat - riderPos.lat) * Math.PI) / 180;
-    const dLng = ((vendorLng - riderPos.lng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((riderPos.lat * Math.PI) / 180) *
-        Math.cos((vendorLat * Math.PI) / 180) *
-        Math.sin(dLng / 2) ** 2;
-    const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const dist = haversineDistance(riderPos.lat, riderPos.lng, vendorLat, vendorLng) * 1000;
     setShowProximityWarning(
       dist > 500 &&
         !data.order.status?.startsWith("picked") &&
@@ -535,7 +542,7 @@ export default function Active() {
          The backend accepts proofPhoto as a base64 DataURL directly (not just a
          server URL), so we can enqueue the full delivery payload right now without
          uploading to the server first. The queue will replay it when reconnected. */
-      showToast("You're offline — delivery queued with photo for retry.", true);
+      showToast(T("offlineDeliveryQueued"), true);
       enqueueAction("update_order", id, { status: "delivered", proofPhoto }).catch((err) => {
         log.error(
           { err: err instanceof Error ? err.message : String(err) },
@@ -555,7 +562,7 @@ export default function Active() {
       } catch (e: unknown) {
         const status = (e as { status?: number })?.status;
         if (status === 400 || status === 413) {
-          showToast("Photo too large, please try again.", true);
+          showToast(T("photoTooLarge"), true);
         } else {
           const isNetworkErr = !status;
           if (isNetworkErr) {
@@ -577,7 +584,7 @@ export default function Active() {
       setProofUploading(false);
     }
     if (!navigator.onLine) {
-      showToast("You're offline — update queued for retry", true);
+      showToast(T("offlineUpdateQueued"), true);
       enqueueAction("update_order", id, {
         status: "delivered",
         ...(photoUrl ? { proofPhotoUrl: photoUrl } : {}),
@@ -623,10 +630,10 @@ export default function Active() {
       } catch (e: unknown) {
         const status = (e as { status?: number })?.status;
         if (status === 400 || status === 413) {
-          showToast("Photo too large, please try again.", true);
+          showToast(T("photoTooLarge"), true);
         } else {
           showToast(
-            e instanceof Error ? e.message : "Photo upload failed. Please try again.",
+            e instanceof Error ? e.message : T("uploadFailed"),
             true
           );
         }
@@ -760,7 +767,7 @@ export default function Active() {
       setShowOtpModal(false);
       setOtpInput("");
       void qc.invalidateQueries({ queryKey: ["rider-active"] });
-      showToast("OTP verified! You can now start the ride.");
+      showToast(T("otpVerified"));
     },
     onError: (e: Error) => showToast(e.message, true),
   });

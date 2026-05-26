@@ -1,9 +1,9 @@
-import { tDual, type TranslationKey } from "@workspace/i18n";
+import { tDual, type Language, type TranslationKey } from "@workspace/i18n";
 import { Bell, ChevronRight, Languages, Moon, Shield, Sun } from "lucide-react";
 import { Link } from "wouter";
 
 interface ProfileSettingsProps {
-  language: string;
+  language: Language;
   setLanguage: (lang: "en" | "ur" | "roman") => void;
   isDark: boolean;
   toggleDark: () => void;
@@ -17,7 +17,7 @@ export function ProfileSettings({
   toggleDark,
   unread,
 }: ProfileSettingsProps) {
-  const T = (key: TranslationKey) => tDual(key, language as never);
+  const T = (key: TranslationKey) => tDual(key, language);
 
   return (
     <div className="animate-[slideUp_0.7s_ease-out] overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">

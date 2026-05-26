@@ -77,7 +77,7 @@ export const AcceptCountdown = memo(function AcceptCountdown({
           strokeDashoffset={dashOffset}
           strokeLinecap="round"
           transform="rotate(-90 18 18)"
-          style={{ transition: "stroke-dashoffset 0.9s linear, stroke 0.3s" }}
+          style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
         />
       </svg>
       <span className="absolute text-[9px] font-extrabold tabular-nums" style={{ color: col }}>

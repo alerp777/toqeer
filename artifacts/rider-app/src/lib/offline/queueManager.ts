@@ -372,11 +372,35 @@ export async function syncQueue(): Promise<void> {
             throw new PermanentQueueError("Session expired — queue cleared", 401);
           }
           /* Other permanent server-side rejection (e.g. 4xx): move to dead-letter
-             immediately and continue draining subsequent actions. */
+             immediately. Also dead-letter any remaining queued actions that share
+             the same entityId — they are dependents (e.g. update_ride, complete_trip
+             after a failed accept_ride) and will never succeed without the predecessor. */
           await pushDeadLetter(action, err);
           await removeAction(action.id).catch((removeErr) => {
             console.warn("[queueManager] removeAction failed after permanent error:", removeErr);
           }); // eslint-disable-line no-console
+          /* Dead-letter orphaned dependents sharing the same entityId. We re-read
+             the remaining actions from IDB rather than using `actions` (which is a
+             snapshot) to avoid operating on stale state if another tab modified
+             the queue between iterations. */
+          try {
+            const remaining = await getAll();
+            const orphans = remaining.filter((a) => a.entityId === action.entityId);
+            for (const orphan of orphans) {
+              await pushDeadLetter(
+                orphan,
+                new PermanentQueueError(
+                  `Cascading failure: preceding action "${action.type}" for entity "${action.entityId}" failed permanently`,
+                  err.httpStatus
+                )
+              );
+              await removeAction(orphan.id).catch((removeErr) => {
+                console.warn("[queueManager] removeAction failed for orphan:", removeErr);
+              }); // eslint-disable-line no-console
+            }
+          } catch (orphanErr) {
+            console.warn("[queueManager] failed to dead-letter orphaned dependents:", orphanErr); // eslint-disable-line no-console
+          }
           continue;
         }
         /* Transient failure (network unreachable, 5xx, 429): bump retry count

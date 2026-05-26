@@ -202,7 +202,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ALLOWED_IMAGE_MIME.includes(file.type.toLowerCase())) {
-      showToast("Invalid file type. Please upload a JPEG, PNG, or WebP image.");
+      showToast(T("invalidFileType"));
       if (avatarInputRef.current) avatarInputRef.current.value = "";
       return;
     }
@@ -224,15 +224,22 @@ export default function Profile() {
         mimeType: file.type,
       });
       if (!uploadRes?.url) {
-        showToast("Upload failed — no URL returned");
+        showToast(T("uploadFailedNoUrl"));
         setAvatarUploading(false);
         return;
       }
-      await api.updateProfile({ avatar: uploadRes.url });
+      try {
+        await api.updateProfile({ avatar: uploadRes.url });
+      } catch {
+        showToast(T("failedSaveProfilePhoto"), true);
+        setAvatarUploading(false);
+        if (avatarInputRef.current) avatarInputRef.current.value = "";
+        return;
+      }
       await refreshUser();
-      showToast("Profile photo updated");
+      showToast(T("profilePhotoUpdated"));
     } catch {
-      showToast("Failed to upload photo");
+      showToast(T("failedUploadPhoto"), true);
     }
     setAvatarUploading(false);
     if (avatarInputRef.current) avatarInputRef.current.value = "";
@@ -245,7 +252,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ALLOWED_IMAGE_MIME.includes(file.type.toLowerCase())) {
-      showToast("Invalid file type. Please upload a JPEG, PNG, or WebP image.");
+      showToast(T("invalidFileType"));
       return;
     }
     if (file.size > maxImageMb * 1024 * 1024) {
@@ -266,7 +273,7 @@ export default function Profile() {
         mimeType: file.type,
       });
       if (!uploadRes?.url) {
-        showToast("Upload failed — no URL returned");
+        showToast(T("uploadFailedNoUrl"));
         return;
       }
       /* Map each document kind to the appropriate profile field */

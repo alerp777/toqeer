@@ -80,7 +80,7 @@ export default function PenaltyHistory() {
   const totalDeducted: number =
     typeof data?.total_deducted === "number"
       ? data.total_deducted
-      : penalties.reduce((sum, p) => sum + parseFloat(String(p.amount) || "0"), 0);
+      : penalties.reduce((sum, p) => sum + parseFloat(String(p.amount || 0)), 0);
 
   const handlePullRefresh = useCallback(async () => {
     await qc.invalidateQueries({ queryKey: ["rider-penalty-history"] });
@@ -139,11 +139,18 @@ export default function PenaltyHistory() {
           {/* Info banner */}
           <div className="flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-3">
             <Info size={15} className="mt-0.5 shrink-0 text-blue-500" />
-            <p className="text-xs leading-relaxed text-blue-700">
-              Penalties are deducted from your wallet for policy violations such as ignoring ride
-              requests, cancelling orders, or conduct issues. Contact support if you believe a
-              penalty was applied in error.
-            </p>
+            <div className="flex-1">
+              <p className="text-xs leading-relaxed text-blue-700">
+                Penalties are deducted from your wallet for policy violations such as ignoring ride
+                requests, cancelling orders, or conduct issues.
+              </p>
+              <Link
+                href="/chat"
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
+              >
+                Contact support if you believe a penalty was applied in error
+              </Link>
+            </div>
           </div>
 
           {/* Loading */}
@@ -188,7 +195,7 @@ export default function PenaltyHistory() {
           {!isLoading && !isError && penalties.length > 0 && (
             <div className="space-y-2.5">
               {penalties.map((p) => {
-                const amt = parseFloat(String(p.amount) || "0");
+                const amt = parseFloat(String(p.amount || 0));
                 const color = penaltyColor(p.type);
                 return (
                   <div

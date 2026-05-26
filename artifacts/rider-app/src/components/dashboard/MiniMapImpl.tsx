@@ -269,14 +269,19 @@ export const MiniMapImpl = memo(function MiniMapImpl({
           <TileLayer url={tileUrl} />
           {hasPick && <Marker position={[pickupLat!, pickupLng!]} icon={PICKUP_ICON_MINI} />}
           {hasDrop && <Marker position={[dropLat!, dropLng!]} icon={DROP_ICON_MINI} />}
-          <MiniMapFitter
-            pickupLat={pickupLat ?? 0}
-            pickupLng={pickupLng ?? 0}
-            dropLat={dropLat ?? 0}
-            dropLng={dropLng ?? 0}
-            hasPick={hasPick}
-            hasDrop={hasDrop}
-          />
+          {/* Only mount MiniMapFitter when at least one real coordinate pair exists — avoids
+              fitBounds being called with fallback 0/0 coordinates which would jump the map
+              to the Gulf of Guinea. */}
+          {(hasPick || hasDrop) && (
+            <MiniMapFitter
+              pickupLat={pickupLat ?? 0}
+              pickupLng={pickupLng ?? 0}
+              dropLat={dropLat ?? 0}
+              dropLng={dropLng ?? 0}
+              hasPick={hasPick}
+              hasDrop={hasDrop}
+            />
+          )}
         </MapContainer>
 
         <div className="pointer-events-none absolute right-1.5 bottom-1.5 z-[1000] rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">

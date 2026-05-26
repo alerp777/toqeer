@@ -70,7 +70,7 @@ function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
           key={i}
           size={size}
           className={
-            i <= Math.round(rating)
+            i <= Math.floor(rating)
               ? "fill-amber-400 text-amber-400"
               : "fill-gray-200 text-gray-200"
           }
@@ -238,7 +238,7 @@ export default function Reviews() {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 rounded-full ${i <= Math.round(review.rating) ? "bg-amber-400" : "bg-gray-100"}`}
+                    className={`h-1 flex-1 rounded-full ${i <= Math.floor(review.rating) ? "bg-amber-400" : "bg-gray-100"}`}
                   />
                 ))}
               </div>

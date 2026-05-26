@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency as _sharedFcP } from "@workspace/api-zod";
-import { tDual, type TranslationKey } from "@workspace/i18n";
+import { tDual, type Language, type TranslationKey } from "@workspace/i18n";
 import { Star } from "lucide-react";
 import { api } from "../../lib/api";
 
@@ -8,12 +8,12 @@ const _fc = (n: string | number | null | undefined, currencySymbol = "Rs.") =>
   _sharedFcP(n != null ? String(n) : (n as null | undefined), currencySymbol);
 
 interface ProfileReviewsProps {
-  language: string;
+  language: Language;
   currency: string;
 }
 
 export function ProfileReviews({ language, currency: _currency }: ProfileReviewsProps) {
-  const T = (key: TranslationKey) => tDual(key, language as never);
+  const T = (key: TranslationKey) => tDual(key, language);
 
   const { data: reviewsData } = useQuery({
     queryKey: ["rider-my-reviews"],
