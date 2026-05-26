@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import {
   RegisterScreen,
   SubmittedScreen,
@@ -5,6 +6,10 @@ import {
   type StepComponentProps,
   type StepConfig,
 } from "@workspace/auth-react";
+=======
+import { RegisterScreen, ThemeProvider, type StepConfig } from "@workspace/auth-react";
+import { CNIC_REGEX } from "@workspace/phone-utils";
+>>>>>>> Stashed changes
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
@@ -113,10 +118,10 @@ const riderSteps: StepConfig[] = [
         id: "cnic",
         type: "text",
         label: "CNIC",
-        placeholder: "XXXXX-XXXXXXX-X",
+        placeholder: "00000-0000000-0",
         validate: (v) => {
           const s = String(v ?? "").trim();
-          if (s && !/^\d{5}-\d{7}-\d{1}$/.test(s)) return "CNIC must be in format XXXXX-XXXXXXX-X";
+          if (s && !CNIC_REGEX.test(s)) return "CNIC must be in format XXXXX-XXXXXXX-X";
           return null;
         },
       },
@@ -132,7 +137,7 @@ const riderSteps: StepConfig[] = [
         type: "select",
         label: "Vehicle Type",
         required: true,
-        options: ["Bike", "Car", "Rickshaw", "Van", "Truck"].map((v) => ({ value: v, label: v })),
+        options: ["bike", "car", "rickshaw", "van"].map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) })),
       },
       { id: "plateNumber", type: "text", label: "Plate Number", placeholder: "e.g. AJK-1234", required: true },
       { id: "licenseNumber", type: "text", label: "License Number", placeholder: "Driving license no.", required: true },
