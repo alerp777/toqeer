@@ -26,6 +26,7 @@ import { AlertTriangle, Download, RefreshCw, ShoppingBag, Zap } from "lucide-rea
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SortDir, SortKey } from "./constants";
 import { STATUS_LABELS, exportOrdersCSV } from "./constants";
+import type { AdminOrder, AdminRider } from "./types";
 import { DeliverConfirmDialog } from "./DeliverConfirmDialog";
 import { OrderDetailDrawer } from "./OrderDetailDrawer";
 import { OrdersFilterBar } from "./OrdersFilterBar";
@@ -189,7 +190,7 @@ export default function Orders() {
   );
 
   const handleUpdateStatus = useCallback(
-    (id: string, status: string, extra?: { localUpdate?: any }) => {
+    (id: string, status: string, extra?: { localUpdate?: Record<string, unknown> }) => {
       if (status === "delivered" && !extra?.localUpdate) {
         setShowDeliverConfirm(id);
         return;
@@ -201,13 +202,13 @@ export default function Orders() {
         {
           onSuccess: () => {
             toast({ title: `Order status updated to ${STATUS_LABELS[status] ?? status}` });
-            setSelectedOrder((prev: any) =>
+            setSelectedOrder((prev: AdminOrder | null) =>
               prev?.id === id ? { ...prev, status, updatedAt: new Date().toISOString() } : prev
             );
           },
           onError: (err) => {
             if (prevStatus !== undefined) {
-              setSelectedOrder((prev: any) =>
+              setSelectedOrder((prev: AdminOrder | null) =>
                 prev?.id === id ? { ...prev, status: prevStatus } : prev
               );
             }
@@ -228,7 +229,7 @@ export default function Orders() {
       {
         onSuccess: () => {
           toast({ title: "Order marked as Delivered" });
-          setSelectedOrder((prev: any) =>
+          setSelectedOrder((prev: AdminOrder | null) =>
             prev?.id === id
               ? { ...prev, status: "delivered", updatedAt: new Date().toISOString() }
               : prev
@@ -247,7 +248,7 @@ export default function Orders() {
       { id: selectedOrder.id, status: "cancelled" },
       {
         onSuccess: () => {
-          setSelectedOrder((p: any) => ({
+          setSelectedOrder((p: AdminOrder | null) => ({
             ...p,
             status: "cancelled",
             updatedAt: new Date().toISOString(),
@@ -288,16 +289,16 @@ export default function Orders() {
       refundMutation.mutate(
         { id: selectedOrder.id, amount: amt, reason: finalReason || undefined },
         {
-          onSuccess: (res: any) => {
+          onSuccess: (res: { refundedAmount?: number }) => {
             toast({
               title: "Refund issued",
-              description: `${formatCurrency(Math.round(res.refundedAmount))} credited to customer wallet`,
+              description: `${formatCurrency(Math.round(res.refundedAmount ?? 0))} credited to customer wallet`,
             });
             setShowRefundConfirm(false);
             setRefundAmount("");
             setRefundReason("");
           },
-          onError: (err: any) =>
+          onError: (err: { message?: string }) =>
             toast({ title: "Refund failed", description: err.message, variant: "destructive" }),
         }
       );
@@ -306,7 +307,7 @@ export default function Orders() {
   );
 
   const handleAssignRider = useCallback(
-    (rider: any) => {
+    (rider: AdminRider) => {
       if (!selectedOrder) return;
       assignMutation.mutate(
         {
@@ -321,7 +322,7 @@ export default function Orders() {
               title: "Rider assigned",
               description: `${rider.name || rider.phone} assigned to order`,
             });
-            setSelectedOrder((p: any) => ({
+            setSelectedOrder((p: AdminOrder | null) => ({
               ...p,
               riderId: rider.id,
               riderName: rider.name || rider.phone,
@@ -353,21 +354,21 @@ export default function Orders() {
         title: "CSV exported",
         description: `${(result.orders || []).length} orders exported`,
       });
-    } catch (err: any) {
-      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Export failed", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       setExporting(false);
     }
   }, [statusFilter, typeFilter, debouncedSearch, dateFrom, dateTo, sortKey, sortDir, toast]);
 
-  const orders = useMemo<any[]>(
+  const orders = useMemo<AdminOrder[]>(
     () => (Array.isArray(data?.orders) ? data.orders : []),
     [data?.orders]
   );
   const serverTotal: number = typeof data?.total === "number" ? data.total : orders.length;
 
   const liveSelectedOrder = selectedOrder
-    ? (orders.find((o: any) => o.id === selectedOrder.id) ?? selectedOrder)
+    ? (orders.find((o) => o.id === selectedOrder.id) ?? selectedOrder)
     : null;
 
   const totalPages = Math.max(1, Math.ceil(serverTotal / pageSize));
@@ -383,7 +384,7 @@ export default function Orders() {
   const deliveredCount: number = statsData?.delivered ?? 0;
   const totalRevenue: number = statsData?.totalRevenue ?? 0;
 
-  const pendingOrders = useMemo(() => orders.filter((o: any) => o.status === "pending"), [orders]);
+  const pendingOrders = useMemo(() => orders.filter((o) => o.status === "pending"), [orders]);
 
   const qc = useQueryClient();
 
@@ -430,7 +431,7 @@ export default function Orders() {
     setDateTo("");
   }, []);
 
-  const handleSelectOrder = useCallback((order: any) => {
+  const handleSelectOrder = useCallback((order: AdminOrder) => {
     setSelectedOrder(order);
     setShowCancelConfirm(false);
   }, []);
@@ -499,7 +500,7 @@ export default function Orders() {
               <p className="truncate text-xs text-amber-600">
                 {pendingOrders
                   .slice(0, 3)
-                  .map((o: any) => `#${o.id.slice(-6).toUpperCase()} (${o.type})`)
+                  .map((o) => `#${o.id.slice(-6).toUpperCase()} (${o.type})`)
                   .join(" · ")}
                 {pendingOrders.length > 3 ? ` +${pendingOrders.length - 3} more` : ""}
               </p>
@@ -632,7 +633,7 @@ export default function Orders() {
               })
             }
             onSelectAll={(checked) =>
-              setSelectedIds(checked ? new Set(orders.map((o: any) => o.id)) : new Set())
+              setSelectedIds(checked ? new Set(orders.map((o) => o.id)) : new Set())
             }
           />
         )}

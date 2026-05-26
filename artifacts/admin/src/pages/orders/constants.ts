@@ -1,3 +1,5 @@
+import type { AdminOrder } from "./types";
+
 export const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
   confirmed: "Confirmed",
@@ -26,8 +28,8 @@ export type SortDir = "asc" | "desc";
 export const PAGE_SIZES = [10, 25, 50];
 
 export const isTerminal = (s: string) => s === "delivered" || s === "cancelled";
-export const canCancel = (o: any) => !isTerminal(o.status);
-export const allowedNext = (o: any) => ALLOWED_TRANSITIONS[o.status] ?? [];
+export const canCancel = (o: AdminOrder) => !isTerminal(o.status);
+export const allowedNext = (o: AdminOrder) => ALLOWED_TRANSITIONS[o.status] ?? [];
 
 export function escapeCSV(val: string): string {
   let safe = val;
@@ -40,18 +42,18 @@ export function escapeCSV(val: string): string {
   return safe;
 }
 
-export function exportOrdersCSV(orders: any[]) {
+export function exportOrdersCSV(orders: AdminOrder[]) {
   const header =
     "orderId,date,customerId,customerName,vendorName,items,total,status,paymentMethod,type,riderName,deliveredAt";
-  const rows = orders.map((o: any) => {
+  const rows = orders.map((o) => {
     const items = Array.isArray(o.items)
-      ? o.items.map((i: any) => `${i.name ?? i.productName ?? ""}×${i.quantity ?? 1}`).join("; ")
+      ? o.items.map((i) => `${i.name ?? i.productName ?? ""}×${i.quantity ?? 1}`).join("; ")
       : "";
     return [
       escapeCSV(o.id ?? ""),
       escapeCSV(o.createdAt?.slice(0, 10) ?? ""),
-      escapeCSV(o.userId ?? o.customerId ?? ""),
-      escapeCSV(o.userName ?? o.customerName ?? ""),
+      escapeCSV(o.userId ?? ""),
+      escapeCSV(o.userName ?? ""),
       escapeCSV(o.vendorName ?? ""),
       escapeCSV(items),
       String(o.total ?? ""),

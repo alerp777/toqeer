@@ -31,13 +31,15 @@ import { SortHeader } from "./SortHeader";
 import type { SortDir, SortKey } from "./constants";
 import { allowedNext, PAGE_SIZES, STATUS_LABELS } from "./constants";
 
+import type { AdminOrder } from "./types";
+
 interface OrdersTableProps {
   isLoading: boolean;
-  paginated: any[];
+  paginated: AdminOrder[];
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
-  onSelectOrder: (order: any) => void;
+  onSelectOrder: (order: AdminOrder) => void;
   onUpdateStatus: (id: string, status: string) => void;
   hasActiveFilters: boolean;
   clearAll: () => void;
@@ -48,7 +50,7 @@ interface OrdersTableProps {
   totalPages: number;
   safePage: number;
   sortedLength: number;
-  toastFn: (opts: any) => void;
+  toastFn: (opts: Record<string, unknown>) => void;
   T: (key: TranslationKey) => string;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -91,7 +93,7 @@ export function OrdersTable({
                   checked={
                     paginated.length > 0 &&
                     !!selectedIds &&
-                    paginated.every((o: any) => selectedIds.has(o.id))
+                    paginated.every((o) => selectedIds.has(o.id))
                   }
                   onChange={(e) => onSelectAll?.(e.target.checked)}
                   aria-label="Select all orders"
@@ -212,7 +214,7 @@ export function OrdersTable({
                 </TableCell>
               </TableRow>
             ) : (
-              paginated.map((order: any) => (
+              paginated.map((order) => (
                 <TableRow
                   key={order.id}
                   className={`hover:bg-muted/30 cursor-pointer ${selectedIds?.has(order.id) ? "bg-blue-50 dark:bg-blue-950/20" : ""}`}
@@ -278,7 +280,7 @@ export function OrdersTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-foreground font-bold">
-                    {formatCurrency(order.total)}
+                    {formatCurrency(Number(order.total))}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Select

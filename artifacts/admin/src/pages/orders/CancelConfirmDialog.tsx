@@ -1,8 +1,10 @@
 import { formatCurrency } from "@/lib/format";
 import { AlertTriangle } from "lucide-react";
 
+import type { AdminOrder } from "./types";
+
 interface CancelConfirmDialogProps {
-  order: any;
+  order: AdminOrder;
   cancelling: boolean;
   onCancel: () => void;
   onBack: () => void;
@@ -28,7 +30,7 @@ export function CancelConfirmDialog({
       </div>
       <p className="text-xs text-red-600">
         {order.paymentMethod === "wallet"
-          ? `${formatCurrency(Math.round(order.total))} will be refunded to the customer's wallet.`
+          ? `${formatCurrency(Math.round(Number(order.total)))} will be refunded to the customer's wallet.`
           : "Cash order — no wallet refund needed."}
       </p>
       <div className="flex gap-2">

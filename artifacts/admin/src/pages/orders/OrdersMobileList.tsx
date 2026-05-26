@@ -5,10 +5,12 @@ import { Card } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 
+import type { AdminOrder } from "./types";
+
 interface OrdersMobileListProps {
   isLoading: boolean;
-  paginated: any[];
-  onSelectOrder: (order: any) => void;
+  paginated: AdminOrder[];
+  onSelectOrder: (order: AdminOrder) => void;
   hasActiveFilters: boolean;
   clearAll: () => void;
   pageSize: number;
@@ -55,7 +57,7 @@ export function OrdersMobileList({
           )}
         </Card>
       ) : (
-        paginated.map((order: any) => (
+        paginated.map((order) => (
           <Card
             key={order.id}
             className="border-border/50 cursor-pointer rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md active:scale-[0.99]"
@@ -105,7 +107,7 @@ export function OrdersMobileList({
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-foreground font-bold">{formatCurrency(order.total)}</p>
+                <p className="text-foreground font-bold">{formatCurrency(Number(order.total))}</p>
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   {Array.isArray(order.items) ? `${order.items.length} items` : ""}
                 </p>

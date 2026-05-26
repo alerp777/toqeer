@@ -1,14 +1,16 @@
 import { Input } from "@/components/ui/input";
 import { Phone, UserCheck } from "lucide-react";
 
+import type { AdminOrder, AdminRider } from "./types";
+
 interface RiderAssignPanelProps {
-  order: any;
-  ridersData: any;
+  order: AdminOrder;
+  ridersData: { riders?: AdminRider[] };
   riderSearch: string;
   setRiderSearch: (v: string) => void;
   showAssignRider: boolean;
   setShowAssignRider: (v: boolean) => void;
-  onAssignRider: (rider: any) => void;
+  onAssignRider: (rider: AdminRider) => void;
   assignPending: boolean;
 }
 
@@ -87,14 +89,14 @@ export function RiderAssignPanel({
             aria-label="Available riders"
           >
             {(ridersData?.riders || [])
-              .filter((r: any) => r.isActive && !r.isBanned)
-              .filter((r: any) =>
+              .filter((r) => r.isActive && !r.isBanned)
+              .filter((r) =>
                 riderSearch
                   ? (r.name || r.phone || "").toLowerCase().includes(riderSearch.toLowerCase())
                   : true
               )
               .slice(0, 8)
-              .map((r: any) => (
+              .map((r) => (
                 <button
                   key={r.id}
                   onClick={() => onAssignRider(r)}
@@ -106,7 +108,7 @@ export function RiderAssignPanel({
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700"
                     aria-hidden="true"
                   >
-                    {(r.name || r.phone || "R")[0].toUpperCase()}
+                    {(r.name || r.phone || "R").charAt(0).toUpperCase()}
                   </div>
                   <span className="truncate font-semibold">{r.name || r.phone}</span>
                   <span className="text-muted-foreground ml-auto shrink-0 font-mono">

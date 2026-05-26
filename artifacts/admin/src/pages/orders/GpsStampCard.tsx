@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { GpsMiniMap } from "./GpsMiniMap";
 const log = createLogger("[GpsStampCard]");
 
-export function GpsStampCard({ order }: { order: any }) {
+import type { AdminOrder } from "./types";
+
+export function GpsStampCard({ order }: { order: AdminOrder }) {
   const cLat = Number(order.customerLat);
   const cLng = Number(order.customerLng);
 

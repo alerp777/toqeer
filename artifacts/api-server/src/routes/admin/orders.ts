@@ -28,7 +28,8 @@ import {
 } from "../../lib/response.js";
 import { getIO } from "../../lib/socketio.js";
 import { requirePermission } from "../../middleware/require-permission.js";
-import { validateBody } from "../../middleware/validate.js";
+import { validate, validateBody } from "../../middleware/validate.js";
+import { adminActionLimiter } from "../../middleware/rate-limit.js";
 import {
   ORDER_NOTIF_KEYS,
   PARCEL_NOTIF_KEYS,
@@ -54,7 +55,22 @@ function wrapAsync(fn: (req: Request, res: Response) => Promise<void>): RequestH
   return (req, res, next) => void fn(req, res).catch(next);
 }
 
-router.post("/orders", requirePermission("orders.create"), async (req, res) => {
+const adminOrderCreateSchema = z.object({
+  userId: z.string().min(1),
+  vendorId: z.string().optional(),
+  type: z.enum(["mart", "food", "pharmacy", "parcel", "van", "school"]).default("mart"),
+  items: z.array(z.object({
+    name: z.string().min(1).max(200),
+    qty: z.number().int().positive(),
+    price: z.number().positive().optional(),
+  })).optional().or(z.string().optional()),
+  total: z.union([z.number().positive(), z.string().min(1)]),
+  deliveryAddress: z.string().max(500).optional(),
+  paymentMethod: z.enum(["cod", "wallet", "jazzcash", "easypaisa"]).default("cod"),
+  status: z.enum(["pending", "confirmed", "preparing", "picked_up", "delivered", "cancelled"]).default("pending"),
+});
+
+router.post("/orders", requirePermission("orders.create"), validateBody(adminOrderCreateSchema), async (req, res) => {
   const { userId, vendorId, type, items, total, deliveryAddress, paymentMethod, status } = req.body;
   if (!userId || typeof userId !== "string" || !userId.trim()) {
     sendValidationError(res, "userId is required");
@@ -891,10 +907,32 @@ router.get(
   })
 );
 
+/* ── Query validation schemas for order list endpoints ── */
+const orderListQuerySchema = z.object({
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  sortBy: z.enum(["id", "customer", "type", "total", "status", "date"]).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional(),
+  search: z.string().max(200).optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+});
+
+const orderExportQuerySchema = z.object({
+  status: z.string().optional(),
+  type: z.string().optional(),
+  search: z.string().max(200).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+});
+
 /* ── GET /admin/orders-enriched — paginated, filtered, user-enriched order list ── */
 router.get(
   "/orders-enriched",
   requirePermission("orders.view"),
+  validate({ query: orderListQuerySchema }),
   wrapAsync(async (req, res) => {
     const q = req.query as Record<string, string | undefined>;
     const page = Math.max(1, parseInt(q["page"] ?? "1", 10) || 1);
@@ -975,6 +1013,7 @@ router.get(
 router.get(
   "/orders-export",
   requirePermission("orders.view"),
+  validate({ query: orderExportQuerySchema }),
   wrapAsync(async (req, res) => {
     const q = req.query as Record<string, string | undefined>;
     const filterConds = buildOrderFilters(q);
@@ -1168,7 +1207,15 @@ router.get(
   requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
-    sendSuccess(res, await loadJson<ReturnRecord>(`return_log_${orderId}`));
+    const records = await loadJson<ReturnRecord>(`return_log_${orderId}`);
+    void addAuditEntry({
+      action: "order_returns_viewed",
+      ip: getClientIp(req),
+      adminId: (req as AdminRequest).adminId,
+      details: `Viewed ${records.length} return records for order ${orderId}`,
+      result: "success",
+    });
+    sendSuccess(res, records);
   })
 );
 
@@ -1226,7 +1273,15 @@ router.get(
   requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
-    sendSuccess(res, await loadJson<DisputeRecord>(`dispute_log_${orderId}`));
+    const records = await loadJson<DisputeRecord>(`dispute_log_${orderId}`);
+    void addAuditEntry({
+      action: "order_disputes_viewed",
+      ip: getClientIp(req),
+      adminId: (req as AdminRequest).adminId,
+      details: `Viewed ${records.length} dispute records for order ${orderId}`,
+      result: "success",
+    });
+    sendSuccess(res, records);
   })
 );
 
@@ -1440,6 +1495,7 @@ const bulkOrderStatusSchema = z.object({
 });
 router.patch(
   "/orders/bulk-status",
+  adminActionLimiter,
   requirePermission("orders.edit"),
   validateBody(bulkOrderStatusSchema),
   async (req, res) => {

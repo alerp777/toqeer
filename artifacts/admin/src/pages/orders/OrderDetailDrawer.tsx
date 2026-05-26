@@ -34,15 +34,17 @@ import { RiderAssignPanel } from "./RiderAssignPanel";
 import { STATUS_LABELS, allowedNext, canCancel, isTerminal } from "./constants";
 
 /* ── Return Request Panel — Admin Moderation View ── */
+import type { AdminOrder, AdminOrderItem, AdminRider, ReturnRequest, DisputeRecord } from "./types";
+
 function ReturnPanel({
   order,
   onRefundOrder,
 }: {
-  order: any;
+  order: AdminOrder;
   onRefundOrder?: (amount?: number, reason?: string) => void;
 }) {
   const { toast } = useToast();
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<ReturnRequest[]>([]);
   const [loadingReqs, setLoadingReqs] = useState(true);
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState(String(order.total ?? ""));
@@ -107,7 +109,7 @@ function ReturnPanel({
       if (action === "approve" && onRefundOrder) {
         const approvedReq = prevRequests.find((r) => r.id === returnId);
         onRefundOrder(
-          approvedReq?.amount ?? order.total,
+          Number(approvedReq?.amount ?? approvedReq?.refundAmount ?? order.total),
           approvedReq?.reason ?? "Return approved by admin"
         );
       }
@@ -142,7 +144,7 @@ function ReturnPanel({
             No return requests for this order yet.
           </p>
         ) : (
-          requests.map((req: any) => (
+          requests.map((req) => (
             <div key={req.id} className="border-border space-y-2 rounded-xl border p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -194,7 +196,7 @@ function ReturnPanel({
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
           <p className="font-semibold text-amber-800">Order #{order.id?.slice(-8).toUpperCase()}</p>
           <p className="mt-0.5 text-amber-700">
-            Total: <strong>{formatCurrency(order.total)}</strong>
+            Total: <strong>{formatCurrency(Number(order.total))}</strong>
           </p>
         </div>
         <div className="space-y-1.5">
@@ -218,12 +220,12 @@ function ReturnPanel({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             min="1"
-            max={order.total}
+            max={String(order.total)}
             step="1"
             className="h-10 rounded-xl"
             placeholder="Partial or full refund"
           />
-          <p className="text-muted-foreground text-xs">Max: {formatCurrency(order.total)}</p>
+          <p className="text-muted-foreground text-xs">Max: {formatCurrency(Number(order.total))}</p>
         </div>
         <Button
           onClick={handleSubmitNew}
@@ -239,9 +241,9 @@ function ReturnPanel({
 }
 
 /* ── Dispute Panel — Admin Moderation View ── */
-function DisputePanel({ order }: { order: any }) {
+function DisputePanel({ order }: { order: AdminOrder }) {
   const { toast } = useToast();
-  const [disputes, setDisputes] = useState<any[]>([]);
+  const [disputes, setDisputes] = useState<DisputeRecord[]>([]);
   const [loadingDisp, setLoadingDisp] = useState(true);
   const [note, setNote] = useState("");
   const [type, setType] = useState("wrong_item");
@@ -337,7 +339,7 @@ function DisputePanel({ order }: { order: any }) {
         ) : disputes.length === 0 ? (
           <p className="text-muted-foreground py-2 text-xs">No disputes for this order.</p>
         ) : (
-          disputes.map((d: any) => (
+          disputes.map((d) => (
             <div key={d.id} className="border-border space-y-2 rounded-xl border p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -431,7 +433,7 @@ function DisputePanel({ order }: { order: any }) {
 }
 
 interface OrderDetailDrawerProps {
-  selectedOrder: any;
+  selectedOrder: AdminOrder;
   onClose: () => void;
   showCancelConfirm: boolean;
   setShowCancelConfirm: (v: boolean) => void;
@@ -449,10 +451,10 @@ interface OrderDetailDrawerProps {
   setShowAssignRider: (v: boolean) => void;
   riderSearch: string;
   setRiderSearch: (v: string) => void;
-  ridersData: any;
-  onAssignRider: (rider: any) => void;
+  ridersData: { riders?: AdminRider[] };
+  onAssignRider: (rider: AdminRider) => void;
   assignPending: boolean;
-  onUpdateStatus: (id: string, status: string, extra?: { localUpdate?: any }) => void;
+  onUpdateStatus: (id: string, status: string, extra?: { localUpdate?: Record<string, unknown> }) => void;
   onDeliverConfirm: (id: string) => void;
 }
 
@@ -576,7 +578,7 @@ export function OrderDetailDrawer({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total</span>
                   <span className="text-foreground text-lg font-bold">
-                    {formatCurrency(selectedOrder.total)}
+                    {formatCurrency(Number(selectedOrder.total))}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -696,7 +698,7 @@ export function OrderDetailDrawer({
                     {selectedOrder.items.length})
                   </h2>
                   <div className="space-y-2">
-                    {selectedOrder.items.map((item: any, i: number) => (
+                    {selectedOrder.items.map((item: AdminOrderItem, i: number) => (
                       <div
                         key={i}
                         className="bg-muted/30 flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
@@ -706,14 +708,14 @@ export function OrderDetailDrawer({
                           <p className="text-muted-foreground text-xs">x{item.quantity}</p>
                         </div>
                         <p className="text-foreground shrink-0 font-bold">
-                          {formatCurrency(item.price * item.quantity)}
+                          {formatCurrency(Number(item.price ?? 0) * (item.quantity ?? 0))}
                         </p>
                       </div>
                     ))}
                     <div className="bg-primary/5 border-primary/20 flex items-center justify-between rounded-xl border px-3 py-2.5">
                       <p className="text-foreground font-bold">Total</p>
                       <p className="text-primary text-lg font-bold">
-                        {formatCurrency(selectedOrder.total)}
+                        {formatCurrency(Number(selectedOrder.total))}
                       </p>
                     </div>
                   </div>
@@ -739,8 +741,8 @@ export function OrderDetailDrawer({
                   {selectedOrder.refundedAt ? (
                     <div className="flex h-9 items-center gap-1.5 rounded-xl border-2 border-green-300 bg-green-50 px-4 text-xs font-bold text-green-700">
                       Refunded
-                      {selectedOrder.refundedAmount
-                        ? ` \u2014 ${formatCurrency(Math.round(parseFloat(selectedOrder.refundedAmount)))}`
+                      {selectedOrder.refundedAmount != null
+                        ? ` \u2014 ${formatCurrency(Math.round(Number(selectedOrder.refundedAmount)))}`
                         : ""}
                     </div>
                   ) : !showRefundConfirm ? (
@@ -774,7 +776,7 @@ export function OrderDetailDrawer({
                           onDeliverConfirm(selectedOrder.id);
                           return;
                         }
-                        onUpdateStatus(selectedOrder.id, val, { localUpdate: true });
+                        onUpdateStatus(selectedOrder.id, val, { localUpdate: {} });
                       }}
                     >
                       <SelectTrigger
@@ -821,7 +823,7 @@ export function OrderDetailDrawer({
 
               <footer className="text-muted-foreground border-border/40 flex justify-between border-t pt-3 text-xs">
                 <span>Ordered: {formatDate(selectedOrder.createdAt)}</span>
-                <span>Updated: {formatDate(selectedOrder.updatedAt)}</span>
+                <span>Updated: {formatDate(selectedOrder.updatedAt ?? "")}</span>
               </footer>
             </>
           )}
