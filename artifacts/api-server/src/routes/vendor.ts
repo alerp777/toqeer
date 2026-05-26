@@ -435,31 +435,42 @@ router.patch("/profile", validateBody(patchProfileSchema), async (req, res, next
     if (bankName !== undefined) userUpdates.bankName = bankName;
     if (bankAccount !== undefined) userUpdates.bankAccount = bankAccount;
     if (bankAccountTitle !== undefined) userUpdates.bankAccountTitle = bankAccountTitle;
-    const [user] = await db
-      .update(usersTable)
-      .set(userUpdates)
-      .where(eq(usersTable.id, vendorId))
-      .returning();
-    const profileUpdates: Record<string, unknown> = { updatedAt: new Date() };
-    if (businessType !== undefined) profileUpdates.businessType = businessType;
-    if (cnicFrontUrl !== undefined) profileUpdates.cnicFrontUrl = cnicFrontUrl;
-    if (cnicBackUrl !== undefined) profileUpdates.cnicBackUrl = cnicBackUrl;
-    if (businessDocUrl !== undefined) profileUpdates.businessDocUrl = businessDocUrl;
-    if (Object.keys(profileUpdates).length > 1) {
-      await db
-        .insert(vendorProfilesTable)
-        .values({ userId: vendorId, ...profileUpdates })
-        .onConflictDoUpdate({ target: vendorProfilesTable.userId, set: profileUpdates });
+    /* Wrap both writes in a transaction so that a failure on the
+       vendorProfiles upsert automatically rolls back the users update —
+       preventing a state where the user row is updated but the profile row
+       is not, leaving the two tables permanently out of sync.             */
+    const [user, profile] = await db.transaction(async (tx) => {
+      const [updatedUser] = await tx
+        .update(usersTable)
+        .set(userUpdates)
+        .where(eq(usersTable.id, vendorId))
+        .returning();
+      const profileUpdates: Record<string, unknown> = { updatedAt: new Date() };
+      if (businessType !== undefined) profileUpdates.businessType = businessType;
+      if (cnicFrontUrl !== undefined) profileUpdates.cnicFrontUrl = cnicFrontUrl;
+      if (cnicBackUrl !== undefined) profileUpdates.cnicBackUrl = cnicBackUrl;
+      if (businessDocUrl !== undefined) profileUpdates.businessDocUrl = businessDocUrl;
+      if (Object.keys(profileUpdates).length > 1) {
+        await tx
+          .insert(vendorProfilesTable)
+          .values({ userId: vendorId, ...profileUpdates })
+          .onConflictDoUpdate({ target: vendorProfilesTable.userId, set: profileUpdates });
+      }
+      const [updatedProfile] = await tx
+        .select({
+          cnicFrontUrl: vendorProfilesTable.cnicFrontUrl,
+          cnicBackUrl: vendorProfilesTable.cnicBackUrl,
+          businessDocUrl: vendorProfilesTable.businessDocUrl,
+          businessType: vendorProfilesTable.businessType,
+        })
+        .from(vendorProfilesTable)
+        .where(eq(vendorProfilesTable.userId, vendorId));
+      return [updatedUser, updatedProfile] as const;
+    });
+    if (!user) {
+      res.status(404).json({ success: false, error: "Vendor not found" });
+      return;
     }
-    const [profile] = await db
-      .select({
-        cnicFrontUrl: vendorProfilesTable.cnicFrontUrl,
-        cnicBackUrl: vendorProfilesTable.cnicBackUrl,
-        businessDocUrl: vendorProfilesTable.businessDocUrl,
-        businessType: vendorProfilesTable.businessType,
-      })
-      .from(vendorProfilesTable)
-      .where(eq(vendorProfilesTable.userId, vendorId));
     sendSuccess(res, formatUser({ ...user, ...(profile ?? {}) }));
   } catch (err) {
     next(err);

@@ -8,7 +8,7 @@ import {
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
-import { and, count, desc, eq, ilike, or, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, sql, sum } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { requirePermission } from "../../middleware/require-permission.js";
@@ -128,7 +128,7 @@ router.get(
               .select({ id: usersTable.id, name: usersTable.name, phone: usersTable.phone })
               .from(usersTable)
               .where(
-                sql`${usersTable.id} = ANY(ARRAY[${sql.raw(userIds.map((id) => `'${id}'`).join(","))}]::text[])`
+                inArray(usersTable.id, userIds)
               )
           : [];
       const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
@@ -211,9 +211,7 @@ router.get(
         ? await db
             .select({ id: usersTable.id, name: usersTable.name, phone: usersTable.phone })
             .from(usersTable)
-            .where(
-              sql`${usersTable.id} = ANY(${sql.raw(`ARRAY[${userIds.map((id) => `'${id}'`).join(",")}]`)})`
-            )
+            .where(inArray(usersTable.id, userIds))
         : [];
     const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
@@ -268,7 +266,7 @@ router.get("/vendors", requirePermission("vendors.view"), async (_req, res) => {
       })
       .from(ordersTable)
       .where(
-        sql`${ordersTable.vendorId} = ANY(${sql.raw(`ARRAY[${vendorIds.map((id) => `'${id}'`).join(",")}]`)})`
+        inArray(ordersTable.vendorId, vendorIds)
       )
       .groupBy(ordersTable.vendorId)
       .catch(() => []);
@@ -1003,9 +1001,7 @@ router.get(
               role: usersTable.roles,
             })
             .from(usersTable)
-            .where(
-              sql`${usersTable.id} = ANY(${sql.raw(`ARRAY[${userIds.map((id) => `'${id}'`).join(",")}]`)})`
-            )
+            .where(inArray(usersTable.id, userIds))
         : [];
     const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
@@ -1358,9 +1354,7 @@ router.get("/deposit-requests", requirePermission("finance.deposits.review"), as
             role: usersTable.roles,
           })
           .from(usersTable)
-          .where(
-            sql`${usersTable.id} = ANY(${sql.raw(`ARRAY[${userIds.map((id) => `'${id}'`).join(",")}]`)})`
-          )
+          .where(inArray(usersTable.id, userIds))
       : [];
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 

@@ -3458,13 +3458,22 @@ router.patch("/rides/:id/status", csrfDoubleSubmit, rideStatusLimiter, condition
          generate a fresh one, update the hash in DB, and emit the raw value. */
         if (ride.tripOtp) {
           const freshOtp = String(randomInt(1000, 10000));
-          db.update(ridesTable)
-            .set({ tripOtp: hashTripOtp(freshOtp), updatedAt: new Date() })
-            .where(eq(ridesTable.id, ride.id))
-            .catch((e: Error) =>
-              logger.error({ rideId: ride.id, err: e.message }, "[rider] arrived tripOtp refresh failed")
+          try {
+            /* Await the DB write BEFORE emitting the OTP.  Emitting first would
+               give the customer an OTP whose hash is not yet in the database —
+               the verification step would reject it, permanently blocking ride
+               completion until the customer requests another OTP.             */
+            await db
+              .update(ridesTable)
+              .set({ tripOtp: hashTripOtp(freshOtp), updatedAt: new Date() })
+              .where(eq(ridesTable.id, ride.id));
+            emitRideOtp(ride.userId, ride.id, freshOtp, ride.riderId);
+          } catch (e: unknown) {
+            logger.error(
+              { rideId: ride.id, err: (e as Error).message },
+              "[rider] arrived tripOtp refresh failed — OTP not emitted to avoid mismatch"
             );
-          emitRideOtp(ride.userId, ride.id, freshOtp, ride.riderId);
+          }
         }
       }
     }
