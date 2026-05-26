@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import {
   ordersTable,
   productsTable,
+  userRolesTable,
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
@@ -126,7 +127,7 @@ router.get("/pending-counts", async (_req: Request, res: Response) => {
       db
         .select({ count: count() })
         .from(usersTable)
-        .where(and(eq(usersTable.approvalStatus, "pending"), sql`roles LIKE '%rider%'`)),
+        .where(and(eq(usersTable.approvalStatus, "pending"), sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`)),
       db.select({ count: count() }).from(ordersTable).where(eq(ordersTable.status, "pending")),
       db
         .select({ count: count() })

@@ -278,6 +278,11 @@ router.post(
           .where(eq(usersTable.id, user.id));
 
         await tx
+          .insert(userRolesTable)
+          .values({ id: generateId(), userId: user.id, role: "vendor" })
+          .onConflictDoNothing();
+
+        await tx
           .insert(vendorProfilesTable)
           .values({
             userId: user.id,
@@ -1108,6 +1113,11 @@ router.post(
             emergencyContact: emergencyContact || null,
           });
 
+          await tx
+            .insert(userRolesTable)
+            .values({ id: generateId(), userId, role: userRole as typeof userRolesTable.$inferInsert["role"] })
+            .onConflictDoNothing();
+
           if (userRole === "rider") {
             await tx.insert(riderProfilesTable).values({
               userId,
@@ -1449,6 +1459,11 @@ router.post(
         ...(city ? { city: city.trim() } : {}),
         ...(emergencyContact ? { emergencyContact: emergencyContact.trim() } : {}),
       });
+
+      await db
+        .insert(userRolesTable)
+        .values({ id: generateId(), userId, role: userRole as typeof userRolesTable.$inferInsert["role"] })
+        .onConflictDoNothing();
 
       // Store email verification token in otp_tokens (replaces emailOtpCode/emailOtpExpiry columns)
       await saveOtpToken({

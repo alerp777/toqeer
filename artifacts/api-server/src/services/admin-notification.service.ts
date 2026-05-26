@@ -10,7 +10,7 @@
  */
 
 import { db } from "@workspace/db";
-import { notificationsTable, usersTable } from "@workspace/db/schema";
+import { notificationsTable, userRolesTable, usersTable } from "@workspace/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { logger } from "../lib/logger.js";
@@ -261,7 +261,7 @@ export class NotificationService {
       let roleCondition: ReturnType<typeof sql> | undefined;
       if (input.userFilter?.roles && input.userFilter.roles.length > 0) {
         const roleConditions = input.userFilter.roles.map(
-          (role) => sql`${usersTable.roles} LIKE ${"%" + role + "%"}`
+          (role) => sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = ${role})`
         );
         roleCondition =
           roleConditions.length === 1

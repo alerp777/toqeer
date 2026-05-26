@@ -5,6 +5,7 @@ import {
   ordersTable,
   otpAttemptsTable,
   ridesTable,
+  userRolesTable,
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
@@ -550,12 +551,12 @@ router.get("/stats", adminAuth, async (_req, res, next) => {
     const [totalRidersRow] = await db
       .select({ c: count() })
       .from(usersTable)
-      .where(and(sql`${usersTable.roles} ILIKE '%rider%'`, sql`${usersTable.deletedAt} IS NULL`));
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`, sql`${usersTable.deletedAt} IS NULL`));
 
     const [totalVendorsRow] = await db
       .select({ c: count() })
       .from(usersTable)
-      .where(and(sql`${usersTable.roles} ILIKE '%vendor%'`, sql`${usersTable.deletedAt} IS NULL`));
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')`, sql`${usersTable.deletedAt} IS NULL`));
 
     const [revenueRow] = await db
       .select({

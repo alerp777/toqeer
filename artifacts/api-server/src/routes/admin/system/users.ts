@@ -231,7 +231,8 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
       )!
     );
   }
-  if (role) {
+  const VALID_ROLE_VALUES = ["customer", "rider", "vendor", "admin", "van_driver"] as const;
+  if (role && VALID_ROLE_VALUES.includes(role as (typeof VALID_ROLE_VALUES)[number])) {
     conditions.push(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = ${role})`);
   }
   if (dateFrom) {
@@ -2215,7 +2216,7 @@ router.post("/users/export", requirePermission("users.view"), async (req, res) =
       const conditions: SQL[] = [isNull(usersTable.deletedAt) as SQL];
 
       if (role && role !== "all") {
-        conditions.push(sql`${usersTable.roles} LIKE ${"%" + role + "%"}`);
+        conditions.push(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = ${role})`);
       }
       if (status && status !== "all") {
         if (status === "banned") conditions.push(eq(usersTable.isBanned, true));

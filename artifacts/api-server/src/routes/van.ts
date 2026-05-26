@@ -4,6 +4,7 @@ import {
   liveLocationsTable,
   notificationsTable,
   riderProfilesTable,
+  userRolesTable,
   usersTable,
   vanBookingsTable,
   vanDriversTable,
@@ -2014,6 +2015,11 @@ router.post("/admin/drivers", adminAuth, async (req, res, next) => {
         updatedAt: new Date(),
       })
       .where(eq(usersTable.id, p.data.userId));
+
+    await db
+      .insert(userRolesTable)
+      .values({ id: generateId(), userId: p.data.userId, role: "van_driver" })
+      .onConflictDoNothing();
 
     sendCreated(res, driver);
   } catch (e) {

@@ -16,6 +16,7 @@ import {
   authAuditLogTable,
   platformSettingsTable,
   riderProfilesTable,
+  userRolesTable,
   userSessionsTable,
   usersTable,
   vendorProfilesTable,
@@ -166,6 +167,11 @@ export class UserService {
       kycStatus: "pending",
       isActive: true,
     });
+
+    await db
+      .insert(userRolesTable)
+      .values({ id: generateId(), userId, role: userRole as typeof userRolesTable.$inferInsert["role"] })
+      .onConflictDoNothing();
 
     // Auto-create blank profile row so leftJoin immediately returns a profile
     // object instead of null, avoiding a data gap in the admin UI.

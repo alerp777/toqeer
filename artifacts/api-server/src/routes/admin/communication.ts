@@ -7,6 +7,7 @@ import {
   communicationRolesTable,
   conversationsTable,
   platformSettingsTable,
+  userRolesTable,
   usersTable,
 } from "@workspace/db/schema";
 import { and, count, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
@@ -636,7 +637,7 @@ router.get("/communication/ajk-ids", async (req, res) => {
     }
 
     const filterCondition = role
-      ? and(condition, sql`${usersTable.roles}::text ILIKE ${"%" + role + "%"}`)
+      ? and(condition, sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = ${role})`)
       : condition;
 
     const users = await db
