@@ -506,7 +506,7 @@ export default function Wallet() {
       queryFn: ({ pageParam }) =>
         api.getWalletPage({ cursor: pageParam ?? null, limit: PAGE_SIZE }),
       initialPageParam: null as string | null,
-      getNextPageParam: (lastPage) => lastPage?.nextCursor ?? null,
+      getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
       staleTime: 30_000,
       refetchInterval: 30000,
       enabled: config.features.wallet,

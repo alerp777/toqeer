@@ -116,6 +116,10 @@ export default function Chat() {
   const [callActive, setCallActive] = useState(false);
   const [callId, setCallId] = useState<string | null>(null);
   const [callTimer, setCallTimer] = useState(0);
+  const callTimerRef = useRef(0);
+  useEffect(() => {
+    callTimerRef.current = callTimer;
+  }, [callTimer]);
   const [muted, setMuted] = useState(false);
   const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -226,7 +230,7 @@ export default function Chat() {
       api
         .apiFetch(`/communication/calls/${callId}/end`, {
           method: "POST",
-          body: JSON.stringify({ duration: callTimer }),
+          body: JSON.stringify({ duration: callTimerRef.current }),
         })
         .catch((err) => {
           log.error(
@@ -260,7 +264,7 @@ export default function Chat() {
     setCallTimer(0);
     setIncomingCall(null);
     trickleIceRef.current = null;
-  }, [callId, callTimer, selectedConv, socket]);
+  }, [callId, selectedConv, socket]);
 
   /* Keep a ref that always points at the latest endCall so socket
      event handlers registered on mount don't capture a stale closure. */

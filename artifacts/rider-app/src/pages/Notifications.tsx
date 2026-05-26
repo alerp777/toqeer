@@ -221,7 +221,7 @@ export default function Notifications() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
-  const notifs: NotifRecord[] = data?.notifications || []; // eslint-disable-line react-hooks/exhaustive-deps
+  const notifs: NotifRecord[] = data?.notifications || [];
   const unread: number = data?.unread || 0;
 
   const [toast, setToast] = useState("");
