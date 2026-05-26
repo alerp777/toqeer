@@ -688,31 +688,6 @@ export function RegisterScreen({
         </button>
       )}
 
-      {isOtpStep(currentStep) && !otpSent && (
-        <form
-          onSubmit={(e) => void handleNext(e)}
-          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-        >
-          <button
-            type="submit"
-            style={{ ...s.btnPrimary(accent, accentText), ...(loading ? s.btnDisabled : {}) }}
-            disabled={loading}
-          >
-            {loading ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-                <SpinIcon size={17} /> Sending…
-              </span>
-            ) : (
-              "Send Verification Code"
-            )}
-          </button>
-          {stepIndex > 0 && (
-            <button type="button" style={s.btnBack(accent)} onClick={handleBack}>
-              ← Back
-            </button>
-          )}
-        </form>
-      )}
     </>
   );
 
