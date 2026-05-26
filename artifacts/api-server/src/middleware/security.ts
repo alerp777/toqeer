@@ -1233,6 +1233,11 @@ export async function customerAuth(req: Request, res: Response, next: NextFuncti
     return;
   }
 
+  if (payload.role?.toLowerCase() !== "customer") {
+    res.status(403).json({ success: false, error: "Forbidden: insufficient role" });
+    return;
+  }
+
   req.customerId = payload.userId;
   req.userId = payload.userId;
   req.userPhone = payload.phone;
@@ -1254,6 +1259,11 @@ export async function riderAuth(req: Request, res: Response, next: NextFunction)
   const payload = verifyUserJwt(raw);
   if (!payload) {
     res.status(401).json({ success: false, error: "Invalid or expired token" });
+    return;
+  }
+
+  if (payload.role?.toLowerCase() !== "rider") {
+    res.status(403).json({ success: false, error: "Forbidden: insufficient role" });
     return;
   }
 
@@ -1407,10 +1417,12 @@ export function requireRole(
           return;
         }
       } catch (err) {
-        logger.debug(
+        logger.error(
           { error: err instanceof Error ? err.message : String(err) },
-          `[fn] on DB error, allow through`
+          `[fn] DB error during vendor approval check — returning 503`
         );
+        res.status(503).json({ error: "Unable to verify vendor approval status. Please try again." });
+        return;
       }
     }
 

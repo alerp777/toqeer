@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import {
   RegisterScreen,
   SubmittedScreen,
@@ -6,13 +5,11 @@ import {
   type StepComponentProps,
   type StepConfig,
 } from "@workspace/auth-react";
-=======
-import { RegisterScreen, ThemeProvider, type StepConfig } from "@workspace/auth-react";
-import { CNIC_REGEX } from "@workspace/phone-utils";
->>>>>>> Stashed changes
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
+
+const CNIC_REGEX = /^\d{5}-\d{7}-\d$/;
 
 const DRAFT_KEY = "rider_reg_draft";
 
