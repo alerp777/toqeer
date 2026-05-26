@@ -115,6 +115,7 @@ export function PopupEngine() {
   const queueRef = useRef<Popup[]>([]);
   const idxRef = useRef(0);
   const autoDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const currentIdRef = useRef<string | null>(null);
 
   const dismissCurrentRef = useRef<(action?: "dismiss" | "click") => void>(() => {});
@@ -152,18 +153,22 @@ export function PopupEngine() {
         clearTimeout(autoDismissTimer.current);
         autoDismissTimer.current = null;
       }
+      dismissTimers.current.forEach((t) => clearTimeout(t));
+      dismissTimers.current = [];
       void sendImpression(current.id, action, token, sessionId.current);
       setLeaving(true);
-      setTimeout(() => {
+      const t1 = setTimeout(() => {
         setVisible(false);
         setCurrent(null);
         currentIdRef.current = null;
         setLeaving(false);
         const nextIdx = idxRef.current + 1;
         if (nextIdx < queueRef.current.length) {
-          setTimeout(() => showAt(queueRef.current, nextIdx), 300);
+          const t2 = setTimeout(() => showAt(queueRef.current, nextIdx), 300);
+          dismissTimers.current.push(t2);
         }
       }, 220);
+      dismissTimers.current.push(t1);
     },
     [current, token, showAt]
   );
@@ -196,6 +201,8 @@ export function PopupEngine() {
     })();
     return () => {
       if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current);
+      dismissTimers.current.forEach((t) => clearTimeout(t));
+      dismissTimers.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAt]);

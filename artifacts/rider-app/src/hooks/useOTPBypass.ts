@@ -35,6 +35,7 @@ export const useOTPBypass = (phone?: string) => {
     const abortController = new AbortController();
     const cacheKey = `otpBypassCache_${phone}`;
     const cacheTimeKey = `otpBypassCacheTime_${phone}`;
+    const isMounted = { current: true };
 
     const applyData = (data: {
       bypassActive?: boolean;
@@ -51,7 +52,7 @@ export const useOTPBypass = (phone?: string) => {
     };
 
     const fetchStatus = async () => {
-      if (abortController.signal.aborted) return;
+      if (abortController.signal.aborted || !isMounted.current) return;
       try {
         const cacheTime = sessionStorage.getItem(cacheTimeKey);
         if (cacheTime && Date.now() - parseInt(cacheTime, 10) < CACHE_TTL_MS) {
@@ -62,22 +63,24 @@ export const useOTPBypass = (phone?: string) => {
             } catch (err) {
               log.warn("OTP bypass cache parse failed:", err);
             }
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
             return;
           }
         }
 
-        setLoading(true);
+        if (isMounted.current) setLoading(true);
         const response = await fetch(`/api/auth/otp-status?phone=${encodeURIComponent(phone)}`, {
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
         });
+        if (!isMounted.current) return;
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         applyData(data);
         sessionStorage.setItem(cacheKey, JSON.stringify(data));
         sessionStorage.setItem(cacheTimeKey, Date.now().toString());
       } catch (error) {
+        if (!isMounted.current) return;
         log.error("Failed to fetch otp-status:", error);
         const cacheTime = sessionStorage.getItem(cacheTimeKey);
         if (cacheTime && Date.now() - parseInt(cacheTime, 10) < CACHE_TTL_MS) {
@@ -91,13 +94,14 @@ export const useOTPBypass = (phone?: string) => {
           }
         }
       } finally {
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
       }
     };
 
     void fetchStatus();
     const interval = setInterval(fetchStatus, POLL_INTERVAL_MS);
     return () => {
+      isMounted.current = false;
       abortController.abort();
       clearInterval(interval);
     };

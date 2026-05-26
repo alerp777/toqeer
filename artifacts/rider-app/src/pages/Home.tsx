@@ -90,6 +90,8 @@ export default function Home() {
   const prevIdsRef = useRef<Set<string>>(new Set());
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const soundIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUnseenRequestsRef = useRef(false);
   const [silenced, setSilenced] = useState(isSilenced());
   const [silenceRemaining, setSilenceRemaining] = useState(getSilenceRemaining());
@@ -105,6 +107,8 @@ export default function Home() {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       if (soundIntervalRef.current) clearInterval(soundIntervalRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
       document.removeEventListener("click", handler);
       document.removeEventListener("touchstart", handler);
     };
@@ -167,8 +171,12 @@ export default function Home() {
     const newStatus = !effectiveOnline;
     setOptimisticOnline(newStatus);
     let succeeded = false;
+    let cancelled = false;
     try {
       const result = await api.setOnline(newStatus);
+      /* If a newer toggle happened while this request was in-flight, drop its
+         side-effects so the UI never oscillates between two concurrent calls. */
+      if (lastToggleRef.current !== now) { cancelled = true; return; }
       if (!isMountedRef.current) return;
       if (result?.serviceZoneWarning) {
         setZoneWarning(result.serviceZoneWarning);
@@ -177,7 +185,9 @@ export default function Home() {
       }
       await refreshUser()
         .then(() => {
-          setLastSeenOnlineAt(new Date().toISOString());
+          if (lastToggleRef.current === now && isMountedRef.current) {
+            setLastSeenOnlineAt(new Date().toISOString());
+          }
         })
         .catch((err) => {
           log.error(
@@ -185,15 +195,15 @@ export default function Home() {
             "[Home] refreshUser failed"
           );
         });
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || lastToggleRef.current !== now) return;
       succeeded = true;
       showToast(newStatus ? T("youAreNowOnline") : T("youAreNowOffline"), "success");
     } catch (e: unknown) {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || cancelled || lastToggleRef.current !== now) return;
       setOptimisticOnline(!newStatus);
       showToast(e instanceof Error ? e.message : T("somethingWentWrong"), "error");
     } finally {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !cancelled && lastToggleRef.current === now) {
         if (succeeded) setOptimisticOnline(null);
         setToggling(false);
       }
@@ -282,6 +292,17 @@ export default function Home() {
     .sort()
     .join(",");
   useEffect(() => {
+    /* Clear stale flash / announce timers before each run so overlapping
+       request waves don't leave dangling timeouts from previous effect runs. */
+    if (flashTimerRef.current) {
+      clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = null;
+    }
+    if (announceTimerRef.current) {
+      clearTimeout(announceTimerRef.current);
+      announceTimerRef.current = null;
+    }
+
     const currentIds = new Set<string>(currentIdsSig.split(",").filter(Boolean));
     const prevIds = prevIdsRef.current;
     let hasNew = false;
@@ -292,7 +313,7 @@ export default function Home() {
 
     if (hasNew && currentIds.size > 0) {
       setNewFlash(true);
-      setTimeout(() => setNewFlash(false), 2500);
+      flashTimerRef.current = setTimeout(() => setNewFlash(false), 2500);
       /* Recheck audio lock before playing — policy may have changed since mount */
       const locked = isAudioLocked();
       setAudioLocked(locked);
@@ -302,7 +323,7 @@ export default function Home() {
       const msg =
         newCount === 1 ? "New request available" : `${newCount} new requests available`;
       setSrAnnouncement("");
-      setTimeout(() => setSrAnnouncement(msg), 50);
+      announceTimerRef.current = setTimeout(() => setSrAnnouncement(msg), 50);
     }
 
     if (currentIds.size === 0) {

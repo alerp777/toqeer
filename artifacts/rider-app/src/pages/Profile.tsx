@@ -161,6 +161,11 @@ export default function Profile() {
     };
   }, []);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const showToast = (m: string, isError = false) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast(m);
@@ -203,24 +208,28 @@ export default function Profile() {
         mimeType: file.type,
       });
       if (!uploadRes?.url) {
-        showToast(T("uploadFailedNoUrl"));
-        setAvatarUploading(false);
+        if (isMountedRef.current) {
+          showToast(T("uploadFailedNoUrl"));
+          setAvatarUploading(false);
+        }
         return;
       }
       try {
         await api.updateProfile({ avatar: uploadRes.url });
       } catch {
-        showToast(T("failedSaveProfilePhoto"), true);
-        setAvatarUploading(false);
+        if (isMountedRef.current) {
+          showToast(T("failedSaveProfilePhoto"), true);
+          setAvatarUploading(false);
+        }
         if (avatarInputRef.current) avatarInputRef.current.value = "";
         return;
       }
       await refreshUser();
-      showToast(T("profilePhotoUpdated"));
+      if (isMountedRef.current) showToast(T("profilePhotoUpdated"));
     } catch {
-      showToast(T("failedUploadPhoto"), true);
+      if (isMountedRef.current) showToast(T("failedUploadPhoto"), true);
     }
-    setAvatarUploading(false);
+    if (isMountedRef.current) setAvatarUploading(false);
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   };
 

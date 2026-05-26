@@ -168,6 +168,7 @@ export default function Chat() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const trickleIceRef = useRef<boolean | null>(null);
 
   /* Initialize remote audio element (reused for all tracks) */
@@ -279,6 +280,8 @@ export default function Chat() {
   useEffect(() => {
     return () => {
       endCallRef.current();
+      scrollTimersRef.current.forEach((t) => clearTimeout(t));
+      scrollTimersRef.current = [];
     };
   }, []);
 
@@ -331,7 +334,7 @@ export default function Chat() {
       queryClient.setQueryData(
         ["messages", selectedConvRef.current?.id],
         (old: InfiniteData<Message[]> | undefined) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.pages)) return old;
           const params = old.pageParams as number[];
           const minParam = params.length > 0 ? Math.min(...params) : 0;
           const pages = old.pages.map((page, i) =>
@@ -410,9 +413,9 @@ export default function Chat() {
     };
 
     const onCallAnswered = (_data: { callId: string }) => {
+      if (timerRef.current) clearInterval(timerRef.current);
       setCallActive(true);
       setCallTimer(0);
-      if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => setCallTimer((t) => t + 1), 1000);
     };
     const onRequestCancelled = () => {
@@ -558,10 +561,11 @@ export default function Chat() {
     } catch (e) {
       setSendError((e as Error)?.message || "Failed to open conversation");
     }
-    setTimeout(() => {
+    const t = setTimeout(() => {
       const el = scrollRef.current;
       if (el) el.scrollTo(0, el.scrollHeight);
     }, 100);
+    scrollTimersRef.current.push(t);
   };
 
   const sendMessage = async () => {
@@ -632,10 +636,11 @@ export default function Chat() {
         }
       );
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      setTimeout(() => {
+      const t = setTimeout(() => {
         const el = scrollRef.current;
         if (el) el.scrollTo(0, el.scrollHeight);
       }, 100);
+      scrollTimersRef.current.push(t);
     } catch (e) {
       setSendError((e as Error)?.message || "Failed to upload file");
     }
@@ -743,6 +748,7 @@ export default function Chat() {
 
       setCallId(data.callId);
       setCallActive(true);
+      if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => setCallTimer((t) => t + 1), 1000);
       const trickleIce = data.trickleIce !== false;
       trickleIceRef.current = trickleIce;
@@ -815,6 +821,7 @@ export default function Chat() {
       const ad = await api.apiFetch(`/communication/calls/${incomingCall.callId}/answer`, {
         method: "POST",
       });
+      if (timerRef.current) clearInterval(timerRef.current);
       setCallActive(true);
       setCallId(incomingCall.callId);
       timerRef.current = setInterval(() => setCallTimer((t) => t + 1), 1000);
@@ -883,7 +890,8 @@ export default function Chat() {
       );
     } finally {
       setAiLoading(false);
-      setTimeout(() => aiScrollRef.current?.scrollTo(0, aiScrollRef.current.scrollHeight), 100);
+      const t = setTimeout(() => aiScrollRef.current?.scrollTo(0, aiScrollRef.current.scrollHeight), 100);
+      scrollTimersRef.current.push(t);
     }
   };
 

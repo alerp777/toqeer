@@ -1,6 +1,6 @@
 import { BiometricEnrollOverlay, LoginScreen as SharedLoginScreen, PendingOverlay, RejectedOverlay, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
 import { tDual } from "@workspace/i18n";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { useRiderAuthConfig } from "../AuthConfigContext";
@@ -42,6 +42,12 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [socialTotpLoading, setSocialTotpLoading] = useState(false);
   const capturedTokenRef = useRef("");
   const capturedRefreshRef = useRef<string | undefined>(undefined);
+  const roleErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (roleErrorTimerRef.current) clearTimeout(roleErrorTimerRef.current);
+    };
+  }, []);
 
   const finishLogin = (token: string, profile: unknown, refreshToken: string) => {
     login(token, profile as AuthUser, refreshToken || undefined);
@@ -204,7 +210,11 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       /* Show a user-visible toast so they know biometric was not saved and
          can retry from Profile settings — but proceed with login either way. */
       setRoleError(tDual("couldNotSaveBiometric", language));
-      setTimeout(() => setRoleError(null), 3500);
+      if (roleErrorTimerRef.current) clearTimeout(roleErrorTimerRef.current);
+      roleErrorTimerRef.current = setTimeout(() => {
+        roleErrorTimerRef.current = null;
+        setRoleError(null);
+      }, 3500);
     }
     const { token, refreshToken, profile } = enrollData;
     setEnrollData(null);

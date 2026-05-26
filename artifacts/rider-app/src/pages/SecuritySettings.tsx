@@ -76,8 +76,9 @@ function PasswordChangeSection({
       showToastFn("Password updated successfully");
     } catch (e: unknown) {
       setPwError(e instanceof Error ? e.message : "Failed to change password");
+    } finally {
+      setPwLoading(false);
     }
-    setPwLoading(false);
   };
 
   return (

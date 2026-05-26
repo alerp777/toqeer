@@ -94,6 +94,7 @@ export default function Active() {
      knows updates may be delayed without a hard UI block. */
   useEffect(() => {
     if (!sharedSocket) return;
+    const reconnectTimerRef = { current: null as ReturnType<typeof setTimeout> | null };
     const onSocketError = (err: Error) => {
       if (!isMountedRef.current) return;
       log.warn({ err: err?.message }, "[Active] Socket transport error");
@@ -101,7 +102,8 @@ export default function Active() {
       /* Attempt reconnect after a brief back-off so the rider regains live
          status updates without needing to reload the page. */
       if (sharedSocket && !sharedSocket.connected) {
-        setTimeout(() => {
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = setTimeout(() => {
           if (isMountedRef.current) sharedSocket.connect();
         }, 3000);
       }
@@ -109,6 +111,7 @@ export default function Active() {
     sharedSocket.on("error", onSocketError);
     return () => {
       sharedSocket.off("error", onSocketError);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
   }, [sharedSocket]);
 
