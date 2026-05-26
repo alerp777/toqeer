@@ -28,8 +28,8 @@ import {
 import { emitVanLocation, emitVanTripUpdate } from "../lib/socketio.js";
 import { sendPushToRole, sendPushToUser } from "../lib/webpush.js";
 import { paymentLimiter } from "../middleware/rate-limit.js";
-import { customerAuth, riderAuth } from "../middleware/security.js";
-import { getCachedSettings } from "./admin-shared.js";
+import { customerAuth, getClientIp, riderAuth } from "../middleware/security.js";
+import { getCachedSettings, logMaintenanceBypass } from "./admin-shared.js";
 import { adminAuth } from "./admin.js";
 import { evaluateRulesForUser } from "./admin/conditions.js";
 
@@ -484,6 +484,7 @@ router.post("/bookings", customerAuth, paymentLimiter, async (req, res, _next) =
         );
         return;
       }
+      logMaintenanceBypass(req, bypass);
     }
 
     const vs = await getVanSettings();

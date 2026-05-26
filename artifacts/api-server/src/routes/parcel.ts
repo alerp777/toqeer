@@ -27,6 +27,7 @@ import { publicLimiter } from "../middleware/rate-limit.js";
 import { addSecurityEvent, customerAuth, getClientIp, riderAuth } from "../middleware/security.js";
 import { verifyOwnership } from "../middleware/verifyOwnership.js";
 import { getCachedSettings } from "./admin.js";
+import { logMaintenanceBypass } from "./admin-shared.js";
 
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "").trim();
 
@@ -241,6 +242,7 @@ router.post("/", customerAuth, async (req, res, next) => {
         );
         return;
       }
+      logMaintenanceBypass(req, bypass);
     }
 
     // Feature flag check

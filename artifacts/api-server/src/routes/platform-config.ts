@@ -9,6 +9,7 @@ import { normalizePhoneFormatPattern } from "../lib/phone-format.js";
 import { sendError, sendNotFound, sendSuccess, sendValidationError } from "../lib/response.js";
 import { customerAuth, getClientIp } from "../middleware/security.js";
 import { getCachedSettings } from "./admin.js";
+import { logMaintenanceBypass } from "./admin-shared.js";
 
 const router: IRouter = Router();
 
@@ -146,7 +147,11 @@ router.get("/", async (req, res) => {
         if (base !== "maintenance") return base;
         const key = (s["security_maintenance_key"] ?? "").trim();
         const bypass = ((req.headers["x-maintenance-key"] as string) ?? "").trim();
-        return key && bypass === key ? "active" : "maintenance";
+        if (key && bypass === key) {
+          logMaintenanceBypass(req, bypass);
+          return "active";
+        }
+        return "maintenance";
       })(),
       supportPhone: s["support_phone"] ?? "03005000000",
       supportEmail: s["support_email"] ?? "",

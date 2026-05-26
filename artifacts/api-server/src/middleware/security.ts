@@ -742,21 +742,17 @@ export async function blacklistSessionHash(tokenHash: string, ttlSec?: number): 
 
 /**
  * Check if a session token hash is blacklisted.
- * Returns false (allow) when Redis is unavailable.
+ *
+ * Fail-closed: throws on Redis error so that callers (checkSessionRevocation)
+ * can return 503 rather than silently allowing a revoked token through during
+ * a Redis outage. A missing redisClient (Redis not configured) is treated as
+ * "not blacklisted" because there is no blacklist store to check.
  */
 export async function isSessionHashBlacklisted(tokenHash: string): Promise<boolean> {
-  try {
-    const { redisClient } = await import("../lib/redis.js");
-    if (!redisClient) return false;
-    const result = await redisClient.exists(`session:bl:${tokenHash}`);
-    return result === 1;
-  } catch (err) {
-    logger.warn(
-      { err: err instanceof Error ? err.message : String(err) },
-      "[auth] isSessionHashBlacklisted Redis error"
-    );
-    return false;
-  }
+  const { redisClient } = await import("../lib/redis.js");
+  if (!redisClient) return false;
+  const result = await redisClient.exists(`session:bl:${tokenHash}`);
+  return result === 1;
 }
 
 /**

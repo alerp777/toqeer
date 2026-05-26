@@ -2,6 +2,7 @@ import { idempotencyKeysTable } from "@workspace/db/schema";
 import { Router } from "express";
 import { AuditService } from "../../services/admin-audit.service.js";
 import { getClientIp } from "../../middleware/security.js";
+import { logMaintenanceBypass } from "../admin-shared.js";
 import type { TranslationKey } from "./helpers.js";
 import {
   acceptBidSchema,
@@ -298,6 +299,7 @@ router.post("/", customerAuth, bookRideLimiter, async (req, res) => {
         );
         return;
       }
+      logMaintenanceBypass(req, bypass);
     }
 
     const ridesEnabled = (s["feature_rides"] ?? "on") === "on";

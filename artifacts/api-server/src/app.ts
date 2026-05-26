@@ -218,6 +218,35 @@ export async function runStartupTasks(): Promise<void> {
   } catch (err) {
     logger.error({ err }, "[startup] platform settings seed failed (continuing)");
   }
+  /* ── Maintenance key entropy check ─────────────────────────────────────────
+     The security_maintenance_key platform setting is the sole credential that
+     allows operators to reach protected routes while the app is in maintenance
+     mode. A weak (short) key is trivially guessable. This is a best-effort
+     check — a DB error here must not block startup. */
+  try {
+    const settings = await getCachedSettings();
+    const mainKey = (settings["security_maintenance_key"] ?? "").trim();
+    if (!mainKey) {
+      logger.info(
+        "[startup] security_maintenance_key is not configured — maintenance bypass is disabled."
+      );
+    } else if (mainKey.length < 16) {
+      logger.warn(
+        { keyLength: mainKey.length },
+        "[startup] SECURITY WARNING: security_maintenance_key is shorter than 16 characters. " +
+          "A weak maintenance key can be brute-forced during an outage. " +
+          "Update it via Admin > Platform Settings. Recommended: 32+ random characters."
+      );
+    } else {
+      logger.info(
+        { keyLength: mainKey.length },
+        "[startup] security_maintenance_key entropy check passed."
+      );
+    }
+  } catch (err) {
+    logger.warn({ err }, "[startup] maintenance key entropy check failed (non-fatal, continuing)");
+  }
+
   try {
     startHealthMonitor();
   } catch (err) {

@@ -4,7 +4,7 @@ import {
   type TranslationKey as I18nTranslationKey,
   type Language,
 } from "@workspace/i18n";
-import { randomBytes, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { generateId as _generateId } from "../lib/id.js";
@@ -18,9 +18,39 @@ import {
 import { verifyAccessToken } from "../utils/admin-jwt.js";
 
 /**
+ * Audit-log a successful maintenance-mode bypass.
+ *
+ * Call this immediately after confirming that a valid x-maintenance-key header
+ * was presented. It writes a structured WARN entry with:
+ *   - actor IP
+ *   - request URL
+ *   - SHA-256 prefix of the raw key (for correlation without exposing the key)
+ *   - ISO timestamp
+ *
+ * Rotation policy: the maintenance key (security_maintenance_key platform setting)
+ * should be rotated at least every 90 days, or immediately after any maintenance
+ * window that required bypass access.
+ */
+export function logMaintenanceBypass(req: Request, rawKey: string): void {
+  const keyHashPrefix = createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
+  pinoLogger.warn(
+    {
+      event: "maintenance_bypass_used",
+      ip: getClientIp(req),
+      keyHashPrefix,
+      url: req.url,
+      method: req.method,
+      ts: new Date().toISOString(),
+    },
+    "[SECURITY] Maintenance mode bypass header accepted — audit log."
+  );
+}
+
+/**
  * Resolve a JWT secret from an environment variable.
- * Exits the process in production if the secret is absent or too short;
- * logs a warning and uses a padded dev fallback in development.
+ * Always exits the process if the secret is absent or too short — there is no
+ * NODE_ENV-gated fallback. Any environment (dev, staging, prod) must have the
+ * secret set before the server will start.
  */
 function resolveAdminSecret(envVar: string): string {
   const val = process.env[envVar];
@@ -28,15 +58,8 @@ function resolveAdminSecret(envVar: string): string {
     const msg = !val
       ? `[admin-shared] FATAL: ${envVar} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${envVar} is too short (${val.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
-      pinoLogger.fatal(msg);
-      process.exit(1);
-    }
-    pinoLogger.warn(
-      `[admin-shared] WARNING: ${envVar} not set or too short. ` +
-        `Using unsafe dev fallback — set a strong secret before deploying.`
-    );
-    return (val ?? "") + "dev_fallback_pad_to_32_chars_min!!";
+    pinoLogger.fatal(msg);
+    process.exit(1);
   }
   return val;
 }
@@ -414,14 +437,8 @@ const _ADMIN_REFRESH_SECRET = (() => {
     const msg = !v
       ? `[admin-shared] FATAL: ${key} is not set. A minimum 32-character secret is required.`
       : `[admin-shared] FATAL: ${key} is too short (${v.length} chars, need ≥32).`;
-    if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
-      pinoLogger.fatal(msg);
-      process.exit(1);
-    }
-    pinoLogger.warn(
-      `[admin-shared] WARNING: ${key} not set or too short. Using unsafe dev fallback.`
-    );
-    return (v ?? "") + "dev_fallback_pad_to_32_chars_min!!";
+    pinoLogger.fatal(msg);
+    process.exit(1);
   }
   return v;
 })();

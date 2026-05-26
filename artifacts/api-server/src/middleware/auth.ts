@@ -78,8 +78,14 @@ export async function checkSessionRevocation(
 
     next();
   } catch (err) {
-    logger.warn({ err }, "[checkSessionRevocation] Check failed — passing through");
-    next();
+    logger.error(
+      { err, url: req.url, ip: getClientIp(req) },
+      "[checkSessionRevocation] Redis/DB unavailable — failing closed (503) to prevent revoked-token bypass"
+    );
+    res.status(503).json({
+      success: false,
+      error: "Service temporarily unavailable. Please try again shortly.",
+    });
   }
 }
 
@@ -162,7 +168,13 @@ export async function verifyTokenFamily(
 
     next();
   } catch (err) {
-    logger.warn({ err }, "[verifyTokenFamily] Check failed — passing through");
-    next();
+    logger.error(
+      { err, url: req.url, ip: getClientIp(req) },
+      "[verifyTokenFamily] DB unavailable — failing closed (503) to prevent revoked-family bypass"
+    );
+    res.status(503).json({
+      success: false,
+      error: "Service temporarily unavailable. Please try again shortly.",
+    });
   }
 }

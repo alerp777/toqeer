@@ -24,9 +24,10 @@ import {
   sendSuccess,
   sendValidationError,
 } from "../lib/response.js";
-import { addSecurityEvent, customerAuth, riderAuth } from "../middleware/security.js";
+import { addSecurityEvent, customerAuth, getClientIp, riderAuth } from "../middleware/security.js";
 import { verifyOwnership } from "../middleware/verifyOwnership.js";
 import { getCachedSettings } from "./admin.js";
+import { logMaintenanceBypass } from "./admin-shared.js";
 import { prescriptionRefMap } from "./uploads.js";
 
 const router: IRouter = Router();
@@ -324,6 +325,7 @@ router.post("/", customerAuth, async (req, res) => {
       );
       return;
     }
+    logMaintenanceBypass(req, bypass);
   }
 
   const pharmacyEnabled = (s["feature_pharmacy"] ?? "on") === "on";
