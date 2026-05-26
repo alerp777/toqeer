@@ -579,3 +579,7 @@ html[data-admin-reduce-motion="1"] *::after {
   30%, 50%, 70% { transform: translateX(-4px); }
   40%, 60%  { transform: translateX(4px);  }
 }
+
+.animate-shake {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}

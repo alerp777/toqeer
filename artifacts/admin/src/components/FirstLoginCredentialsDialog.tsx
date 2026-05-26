@@ -55,6 +55,7 @@ function PasswordInput({
   onToggleShow,
   hasError,
   "data-testid": testId,
+  inputRef,
 }: {
   id: string;
   value: string;
@@ -66,6 +67,7 @@ function PasswordInput({
   onToggleShow: () => void;
   hasError?: boolean;
   "data-testid"?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
 }) {
   return (
     <div className="relative">
@@ -78,6 +80,7 @@ function PasswordInput({
         autoComplete={autoComplete}
         disabled={disabled}
         data-testid={testId}
+        ref={inputRef}
         className={[
           "h-10 rounded-lg pr-10 text-sm transition-all",
           "border-border/70 bg-muted/40",
@@ -181,6 +184,9 @@ export function FirstLoginCredentialsDialog() {
   const [passwordSavedThisSession, setPasswordSavedThisSession] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
 
+  /* refs for focus management */
+  const currentPwRef = useRef<HTMLInputElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,10 +201,31 @@ export function FirstLoginCredentialsDialog() {
     }
   }, [open, state.user?.username]);
 
-  /* clear field-level error when user edits the field */
+  /* FIX #1: clear BOTH field-level and banner errors when user edits the field */
   useEffect(() => {
-    if (currentPwError && currentPassword) setCurrentPwError(false);
+    if (currentPwError && currentPassword) {
+      setCurrentPwError(false);
+      setFormError(null);
+    }
   }, [currentPassword, currentPwError]);
+
+  /* also clear banner when newPassword or confirmPassword changes (user is fixing things) */
+  useEffect(() => {
+    if (formError && (newPassword || confirmPassword)) {
+      const isPasswordError =
+        formError.toLowerCase().includes("password") ||
+        formError.toLowerCase().includes("match") ||
+        formError.toLowerCase().includes("strength");
+      if (isPasswordError) setFormError(null);
+    }
+  }, [newPassword, confirmPassword, formError]);
+
+  /* FIX #5: auto-focus username field after password save succeeds */
+  useEffect(() => {
+    if (passwordSavedThisSession) {
+      setTimeout(() => usernameRef.current?.focus(), 80);
+    }
+  }, [passwordSavedThisSession]);
 
   const handleSkip = () => {
     dismissDefaultCredentialsPrompt();
@@ -275,6 +302,7 @@ export function FirstLoginCredentialsDialog() {
           if (isWrongPw) setCurrentPwError(true);
           setFormError(msg);
           triggerShake();
+          setTimeout(() => currentPwRef.current?.focus(), 50);
           return;
         }
       }
@@ -289,6 +317,7 @@ export function FirstLoginCredentialsDialog() {
               : baseMsg
           );
           triggerShake();
+          setTimeout(() => usernameRef.current?.focus(), 50);
           return;
         }
       }
@@ -359,13 +388,12 @@ export function FirstLoginCredentialsDialog() {
               </div>
             </div>
 
-            {/* Skip for now */}
+            {/* Skip for now — FIX #6: never disabled so user is never trapped */}
             <button
               type="button"
               onClick={handleSkip}
-              disabled={submitting}
               title="Skip for now — you can update credentials later in Settings"
-              className="group mt-0.5 flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white/35 transition-all hover:bg-white/10 hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:pointer-events-none"
+              className="group mt-0.5 flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white/35 transition-all hover:bg-white/10 hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
               data-testid="button-skip-credentials"
             >
               <X className="h-3.5 w-3.5" />
@@ -426,6 +454,7 @@ export function FirstLoginCredentialsDialog() {
                     show={showCurrent}
                     onToggleShow={() => setShowCurrent((v) => !v)}
                     hasError={currentPwError}
+                    inputRef={currentPwRef}
                     data-testid="input-current-password"
                   />
                   {currentPwError && (
@@ -484,7 +513,7 @@ export function FirstLoginCredentialsDialog() {
                       disabled={submitting}
                       data-testid="input-confirm-password"
                       className={[
-                        "h-10 rounded-lg text-sm transition-all border-border/70 bg-muted/40",
+                        "h-10 rounded-lg pr-10 text-sm transition-all border-border/70 bg-muted/40",
                         confirmPassword.length > 0 && confirmPassword !== newPassword
                           ? "border-destructive/60 bg-destructive/5 focus:border-destructive/80 focus:ring-destructive/20"
                           : confirmPassword.length > 0 && confirmPassword === newPassword
@@ -511,7 +540,12 @@ export function FirstLoginCredentialsDialog() {
             )}
 
             {/* ── Section 2: Username ─────────────────────────────────────── */}
-            <div className={`rounded-xl border border-border/50 p-4 space-y-3 transition-opacity ${!passwordSavedThisSession ? "opacity-60" : "bg-muted/20 opacity-100"}`}>
+            {/* FIX #4: removed opacity-60 — always fully readable */}
+            <div
+              className={`rounded-xl border border-border/50 p-4 space-y-3 transition-colors ${
+                !passwordSavedThisSession ? "bg-muted/10" : "bg-muted/20"
+              }`}
+            >
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600/10">
                   <User className="h-3 w-3 text-indigo-500" />
@@ -529,6 +563,7 @@ export function FirstLoginCredentialsDialog() {
                   placeholder={state.user?.username ?? "admin"}
                   autoComplete="username"
                   disabled={submitting}
+                  ref={usernameRef}
                   className="h-10 rounded-lg border-border/70 bg-muted/40 text-sm transition-all focus:border-indigo-400 focus:ring-indigo-400/20"
                   data-testid="input-new-username"
                 />
@@ -549,15 +584,12 @@ export function FirstLoginCredentialsDialog() {
                 ref={errorRef}
                 role="alert"
                 data-testid="text-credentials-error"
-                className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-2.5 animate-in slide-in-from-top-1 duration-200"
-                style={{
-                  animation: shakeKey > 0
-                    ? "shake 0.4s cubic-bezier(.36,.07,.19,.97) both"
-                    : undefined,
-                }}
+                className="animate-shake"
               >
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <p className="text-[13px] leading-snug text-destructive">{formError}</p>
+                <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-2.5 animate-in slide-in-from-top-1 duration-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <p className="text-[13px] leading-snug text-destructive">{formError}</p>
+                </div>
               </div>
             )}
           </div>
@@ -567,8 +599,7 @@ export function FirstLoginCredentialsDialog() {
             <button
               type="button"
               onClick={handleSkip}
-              disabled={submitting}
-              className="text-[12px] font-medium text-muted-foreground/60 underline-offset-2 transition-colors hover:text-muted-foreground hover:underline focus-visible:outline-none disabled:pointer-events-none"
+              className="text-[12px] font-medium text-muted-foreground/60 underline-offset-2 transition-colors hover:text-muted-foreground hover:underline focus-visible:outline-none"
               data-testid="button-skip-credentials-footer"
             >
               Skip for now
