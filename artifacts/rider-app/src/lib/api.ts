@@ -281,6 +281,31 @@ export function registerTokenRefreshCallback(fn: () => void): () => void {
    listener has been attached yet. */
 let _logoutCallback: (() => void) | null = null;
 
+/* ── Last 401 reason capture ───────────────────────────────────────────────────
+   The `on401` callback in _resiClient fires when a 401 response is received,
+   BEFORE the token refresh is attempted. We read the response body here and
+   store any reason/code so that if the refresh ultimately fails and we call
+   triggerLogout(), we can forward a meaningful reason code rather than the
+   generic "session_expired". Cleared after use to avoid stale values. */
+let _last401Reason: string | null = null;
+
+function _capture401Reason(body: unknown): void {
+  try {
+    const b = body as Record<string, unknown> | null;
+    if (!b || typeof b !== "object") return;
+    const dataBlock = b.data as Record<string, unknown> | undefined;
+    const reason =
+      (b.reason as string | undefined) ??
+      (dataBlock?.reason as string | undefined) ??
+      (b.code as string | undefined) ??
+      (dataBlock?.code as string | undefined) ??
+      null;
+    _last401Reason = reason;
+  } catch {
+    /* non-critical */
+  }
+}
+
 export function registerLogoutCallback(fn: () => void): () => void {
   _logoutCallback = fn;
   return () => {
@@ -288,7 +313,12 @@ export function registerLogoutCallback(fn: () => void): () => void {
   };
 }
 
-function triggerLogout(reason: string) {
+function triggerLogout(fallbackReason: string) {
+  /* Use the reason captured from the 401 response body (if any), falling back
+     to the generic reason supplied by the caller. Clear after use so the stale
+     reason cannot bleed into a subsequent, unrelated auth flow. */
+  const reason = _last401Reason ?? fallbackReason;
+  _last401Reason = null;
   clearTokens();
   if (_logoutCallback) {
     _logoutCallback();
@@ -354,6 +384,7 @@ const _resiClient = createResilientFetcher({
   },
   getRefreshToken: localGet,
   setRefreshToken: localSet,
+  on401: _capture401Reason,
   onRefreshFailed: (isTransient: boolean) => {
     if (!isTransient) triggerLogout("session_expired");
   },

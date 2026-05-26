@@ -28,6 +28,7 @@ export interface ResilientFetcherConfig extends CreateApiFetcherConfig {
    * otherwise be stripped by the data-unwrapping step.
    */
   onRawJson?: (json: unknown) => void;
+  /* on401 is inherited from CreateApiFetcherConfig and passed through as-is */
 }
 
 export interface ResilientFetcher {

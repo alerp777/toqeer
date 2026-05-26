@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-import { Bell, Home, MapPin, RefreshCw, TrendingUp, User, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bell, Home, MapPin, RefreshCw, TrendingUp, User, Wallet, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { useQueueStatus } from "../lib/offline/queueManager";
@@ -50,6 +50,31 @@ export function BottomNav() {
     };
   }, []);
 
+  /* UX-06: The sync banner auto-collapses 8 s after the pending count
+     stabilises (no new sync events). The rider can also dismiss it manually.
+     When new items are added to the queue the banner re-shows immediately. */
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const prevPendingRef = useRef(pendingCount);
+  const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (pendingCount > prevPendingRef.current) {
+      setBannerDismissed(false);
+    }
+    prevPendingRef.current = pendingCount;
+  }, [pendingCount]);
+
+  useEffect(() => {
+    if (pendingCount === 0 || bannerDismissed) {
+      if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
+      return;
+    }
+    autoDismissRef.current = setTimeout(() => setBannerDismissed(true), 8000);
+    return () => {
+      if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
+    };
+  }, [pendingCount, bannerDismissed]);
+
   const { data: notifData } = useQuery({
     queryKey: ["rider-notifs-count"],
     queryFn: () => api.getNotifications(),
@@ -71,18 +96,27 @@ export function BottomNav() {
       className="fixed right-0 bottom-0 left-0 z-40 border-t border-gray-200/60 bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-lg"
       style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom, 6px))" }}
     >
-      {pendingCount > 0 && (
+      {pendingCount > 0 && !bannerDismissed && (
         <div
-          className={`flex items-center justify-center gap-1.5 px-3 py-1 text-[10px] font-bold text-white ${
+          className={`flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold text-white ${
             syncing ? "bg-amber-500" : isOnline ? "bg-red-500" : "bg-amber-500"
           }`}
         >
           <RefreshCw size={10} className={syncing ? "animate-spin" : ""} />
-          {syncing
-            ? `Syncing ${pendingCount} pending action${pendingCount > 1 ? "s" : ""}…`
-            : isOnline
-              ? `Sync error — ${pendingCount} action${pendingCount > 1 ? "s" : ""} pending (will retry)`
-              : `${pendingCount} action${pendingCount > 1 ? "s" : ""} queued — will sync when online`}
+          <span className="flex-1 text-center">
+            {syncing
+              ? `Syncing ${pendingCount} pending action${pendingCount > 1 ? "s" : ""}…`
+              : isOnline
+                ? `Sync error — ${pendingCount} action${pendingCount > 1 ? "s" : ""} pending (will retry)`
+                : `${pendingCount} action${pendingCount > 1 ? "s" : ""} queued — will sync when online`}
+          </span>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            aria-label="Dismiss sync banner"
+            className="ml-1 flex-shrink-0 rounded p-0.5 opacity-80 hover:opacity-100"
+          >
+            <X size={10} />
+          </button>
         </div>
       )}
       <div className="mx-auto flex max-w-md">

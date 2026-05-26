@@ -60,6 +60,15 @@ export interface CreateApiFetcherConfig {
   onRefreshFailed: (isTransient: boolean) => void;
 
   /**
+   * Called when a 401 response is received, before the token refresh is
+   * attempted. The parsed response body is passed so callers can extract
+   * a session-expiry reason (e.g. body.reason = "admin_revoked") and use
+   * it to show context-aware messaging if the refresh ultimately fails.
+   * Parsing errors are swallowed — the refresh flow is never interrupted.
+   */
+  on401?: (responseBody: unknown) => void;
+
+  /**
    * Full URL to POST for a URL-based token refresh.
    * Mutually exclusive with refreshFn; one must be provided.
    */
@@ -206,6 +215,7 @@ export function createApiFetcher(
     getRefreshToken,
     setRefreshToken,
     onRefreshFailed,
+    on401,
     refreshEndpoint,
     refreshFn,
     extraHeaders,
@@ -319,6 +329,18 @@ export function createApiFetcher(
 
     if (res.status !== 401) {
       return res;
+    }
+
+    // ── Parse the 401 body before the refresh discards it ─────────────────
+    // Cloning the response so the body can be read without consuming the
+    // original (though we don't reuse it — this is purely for the callback).
+    if (on401) {
+      try {
+        const body = await res.clone().json().catch(() => ({}));
+        on401(body);
+      } catch {
+        /* ignore parsing errors — never block the refresh flow */
+      }
     }
 
     // ── 401 → refresh (mutex) → retry once ───────────────────────────────

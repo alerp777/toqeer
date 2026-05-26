@@ -86,6 +86,82 @@ function RedirectTo({ to }: { to: string }) {
   return null;
 }
 
+/**
+ * ModuleDisabled — shown when a rider navigates directly to a route whose
+ * platform module has been disabled (e.g. /wallet when modules.wallet = false).
+ * Provides a clear explanation and a way back to home instead of a blank page
+ * or the generic 404 screen.
+ */
+function ModuleDisabled() {
+  const [, navigate] = useLocation();
+  return (
+    <div
+      style={{
+        minHeight: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        padding: "0 24px",
+        background: "var(--color-surface)",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 18,
+          background: "rgba(240,185,11,0.10)",
+          border: "1px solid rgba(240,185,11,0.20)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 4,
+        }}
+      >
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--color-brand)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+        </svg>
+      </div>
+      <h2 style={{ color: "#E8E9EF", fontSize: 18, fontWeight: 700, margin: 0 }}>
+        Feature not available
+      </h2>
+      <p style={{ color: "#6B7280", fontSize: 14, lineHeight: 1.6, margin: 0, maxWidth: 280 }}>
+        This feature has been temporarily disabled by the platform. Please check back later.
+      </p>
+      <button
+        onClick={() => navigate("/", { replace: true })}
+        style={{
+          marginTop: 8,
+          height: 44,
+          paddingInline: 28,
+          borderRadius: 12,
+          border: "none",
+          background: "linear-gradient(135deg, var(--color-brand), #D97706)",
+          color: "var(--color-surface)",
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Back to home
+      </button>
+    </div>
+  );
+}
+
 function getRouterBase(): string {
   try {
     const raw = riderEnv.baseUrl || "/";
@@ -110,9 +186,50 @@ const SPLASH_DEADLINE_MS = 15_000;
 const NOTIF_ASKED_KEY = "_ajkm_notifPermissionAsked";
 
 
-function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
+/* Maps API 401 reason codes to human-readable messages shown in SessionExpiredOverlay. */
+const SESSION_EXPIRY_MESSAGES: Record<string, { title: string; detail: string }> = {
+  token_expired: {
+    title: "Your session expired",
+    detail: "Your login session has timed out. Please sign in again to continue.",
+  },
+  session_expired: {
+    title: "Your session expired",
+    detail: "Your login session has timed out. Please sign in again to continue.",
+  },
+  admin_revoked: {
+    title: "Logged out by administrator",
+    detail: "An administrator has ended your session. Please sign in again or contact support.",
+  },
+  admin_revocation: {
+    title: "Logged out by administrator",
+    detail: "An administrator has ended your session. Please sign in again or contact support.",
+  },
+  device_change: {
+    title: "Signed in on another device",
+    detail: "Your session was ended because you signed in on a different device.",
+  },
+  new_device: {
+    title: "Signed in on another device",
+    detail: "Your session was ended because you signed in on a different device.",
+  },
+  token_revoked: {
+    title: "Session revoked",
+    detail: "Your session was revoked. Please sign in again.",
+  },
+};
+
+function SessionExpiredOverlay({
+  onDismiss,
+  reason,
+}: {
+  onDismiss: () => void;
+  reason: string | null;
+}) {
   const { language } = useLanguage();
   const T = (key: TranslationKey) => tDual(key, language);
+  const msg =
+    (reason != null && reason !== "" ? SESSION_EXPIRY_MESSAGES[reason] : undefined) ??
+    SESSION_EXPIRY_MESSAGES["session_expired"];
   return (
     <div
       style={{
@@ -167,10 +284,10 @@ function SessionExpiredOverlay({ onDismiss }: { onDismiss: () => void }) {
           </svg>
         </div>
         <h2 style={{ color: "#E8E9EF", fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>
-          {T("sessionExpired")}
+          {msg.title}
         </h2>
         <p style={{ color: "#6B7280", fontSize: 14, lineHeight: 1.6, margin: "0 0 24px" }}>
-          {T("sessionExpiredMsg")}
+          {msg.detail}
         </p>
         <button
           onClick={onDismiss}
@@ -310,6 +427,7 @@ function AppRoutes() {
     retryConnection,
     logout,
     sessionExpired,
+    sessionExpiredReason,
     clearSessionExpired,
   } = useAuth();
   const { config } = usePlatformConfig();
@@ -1086,6 +1204,7 @@ function AppRoutes() {
       <>
         {sessionExpired && (
           <SessionExpiredOverlay
+            reason={sessionExpiredReason}
             onDismiss={() => {
               clearSessionExpired();
               navigate("/login");
@@ -1454,33 +1573,39 @@ function AppRoutes() {
                 </ErrorBoundary>
               )}
             </Route>
-            {modules.history && (
-              <Route path="/history">
-                {() => (
+            <Route path="/history">
+              {() =>
+                modules.history ? (
                   <ErrorBoundary>
                     <History />
                   </ErrorBoundary>
-                )}
-              </Route>
-            )}
-            {modules.earnings && (
-              <Route path="/earnings">
-                {() => (
+                ) : (
+                  <ModuleDisabled />
+                )
+              }
+            </Route>
+            <Route path="/earnings">
+              {() =>
+                modules.earnings ? (
                   <ErrorBoundary>
                     <Earnings />
                   </ErrorBoundary>
-                )}
-              </Route>
-            )}
-            {modules.wallet && (
-              <Route path="/wallet">
-                {() => (
+                ) : (
+                  <ModuleDisabled />
+                )
+              }
+            </Route>
+            <Route path="/wallet">
+              {() =>
+                modules.wallet ? (
                   <ErrorBoundary>
                     <Wallet />
                   </ErrorBoundary>
-                )}
-              </Route>
-            )}
+                ) : (
+                  <ModuleDisabled />
+                )
+              }
+            </Route>
             <Route path="/notifications">
               {() => (
                 <ErrorBoundary>

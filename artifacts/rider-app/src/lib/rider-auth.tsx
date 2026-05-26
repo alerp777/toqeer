@@ -102,6 +102,9 @@ interface AuthCtx {
   logout: () => void;
   refreshUser: () => Promise<void>;
   sessionExpired: boolean;
+  /** Reason code forwarded from the API 401 response body (e.g. "session_expired",
+   *  "admin_revoked", "device_change"). Null when the reason is unknown. */
+  sessionExpiredReason: string | null;
   clearSessionExpired: () => void;
 }
 
@@ -134,13 +137,15 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
   const [retryKey, setRetryKey] = useState(0);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [sessionExpiredReason, setSessionExpiredReason] = useState<string | null>(null);
   const refreshUserInflightRef = useRef<Promise<void> | null>(null);
 
-  const handleSdkLogout = useCallback(() => {
+  const handleSdkLogout = useCallback((reason?: string) => {
     api.clearTokens();
     setToken(null);
     setUser(null);
     sharedAuth.logout();
+    setSessionExpiredReason(reason ?? "token_expired");
     setSessionExpired(true);
     navigate("/login");
   }, [sharedAuth, navigate]);
@@ -243,14 +248,22 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
   }, [sharedAuth, retryKey]);
 
   useEffect(() => {
-    const clearAuth = () => {
+    const clearAuth = (reason?: string) => {
+      api.clearTokens();
       setToken(null);
       setUser(null);
       sharedAuth.logout();
+      if (reason) {
+        setSessionExpiredReason(reason);
+        setSessionExpired(true);
+      }
       navigate("/login");
     };
-    const unregister = api.registerLogoutCallback(clearAuth);
-    const handleLogoutEvent = () => clearAuth();
+    const unregister = api.registerLogoutCallback(() => clearAuth());
+    const handleLogoutEvent = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ reason?: string }>).detail;
+      clearAuth(detail?.reason ?? undefined);
+    };
     window.addEventListener("ajkmart:logout", handleLogoutEvent);
     return () => {
       unregister();
@@ -316,7 +329,10 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
     return p;
   }, [sharedAuth]);
 
-  const clearSessionExpired = useCallback(() => setSessionExpired(false), []);
+  const clearSessionExpired = useCallback(() => {
+    setSessionExpired(false);
+    setSessionExpiredReason(null);
+  }, []);
 
   const retryConnection = useCallback(() => {
     /* Re-run the startup getMe() effect without a full page reload.
@@ -340,6 +356,7 @@ function RiderAuthInner({ children }: { children: ReactNode }) {
         logout,
         refreshUser,
         sessionExpired,
+        sessionExpiredReason,
         clearSessionExpired,
       }}
     >
