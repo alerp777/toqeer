@@ -235,7 +235,6 @@ export function useProductForm({
     onSuccess: (result) => {
       if (result == null) return;
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
       setShowAdd(false);
       setForm({ ...EMPTY_FORM });
       showToast("Product added!");
@@ -295,7 +294,6 @@ export function useProductForm({
         }
       }
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
       setEditProd(null);
       setShowAdd(false);
       setEditThreshold("");
@@ -308,7 +306,6 @@ export function useProductForm({
     mutationFn: (id: string) => api.deleteProduct(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
       showToast("Deleted");
     },
     onError: (e: Error) => showToast("Error: " + errMsg(e)),

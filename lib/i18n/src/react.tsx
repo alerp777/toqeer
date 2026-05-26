@@ -2,10 +2,57 @@
 
 import { createContext, useContext, useCallback, useEffect, useState, ReactNode } from "react";
 import type { Language, TranslationKey } from "./index";
-import { DEFAULT_LANGUAGE, LANGUAGE_OPTIONS, isRTL, t } from "./index";
+import { DEFAULT_LANGUAGE, LANGUAGE_OPTIONS, isRTL } from "./index";
 import { createLogger } from "@workspace/logger";
 
 const log = createLogger("[i18n-react]");
+
+const NOTO_FONT_ID = "ajkm-noto-nastaliq-font";
+const NOTO_FONT_URL =
+  "https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap";
+
+/** Inject the Noto Nastaliq Urdu <link> into <head> only when locale is 'ur'. */
+function injectUrduFont(): void {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(NOTO_FONT_ID)) return;
+  const link = document.createElement("link");
+  link.id = NOTO_FONT_ID;
+  link.rel = "stylesheet";
+  link.href = NOTO_FONT_URL;
+  document.head.appendChild(link);
+}
+
+/** Remove the Noto Nastaliq Urdu <link> from <head> when no longer needed. */
+function removeUrduFont(): void {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById(NOTO_FONT_ID);
+  if (el) el.remove();
+}
+
+type LocaleDict = Record<string, string>;
+
+/**
+ * Lazily import a locale dictionary. Returns a promise resolving to the dict.
+ * Dynamic imports allow bundlers (Vite/webpack) to code-split each locale into
+ * a separate chunk that is fetched only when first needed.
+ */
+async function loadLocaleDict(lang: Language): Promise<LocaleDict> {
+  switch (lang) {
+    case "ur": {
+      const mod = await import("./locales/ur");
+      return mod.default as LocaleDict;
+    }
+    case "roman": {
+      const mod = await import("./locales/roman");
+      return mod.default as LocaleDict;
+    }
+    case "en":
+    default: {
+      const mod = await import("./locales/en");
+      return mod.default as LocaleDict;
+    }
+  }
+}
 
 /**
  * TranslationContext — provides language state & translation function
@@ -35,7 +82,9 @@ export function useTranslation(): TranslationContextType {
 
 /**
  * LanguageProvider — wraps app with translation context
- * Manages language state, localStorage, server sync (if api provided)
+ * Manages language state, localStorage, server sync (if api provided).
+ * Locale dictionaries are loaded lazily via dynamic import() so only the
+ * active locale is included in the initial JS payload.
  */
 export interface LanguageProviderProps {
   children: ReactNode;
@@ -61,7 +110,6 @@ export function LanguageProvider({
 }: LanguageProviderProps) {
   const lsKey = `${lsKeyPrefix}_language`;
   const [language, setLang] = useState<Language>(() => {
-    // Initial: read from localStorage
     if (typeof window === "undefined") return DEFAULT_LANGUAGE;
     try {
       const stored = localStorage.getItem(lsKey);
@@ -74,10 +122,33 @@ export function LanguageProvider({
     return DEFAULT_LANGUAGE;
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [initialised, setInitialised] = useState(false);
+  const [dict, setDict] = useState<LocaleDict | null>(null);
+  const [enFallback, setEnFallback] = useState<LocaleDict | null>(null);
 
-  // Apply RTL & document attributes whenever language changes
+  /* Load the EN fallback once at mount — needed for partial UR/Roman dicts */
+  useEffect(() => {
+    loadLocaleDict("en")
+      .then((d) => setEnFallback(d))
+      .catch((err) => log.warn("Failed to load EN fallback", err));
+  }, []);
+
+  /* Load the active locale dict whenever language changes */
+  useEffect(() => {
+    setLoading(true);
+    loadLocaleDict(language)
+      .then((d) => {
+        setDict(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        log.warn("Failed to load locale dict", err);
+        setLoading(false);
+      });
+  }, [language]);
+
+  /* Apply RTL, document attributes, localStorage, and Noto font whenever language changes */
   useEffect(() => {
     const dir = isRTL(language) ? "rtl" : "ltr";
     document.documentElement.setAttribute("dir", dir);
@@ -87,21 +158,23 @@ export function LanguageProvider({
     } catch (err) {
       log.warn("Failed to save language to localStorage", err);
     }
+    if (language === "ur") {
+      injectUrduFont();
+    } else {
+      removeUrduFont();
+    }
   }, [language, lsKey]);
 
-  // On mount: fetch language from server if api available
+  /* On mount: fetch language from server if api available */
   useEffect(() => {
     if (!api) {
       setInitialised(true);
       return;
     }
-
-    // Only fetch if token exists (avoid 401 on login page)
     if (!api.getToken()) {
       setInitialised(true);
       return;
     }
-
     api
       .getSettings()
       .then((settings) => {
@@ -115,12 +188,15 @@ export function LanguageProvider({
       .finally(() => setInitialised(true));
   }, [api]);
 
+  /* Mark initialised once the dict is loaded (when no API) */
+  useEffect(() => {
+    if (!api && dict !== null) setInitialised(true);
+  }, [api, dict]);
+
   const setLanguage = useCallback(
     async (lang: Language) => {
       setLoading(true);
       setLang(lang);
-
-      // Sync to server if api available
       if (api) {
         try {
           await api.updateSettings({ language: lang });
@@ -128,13 +204,25 @@ export function LanguageProvider({
           log.warn("Failed to update language on API", err);
         }
       }
-
       setLoading(false);
     },
     [api]
   );
 
-  const translate = useCallback((key: TranslationKey): string => t(key, language), [language]);
+  const translate = useCallback(
+    (key: TranslationKey): string => {
+      if (dict) {
+        const val = (dict as Record<string, string>)[key as string];
+        if (val !== undefined) return val;
+      }
+      if (enFallback) {
+        const val = (enFallback as Record<string, string>)[key as string];
+        if (val !== undefined) return val;
+      }
+      return String(key);
+    },
+    [dict, enFallback]
+  );
 
   const value: TranslationContextType = {
     language,

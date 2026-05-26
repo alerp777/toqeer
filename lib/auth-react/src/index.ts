@@ -111,3 +111,7 @@ export type { PendingOverlayProps, RejectedOverlayProps, MaintenanceOverlayProps
 // App status hook
 export { useAppStatus } from "./hooks/useAppStatus";
 export type { UseAppStatusOptions, AppStatus, UserStatus } from "./hooks/useAppStatus";
+
+// Join select page — shared role-selection component for Rider and Vendor apps
+export { JoinSelect } from "./components/JoinSelect";
+export type { JoinSelectProps, JoinSelectTheme, JoinSelectActions } from "./components/JoinSelect";

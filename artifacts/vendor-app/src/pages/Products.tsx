@@ -150,9 +150,10 @@ export default function Products() {
       socket.emit("join", `vendor:${user.id}`);
       /* Always invalidate on connect — including the first connect — to flush
          any stock updates that were broadcast during the socket setup window
-         (between component mount and the socket completing its handshake). */
+         (between component mount and the socket completing its handshake).
+         A single prefix-based invalidation deduplicates the ["vendor-products"]
+         and ["vendor-products-all"] sub-keys into one network request. */
       void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-      void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
     });
     socket.on(
       "product:stock_updated",
@@ -187,7 +188,6 @@ export default function Products() {
         } else {
           /* Product not in cache (e.g. arrived before initial fetch completed) — re-fetch */
           void qc.invalidateQueries({ queryKey: ["vendor-products"] });
-          void qc.invalidateQueries({ queryKey: ["vendor-products-all"] });
         }
         setLastStockSync(new Date());
       }

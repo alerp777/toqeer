@@ -452,7 +452,10 @@ export default function Active() {
             );
           });
           queueUpdate({ kind: "location", run: doUpdate });
-        } else {
+        } else if (!socketRef.current?.connected) {
+          /* Socket is connected — location is already broadcast via the
+             socket heartbeat in SocketProvider. Only fire the REST fallback
+             when the socket is disconnected so we don't double-report. */
           void doUpdate();
         }
       },

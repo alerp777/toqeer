@@ -1,5 +1,5 @@
 import type { Language } from "@workspace/i18n";
-import { LANGUAGE_OPTIONS, isRTL } from "@workspace/i18n";
+import { LANGUAGE_OPTIONS, isRTL, preloadLocale } from "@workspace/i18n";
 import React, {
   createContext,
   useCallback,
@@ -13,6 +13,24 @@ import { api } from "./api";
 
 const STORAGE_KEY = "ajkmart_rider_language";
 const VALID_LANGS = new Set<string>(LANGUAGE_OPTIONS.map((o) => o.value));
+
+const NOTO_LINK_ID = "noto-nastaliq-font";
+const NOTO_HREF =
+  "https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap";
+
+function applyNotoFont(lang: Language): void {
+  if (lang === "ur") {
+    if (!document.getElementById(NOTO_LINK_ID)) {
+      const link = document.createElement("link");
+      link.id = NOTO_LINK_ID;
+      link.rel = "stylesheet";
+      link.href = NOTO_HREF;
+      document.head.appendChild(link);
+    }
+  } else {
+    document.getElementById(NOTO_LINK_ID)?.remove();
+  }
+}
 
 function getStoredLanguage(): Language | null {
   try {
@@ -34,6 +52,7 @@ function applyRTL(lang: Language) {
   _lastAppliedDir = dir + "|" + lang;
   document.documentElement.setAttribute("dir", dir);
   document.documentElement.setAttribute("lang", lang === "ur" ? "ur" : "en");
+  applyNotoFont(lang);
 }
 
 interface LanguageCtx {
@@ -67,6 +86,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (local) {
       setLanguageState(local);
       applyRTL(local);
+      preloadLocale(local).catch(() => {});
       setInitialised(true);
       /* Only sync language preference from server when authenticated — avoids
          a 401 on the login page which would log noise in the browser console. */
@@ -92,6 +112,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           if (serverLang && VALID_LANGS.has(serverLang)) {
             setLanguageState(serverLang as Language);
             applyRTL(serverLang as Language);
+            preloadLocale(serverLang as Language).catch(() => {});
             try {
               localStorage.setItem(STORAGE_KEY, serverLang);
             } catch (err) {
@@ -108,6 +129,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback(async (lang: Language) => {
     setLoading(true);
+    await preloadLocale(lang).catch(() => {});
     setLanguageState(lang);
     applyRTL(lang);
     /* P3: Mark that the user has made an explicit pick so any in-flight
