@@ -5,17 +5,18 @@
  * default/seeded credentials. Guides them through:
  *   1. Welcome & security notice
  *   2. Set a strong new password
- *   3. Update username (optional)
+ *   3. Update username / display name (optional)
  *   4. Success confirmation
  *
  * Features:
  *   – Password strength meter with real-time feedback
- *   – Show/hide password toggle on all fields
- *   – Inline validation with clear error messages
+ *   – Show/hide password toggle on all fields (auto-hides after 5s)
+ *   – Inline validation with clear, aria-live error messages
  *   – Skip option (popup dismisses for the session)
+ *   – Step progress indicator
  *   – Accessible (ARIA labels, focus management, keyboard nav)
- *   – Reduced-motion support
- *   – Fully typed & error-safe
+ *   – i18n-ready via useAdminTranslation
+ *   – Fully typed, lint-clean, error-safe
  */
 
 import {
@@ -34,10 +35,14 @@ import {
   type StrengthLevel,
   validateStrength,
 } from "@/lib/auth/passwordStrength";
+import { useAdminTranslation } from "@/lib/AdminLanguageContext";
+import { createLogger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
+  Circle,
   Eye,
   EyeOff,
   KeyRound,
@@ -48,17 +53,82 @@ import {
   UserRound,
   AlertTriangle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+const log = createLogger("[FirstLoginDialog]");
 
 type WizardStep = "welcome" | "password" | "username" | "success";
 
-/* ── Helper: strength bar colour for a single segment ──────────────── */
+/* Step metadata for progress bar */
+const STEPS: { key: WizardStep; label: string }[] = [
+  { key: "welcome", label: "Welcome" },
+  { key: "password", label: "Password" },
+  { key: "username", label: "Profile" },
+  { key: "success", label: "Done" },
+];
+
+function stepIndex(s: WizardStep): number {
+  return STEPS.findIndex((x) => x.key === s);
+}
+
+/* Helper: strength bar colour */
 function strengthBarColor(level: StrengthLevel, segment: number): string {
   if (level < segment) return "bg-white/10";
   return STRENGTH_META[level].bar;
 }
 
-/* ── Sub-component: Strength Meter ─────────────────────────────────── */
+/* Sub-component: Step Progress Indicator */
+function StepProgress({ current }: { current: WizardStep }) {
+  const idx = stepIndex(current);
+  return (
+    <div className="mb-6 flex items-center gap-2" aria-label="Step progress">
+      {STEPS.map((s, i) => {
+        const isActive = i === idx;
+        const isDone = i < idx;
+        return (
+          <div key={s.key} className="flex flex-1 items-center gap-2">
+            <div
+              className={cn(
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-300",
+                isDone && "bg-emerald-500 text-white",
+                isActive && "bg-indigo-500 text-white ring-2 ring-indigo-400/40",
+                !isDone && !isActive && "border border-white/15 bg-white/[0.04] text-white/30"
+              )}
+              aria-current={isActive ? "step" : undefined}
+            >
+              {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
+            </div>
+            <span
+              className={cn(
+                "hidden text-[10px] font-medium uppercase tracking-wider sm:block",
+                isActive ? "text-white/70" : "text-white/25"
+              )}
+            >
+              {s.label}
+            </span>
+            {i < STEPS.length - 1 && (
+              <div
+                className={cn(
+                  "ml-1 h-px flex-1 transition-colors duration-300",
+                  i < idx ? "bg-emerald-500/40" : "bg-white/10"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Sub-component: Strength Meter */
 function StrengthMeter({ password }: { password: string }) {
   const level = computeStrength(password);
   const meta = STRENGTH_META[level];
@@ -66,7 +136,7 @@ function StrengthMeter({ password }: { password: string }) {
   if (!password) return null;
 
   return (
-    <div className="space-y-1.5 pt-1">
+    <div className="space-y-1.5 pt-1" aria-live="polite" aria-atomic="true">
       <div className="flex gap-1" aria-hidden="true">
         {([1, 2, 3, 4] as const).map((bar) => (
           <div
@@ -87,13 +157,13 @@ function StrengthMeter({ password }: { password: string }) {
   );
 }
 
-/* ── Sub-component: Requirement Checklist ──────────────────────────── */
+/* Sub-component: Requirement Checklist */
 function RequirementChecklist({ password }: { password: string }) {
   const checks = useMemo(
     () => [
       { label: "At least 8 characters", met: password.length >= 8 },
-      { label: "1 uppercase letter (A–Z)", met: /[A-Z]/.test(password) },
-      { label: "1 number (0–9)", met: /[0-9]/.test(password) },
+      { label: "1 uppercase letter (A\u2013Z)", met: /[A-Z]/.test(password) },
+      { label: "1 number (0\u20139)", met: /[0-9]/.test(password) },
     ],
     [password]
   );
@@ -108,9 +178,11 @@ function RequirementChecklist({ password }: { password: string }) {
             c.met ? "text-emerald-400" : "text-white/30"
           )}
         >
-          <CheckCircle2
-            className={cn("h-3 w-3 shrink-0 transition-colors", c.met ? "text-emerald-400" : "text-white/20")}
-          />
+          {c.met ? (
+            <Check className="h-3 w-3 shrink-0 text-emerald-400" aria-hidden="true" />
+          ) : (
+            <Circle className="h-3 w-3 shrink-0 text-white/20" aria-hidden="true" />
+          )}
           {c.label}
         </li>
       ))}
@@ -118,19 +190,8 @@ function RequirementChecklist({ password }: { password: string }) {
   );
 }
 
-/* ── Sub-component: Password Field (with show/hide) ───────────────── */
-function PasswordField({
-  id,
-  label,
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-  required,
-  show,
-  onToggleShow,
-  disabled,
-}: {
+/* Sub-component: Password Field (forwardRef for focus mgmt) */
+const PasswordField = forwardRef<HTMLInputElement, {
   id: string;
   label: string;
   value: string;
@@ -141,7 +202,10 @@ function PasswordField({
   show: boolean;
   onToggleShow: () => void;
   disabled?: boolean;
-}) {
+}>(function PasswordField(
+  { id, label, value, onChange, placeholder, autoComplete, required, show, onToggleShow, disabled },
+  ref
+) {
   return (
     <div className="space-y-1.5">
       <label
@@ -153,6 +217,7 @@ function PasswordField({
       <div className="relative">
         <Input
           id={id}
+          ref={ref}
           type={show ? "text" : "password"}
           autoComplete={autoComplete}
           value={value}
@@ -174,9 +239,9 @@ function PasswordField({
       </div>
     </div>
   );
-}
+});
 
-/* ── Sub-component: Step Header ────────────────────────────────────── */
+/* Sub-component: Step Header */
 function StepHeader({
   icon: Icon,
   title,
@@ -197,13 +262,12 @@ function StepHeader({
   );
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   Main Component
-   ════════════════════════════════════════════════════════════════════ */
+/* Main Component */
 export function FirstLoginCredentialsDialog() {
   const { state, changePassword, updateOwnProfile, dismissDefaultCredentialsPrompt, logout } =
     useAdminAuth();
   const { toast } = useToast();
+  const { t } = useAdminTranslation();
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<WizardStep>("welcome");
@@ -228,7 +292,14 @@ export function FirstLoginCredentialsDialog() {
   const currentPwRef = useRef<HTMLInputElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
-  /* ── Open dialog when conditions are met ───────────────────────── */
+  /* Auto-hide password after 5 seconds for shoulder-surfing protection */
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleAutoHide = useCallback((setter: (v: boolean) => void) => {
+    if (showTimerRef.current) clearTimeout(showTimerRef.current);
+    showTimerRef.current = setTimeout(() => { setter(false); }, 5000);
+  }, []);
+
+  /* Open dialog when conditions are met */
   useEffect(() => {
     const shouldShow =
       !!state.accessToken &&
@@ -253,17 +324,27 @@ export function FirstLoginCredentialsDialog() {
     }
   }, [state.accessToken, state.usingDefaultCredentials, state.defaultCredentialsDismissed]);
 
-  /* ── Auto-focus first field on step change ────────────────────────── */
+  /* Auto-focus first field on step change */
   useEffect(() => {
     if (step === "password") {
-      setTimeout(() => currentPwRef.current?.focus(), 50);
+      const t = setTimeout(() => currentPwRef.current?.focus(), 50);
+      return () => clearTimeout(t);
     }
     if (step === "username") {
-      setTimeout(() => usernameRef.current?.focus(), 50);
+      const t = setTimeout(() => usernameRef.current?.focus(), 50);
+      return () => clearTimeout(t);
     }
+    return undefined;
   }, [step]);
 
-  /* ── Close & skip handlers ───────────────────────────────────────── */
+  /* Cleanup auto-hide timer on unmount */
+  useEffect(() => {
+    return () => {
+      if (showTimerRef.current) clearTimeout(showTimerRef.current);
+    };
+  }, []);
+
+  /* Close & skip handlers */
   const handleSkip = useCallback(() => {
     dismissDefaultCredentialsPrompt();
     toast({
@@ -275,12 +356,12 @@ export function FirstLoginCredentialsDialog() {
   const handleSignOut = useCallback(async () => {
     try {
       await logout();
-    } catch {
-      // logout() clears local state regardless
+    } catch (err) {
+      log.warn("Logout during first-login dialog failed:", err);
     }
   }, [logout]);
 
-  /* ── Password step submit ────────────────────────────────────────── */
+  /* Password step submit */
   const handlePasswordSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -317,7 +398,7 @@ export function FirstLoginCredentialsDialog() {
     [currentPassword, newPassword, confirmPassword, changePassword, toast]
   );
 
-  /* ── Username step submit ────────────────────────────────────────── */
+  /* Username step submit */
   const handleUsernameSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -364,26 +445,16 @@ export function FirstLoginCredentialsDialog() {
     [newUsername, newDisplayName, updateOwnProfile, toast]
   );
 
-  /* ── Computed helpers ────────────────────────────────────────────── */
-  const pwStrength = computeStrength(newPassword);
-  const pwValid =
-    newPassword.length >= 8 &&
-    /[A-Z]/.test(newPassword) &&
-    /[0-9]/.test(newPassword) &&
-    newPassword === confirmPassword &&
-    newPassword !== currentPassword;
-
+  /* Computed helpers */
   const canSubmitPassword =
     !submitting && currentPassword && newPassword && confirmPassword;
 
   const canSubmitUsername = !submitting;
 
-  /* ══════════════════════════════════════════════════════════════════
-     Render: Welcome Step
-     ══════════════════════════════════════════════════════════════════ */
+  /* Render: Welcome Step */
   if (step === "welcome") {
     return (
-      <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
+      <Dialog open={open} onOpenChange={(v: boolean) => !v && handleSkip()}>
         <DialogContent
           className="max-w-md border-white/[0.07] bg-[#131720] p-0 shadow-2xl"
           onPointerDownOutside={(e) => e.preventDefault()}
@@ -439,18 +510,18 @@ export function FirstLoginCredentialsDialog() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════════════════
-     Render: Password Step
-     ══════════════════════════════════════════════════════════════════ */
+  /* Render: Password Step */
   if (step === "password") {
     return (
-      <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
+      <Dialog open={open} onOpenChange={(v: boolean) => !v && handleSkip()}>
         <DialogContent
           className="max-w-md border-white/[0.07] bg-[#131720] p-0 shadow-2xl"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <div className="p-6">
+            <StepProgress current={step} />
+
             <DialogHeader className="border-b border-white/[0.07] px-0 pt-0 pb-4">
               <DialogTitle className="flex items-center gap-2 text-lg text-white">
                 <KeyRound className="h-5 w-5 text-indigo-400" />
@@ -465,6 +536,7 @@ export function FirstLoginCredentialsDialog() {
               {/* Current password */}
               <PasswordField
                 id="fl-current"
+                ref={currentPwRef}
                 label="Current password"
                 value={currentPassword}
                 onChange={setCurrentPassword}
@@ -472,7 +544,10 @@ export function FirstLoginCredentialsDialog() {
                 autoComplete="current-password"
                 required
                 show={showCurrent}
-                onToggleShow={() => setShowCurrent((v) => !v)}
+                onToggleShow={() => {
+                  setShowCurrent((v) => !v);
+                  if (!showCurrent) scheduleAutoHide(setShowCurrent);
+                }}
                 disabled={submitting}
               />
 
@@ -487,7 +562,10 @@ export function FirstLoginCredentialsDialog() {
                   autoComplete="new-password"
                   required
                   show={showNew}
-                  onToggleShow={() => setShowNew((v) => !v)}
+                  onToggleShow={() => {
+                    setShowNew((v) => !v);
+                    if (!showNew) scheduleAutoHide(setShowNew);
+                  }}
                   disabled={submitting}
                 />
                 {newPassword.length > 0 && (
@@ -508,7 +586,10 @@ export function FirstLoginCredentialsDialog() {
                 autoComplete="new-password"
                 required
                 show={showConfirm}
-                onToggleShow={() => setShowConfirm((v) => !v)}
+                onToggleShow={() => {
+                  setShowConfirm((v) => !v);
+                  if (!showConfirm) scheduleAutoHide(setShowConfirm);
+                }}
                 disabled={submitting}
               />
 
@@ -516,6 +597,7 @@ export function FirstLoginCredentialsDialog() {
               {error && (
                 <div
                   role="alert"
+                  aria-live="assertive"
                   className="rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5 text-[13px] leading-snug text-red-400 animate-in slide-in-from-top-1 duration-200"
                 >
                   {error}
@@ -562,18 +644,18 @@ export function FirstLoginCredentialsDialog() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════════════════
-     Render: Username Step
-     ══════════════════════════════════════════════════════════════════ */
+  /* Render: Username Step */
   if (step === "username") {
     return (
-      <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
+      <Dialog open={open} onOpenChange={(v: boolean) => !v && handleSkip()}>
         <DialogContent
           className="max-w-md border-white/[0.07] bg-[#131720] p-0 shadow-2xl"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <div className="p-6">
+            <StepProgress current={step} />
+
             <DialogHeader className="border-b border-white/[0.07] px-0 pt-0 pb-4">
               <DialogTitle className="flex items-center gap-2 text-lg text-white">
                 <UserRound className="h-5 w-5 text-indigo-400" />
@@ -593,11 +675,11 @@ export function FirstLoginCredentialsDialog() {
                 <div className="mt-1 space-y-0.5">
                   <p className="text-[13px] text-white/70">
                     <span className="text-white/40">Username:</span>{" "}
-                    {state.user?.username || "—"}
+                    {state.user?.username || "\u2014"}
                   </p>
                   <p className="text-[13px] text-white/70">
                     <span className="text-white/40">Name:</span>{" "}
-                    {state.user?.name || "—"}
+                    {state.user?.name || "\u2014"}
                   </p>
                 </div>
               </div>
@@ -608,11 +690,12 @@ export function FirstLoginCredentialsDialog() {
                   htmlFor="fl-username"
                   className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase"
                 >
-                  New username <span className="text-white/25 normal-case tracking-normal font-normal">(optional)</span>
+                  New username{" "}
+                  <span className="text-white/25 normal-case tracking-normal font-normal">(optional)</span>
                 </label>
                 <Input
                   id="fl-username"
-                  ref={usernameRef as any}
+                  ref={usernameRef}
                   type="text"
                   autoComplete="username"
                   value={newUsername}
@@ -632,7 +715,8 @@ export function FirstLoginCredentialsDialog() {
                   htmlFor="fl-displayname"
                   className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase"
                 >
-                  Display name <span className="text-white/25 normal-case tracking-normal font-normal">(optional)</span>
+                  Display name{" "}
+                  <span className="text-white/25 normal-case tracking-normal font-normal">(optional)</span>
                 </label>
                 <Input
                   id="fl-displayname"
@@ -650,6 +734,7 @@ export function FirstLoginCredentialsDialog() {
               {error && (
                 <div
                   role="alert"
+                  aria-live="assertive"
                   className="rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5 text-[13px] leading-snug text-red-400 animate-in slide-in-from-top-1 duration-200"
                 >
                   {error}
@@ -699,18 +784,18 @@ export function FirstLoginCredentialsDialog() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════════════════
-     Render: Success Step
-     ══════════════════════════════════════════════════════════════════ */
+  /* Render: Success Step */
   if (step === "success") {
     return (
-      <Dialog open={open} onOpenChange={(v) => !v && handleSkip()}>
+      <Dialog open={open} onOpenChange={(v: boolean) => !v && handleSkip()}>
         <DialogContent
           className="max-w-md border-white/[0.07] bg-[#131720] p-0 shadow-2xl"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <div className="p-6 text-center">
+            <StepProgress current={step} />
+
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
               <CheckCircle2 className="h-8 w-8 text-white" />
             </div>
@@ -749,6 +834,6 @@ export function FirstLoginCredentialsDialog() {
     );
   }
 
-  /* Fallback — should never reach here */
+  /* Fallback */
   return null;
 }
