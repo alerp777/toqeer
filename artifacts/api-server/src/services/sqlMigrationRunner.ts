@@ -25,6 +25,88 @@ const __dirname = path.dirname(__filename);
  * Both directories are sorted alphabetically so migrations are applied in
  * version order. Files already recorded in their tracking table are skipped.
  */
+/**
+ * Split a SQL file into individual statements, correctly handling:
+ * - Dollar-quoted strings: DO $$ ... $$; — semicolons inside are NOT separators
+ * - Single-quoted strings: 'hello; world' — semicolons inside are NOT separators
+ * - Line comments: -- comment (stripped before splitting)
+ *
+ * Returns trimmed, non-empty statements ready to pass to pool.query().
+ */
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = "";
+  let i = 0;
+
+  while (i < sql.length) {
+    // Line comment: skip to end of line
+    if (sql[i] === "-" && sql[i + 1] === "-") {
+      while (i < sql.length && sql[i] !== "\n") i++;
+      continue;
+    }
+
+    // Dollar-quoted string: $tag$...$tag$ — consume everything until closing tag
+    if (sql[i] === "$") {
+      // Find the closing $ of the opening tag (e.g. "$$" or "$body$")
+      const tagStart = i;
+      i++; // skip first $
+      while (i < sql.length && sql[i] !== "$") i++;
+      i++; // skip closing $
+      const tag = sql.slice(tagStart, i); // e.g. "$$" or "$body$"
+      current += tag;
+
+      // Now consume until we find the matching closing tag
+      while (i < sql.length) {
+        const closing = sql.indexOf(tag, i);
+        if (closing === -1) {
+          // Malformed — consume the rest
+          current += sql.slice(i);
+          i = sql.length;
+          break;
+        }
+        current += sql.slice(i, closing + tag.length);
+        i = closing + tag.length;
+        break;
+      }
+      continue;
+    }
+
+    // Single-quoted string: skip until closing quote (handle '' escapes)
+    if (sql[i] === "'") {
+      current += sql[i++];
+      while (i < sql.length) {
+        if (sql[i] === "'" && sql[i + 1] === "'") {
+          current += "''";
+          i += 2;
+        } else if (sql[i] === "'") {
+          current += sql[i++];
+          break;
+        } else {
+          current += sql[i++];
+        }
+      }
+      continue;
+    }
+
+    // Statement terminator outside any quoted context
+    if (sql[i] === ";") {
+      const stmt = current.trim();
+      if (stmt.length > 0) statements.push(stmt);
+      current = "";
+      i++;
+      continue;
+    }
+
+    current += sql[i++];
+  }
+
+  // Catch any trailing statement without a final semicolon
+  const trailing = current.trim();
+  if (trailing.length > 0) statements.push(trailing);
+
+  return statements;
+}
+
 export async function runSqlMigrations() {
   const rawUrl = process.env.DATABASE_URL;
   if (!rawUrl) {
@@ -143,13 +225,12 @@ export async function runSqlMigrations() {
         // Split the file into individual statements so each runs in its own
         // pool.query() call. This is required for statements that cannot run
         // inside a transaction block (e.g. CREATE/DROP INDEX CONCURRENTLY).
-        // Strip SQL line comments before splitting so comment-only lines do
-        // not produce empty statements.
-        const statements = sql
-          .replace(/--[^\n]*/g, "")
-          .split(";")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+        //
+        // IMPORTANT: We must NOT naively split on ";" because dollar-quoted
+        // PL/pgSQL blocks (DO $$ ... $$;) contain semicolons inside them.
+        // This parser tracks dollar-quote depth and only splits on ";" that
+        // appear outside any dollar-quoted string.
+        const statements = splitSqlStatements(sql);
 
         let hadFatal = false;
         for (const stmt of statements) {
