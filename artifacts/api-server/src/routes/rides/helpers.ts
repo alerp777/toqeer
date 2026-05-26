@@ -18,6 +18,7 @@ import { createHash, randomInt } from "crypto";
 import { and, asc, count, eq, gte, isNull, ne, or, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
+import { safeParseFloat } from "../../lib/safe-parse.js";
 import { z } from "zod";
 import { isInServiceZone } from "../../lib/geofence.js";
 import { getUserLanguage } from "../../lib/getUserLanguage.js";
@@ -246,8 +247,8 @@ export async function broadcastRideAttempt(rideId: string) {
   if (!["searching", "bargaining"].includes(ride.status)) return;
 
   const s = await getCachedSettings();
-  const radiusKm = parseFloat(s["dispatch_min_radius_km"] ?? "5");
-  const avgSpeed = parseFloat(s["dispatch_avg_speed_kmh"] ?? "25");
+  const radiusKm = safeParseFloat(s["dispatch_min_radius_km"], 5, 0.1, 50);
+  const avgSpeed = safeParseFloat(s["dispatch_avg_speed_kmh"], 25, 1, 200);
 
   const pickupLat = parseFloat(ride.pickupLat ?? "");
   const pickupLng = parseFloat(ride.pickupLng ?? "");
@@ -660,11 +661,11 @@ export async function calcFare(
   }
 
   const surgeEnabled = (s["ride_surge_enabled"] ?? "off") === "on";
-  const surgeMultiplier = surgeEnabled ? parseFloat(s["ride_surge_multiplier"] ?? "1.5") : 1;
+  const surgeMultiplier = surgeEnabled ? safeParseFloat(s["ride_surge_multiplier"], 1.5, 1, 10) : 1;
   const raw = Math.round(baseRate + distance * perKm);
   const baseFare = Math.round(Math.max(minFare, raw) * surgeMultiplier);
   const gstEnabled = (s["finance_gst_enabled"] ?? "off") === "on";
-  const gstPct = parseFloat(s["finance_gst_pct"] ?? "17");
+  const gstPct = safeParseFloat(s["finance_gst_pct"], 17, 0, 100);
   const gstAmount = gstEnabled ? Math.round((baseFare * gstPct) / 100) : 0;
   const total = baseFare + gstAmount;
   return { baseFare, gstAmount, total, minFare };

@@ -1,5 +1,6 @@
 import { inArray } from "drizzle-orm";
 import { Router } from "express";
+import { safeParseFloat } from "../../lib/safe-parse.js";
 import {
   adminAuth,
   and,
@@ -495,7 +496,7 @@ router.get("/:id/track", customerAuth, async (req, res, next) => {
         riderLocAge = Math.floor((Date.now() - new Date(loc.updatedAt).getTime()) / 1000);
 
         const s = await getCachedSettings();
-        const avgSpeedKmh = parseFloat(s["dispatch_avg_speed_kmh"] ?? "25");
+        const avgSpeedKmh = safeParseFloat(s["dispatch_avg_speed_kmh"], 25, 1, 200);
         const destinationLat =
           ride.status === "in_transit"
             ? ride.dropLat

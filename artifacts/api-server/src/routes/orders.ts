@@ -1236,6 +1236,10 @@ router.patch(
 
       if (order.paymentMethod === "wallet" && !order.refundedAt) {
         const refundAmt = parseFloat(String(order.total));
+        if (!Number.isFinite(refundAmt) || refundAmt <= 0) {
+          sendError(res, "Invalid order total — refund cannot be processed", 500);
+          return;
+        }
         await db.transaction(async (tx) => {
           const [result] = await tx
             .update(ordersTable)
@@ -1249,11 +1253,12 @@ router.patch(
               and(
                 eq(ordersTable.id, orderId),
                 eq(ordersTable.userId, customerId),
-                isNull(ordersTable.refundedAt)
+                isNull(ordersTable.refundedAt),
+                inArray(ordersTable.status, ["pending", "confirmed"])
               )
             )
             .returning();
-          if (!result) throw new Error("Order already processed");
+          if (!result) throw new Error("Order already processed or not cancellable");
           updated = result;
           const balRows = await tx.execute(
             sql`UPDATE users SET wallet_balance = wallet_balance + ${refundAmt} WHERE id = ${customerId} RETURNING wallet_balance`
@@ -1280,9 +1285,15 @@ router.patch(
           const [result] = await tx
             .update(ordersTable)
             .set({ status: "cancelled", updatedAt: now })
-            .where(and(eq(ordersTable.id, orderId), eq(ordersTable.userId, customerId)))
+            .where(
+              and(
+                eq(ordersTable.id, orderId),
+                eq(ordersTable.userId, customerId),
+                inArray(ordersTable.status, ["pending", "confirmed"])
+              )
+            )
             .returning();
-          if (!result) throw new Error("Order not found or already cancelled");
+          if (!result) throw new Error("Order not found, already cancelled, or not in cancellable status");
           updated = result;
           /* Restore stock atomically with the status update */
           await restoreStock(tx);

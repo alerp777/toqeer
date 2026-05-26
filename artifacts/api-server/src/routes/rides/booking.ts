@@ -4,6 +4,7 @@ import { AuditService } from "../../services/admin-audit.service.js";
 import { getClientIp } from "../../middleware/security.js";
 import { logMaintenanceBypass } from "../admin-shared.js";
 import type { TranslationKey } from "./helpers.js";
+import { safeParseFloat } from "../../lib/safe-parse.js";
 import {
   acceptBidSchema,
   and,
@@ -150,7 +151,7 @@ router.post("/estimate", estimateLimiter, async (req, res) => {
       const durationMin = Math.round(durationSeconds / 60);
       const duration = `${durationMin} min`;
       const bargainEnabled = (s["ride_bargaining_enabled"] ?? "on") === "on";
-      const bargainMinPct = parseFloat(s["ride_bargaining_min_pct"] ?? "70");
+      const bargainMinPct = safeParseFloat(s["ride_bargaining_min_pct"], 70, 1, 100);
       const minOffer = Math.ceil(total * (bargainMinPct / 100));
       sendSuccess(res, {
         distance: Math.round(distanceKm * 10) / 10,
@@ -360,14 +361,14 @@ router.post("/", customerAuth, bookRideLimiter, async (req, res) => {
     }
 
     const bargainEnabled = (s["ride_bargaining_enabled"] ?? "on") === "on";
-    const bargainMinPct = parseFloat(s["ride_bargaining_min_pct"] ?? "70");
+    const bargainMinPct = safeParseFloat(s["ride_bargaining_min_pct"], 70, 1, 100);
 
     let isBargaining = false;
     let validatedOffer = 0;
 
     if (offeredFare !== undefined && bargainEnabled) {
       validatedOffer = offeredFare;
-      const maxFare = parseFloat(s["ride_max_fare"] ?? String(DEFAULT_MAX_FARE));
+      const maxFare = safeParseFloat(s["ride_max_fare"], DEFAULT_MAX_FARE, 1, 500000);
       if (validatedOffer > maxFare) {
         sendErrorWithData(
           res,
@@ -399,8 +400,8 @@ router.post("/", customerAuth, bookRideLimiter, async (req, res) => {
       isBargaining = validatedOffer < platformFare;
     }
 
-    const minOnline = parseFloat(s["payment_min_online"] ?? "50");
-    const maxOnline = parseFloat(s["payment_max_online"] ?? "100000");
+    const minOnline = safeParseFloat(s["payment_min_online"], 50, 0, 500000);
+    const maxOnline = safeParseFloat(s["payment_max_online"], 100000, 0, 500000);
     const effectiveFare = isBargaining ? validatedOffer : platformFare;
     if (paymentMethod === "wallet" && (effectiveFare < minOnline || effectiveFare > maxOnline)) {
       sendValidationError(
@@ -945,7 +946,7 @@ router.patch(
 
       await cleanupNotifiedRiders(String(req.params["id"] as string));
       const s = await getCachedSettings();
-      const cancelFee = parseFloat(s["ride_cancellation_fee"] ?? "30");
+      const cancelFee = safeParseFloat(s["ride_cancellation_fee"], 30, 0, 10000);
       const riderAssigned = ["accepted", "arrived", "in_transit"].includes(ride.status);
 
       let actualCancelFee = 0;
@@ -1548,10 +1549,10 @@ router.patch(
       const { offeredFare: newOffer, note } = parsed.data;
 
       const s = await getCachedSettings();
-      const bargainMinPct = parseFloat(s["ride_bargaining_min_pct"] ?? "70");
+      const bargainMinPct = safeParseFloat(s["ride_bargaining_min_pct"], 70, 1, 100);
       const platformFare = parseFloat(ride.fare);
 
-      const maxFare = parseFloat(s["ride_max_fare"] ?? "100000");
+      const maxFare = safeParseFloat(s["ride_max_fare"], 100000, 1, 500000);
       if (newOffer > maxFare) {
         sendErrorWithData(
           res,
@@ -1561,7 +1562,7 @@ router.patch(
         );
         return;
       }
-      const maxMultiplier = parseFloat(s["ride_counter_offer_max_multiplier"] ?? "3");
+      const maxMultiplier = safeParseFloat(s["ride_counter_offer_max_multiplier"], 3, 1, 50);
       if (platformFare > 0 && newOffer > platformFare * maxMultiplier) {
         sendErrorWithData(
           res,

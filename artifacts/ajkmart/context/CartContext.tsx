@@ -139,17 +139,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [socket]);
 
   useEffect(() => {
-    AsyncStorage.getItem("@ajkmart_cart").then(stored => {
-      if (!stored) { setHasLoaded(true); return; }
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) setItems(parsed);
-      } catch (parseErr) {
-        console.warn("[Cart] Failed to parse stored cart — clearing:", parseErr instanceof Error ? parseErr.message : String(parseErr));
-        AsyncStorage.removeItem("@ajkmart_cart");
-      }
-      setHasLoaded(true);
-    });
+    AsyncStorage.getItem("@ajkmart_cart")
+      .then(stored => {
+        if (!stored) { setHasLoaded(true); return; }
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) setItems(parsed);
+        } catch (parseErr) {
+          console.warn("[Cart] Failed to parse stored cart — clearing:", parseErr instanceof Error ? parseErr.message : String(parseErr));
+          AsyncStorage.removeItem("@ajkmart_cart");
+        }
+        setHasLoaded(true);
+      })
+      .catch((err: unknown) => {
+        console.warn("[Cart] Failed to load stored cart:", err instanceof Error ? err.message : String(err));
+        setHasLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
