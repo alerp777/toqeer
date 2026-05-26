@@ -246,15 +246,21 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         role="rider"
         logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
-        enableBiometric
-        enableSocial
-        enableEmailOtp
-        enableMagicLinkModal
-        loginMethodTabs={["otp", "password", "email"]}
+        enableBiometric={authConfig.biometricEnabled}
+        enableSocial={authConfig.googleEnabled || authConfig.facebookEnabled}
+        enableEmailOtp={authConfig.emailEnabled}
+        enableMagicLinkModal={authConfig.magicLinkEnabled}
+        loginMethodTabs={(() => {
+          const tabs: Array<"otp" | "password" | "email"> = [];
+          if (authConfig.phoneEnabled) tabs.push("otp");
+          if (authConfig.usernamePassword) tabs.push("password");
+          if (authConfig.emailEnabled) tabs.push("email");
+          return tabs.length > 0 ? tabs : ["otp"];
+        })()}
         captureDevOtp
         onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
-        onGoogle={() => { void handleGoogle(); }}
-        onFacebook={() => { void handleFacebook(); }}
+        onGoogle={authConfig.googleEnabled ? () => { void handleGoogle(); } : undefined}
+        onFacebook={authConfig.facebookEnabled ? () => { void handleFacebook(); } : undefined}
         onRegisterPress={() => navigate("/register")}
       />
     </ThemeProvider>

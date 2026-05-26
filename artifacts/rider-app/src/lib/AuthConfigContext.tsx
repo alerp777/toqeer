@@ -9,6 +9,7 @@ export interface AuthConfig {
   magicLinkEnabled: boolean;
   usernamePassword: boolean;
   totp: boolean;
+  biometricEnabled: boolean;
   captchaEnabled: boolean;
   otpProvider: string | null;
   authMode: string;
@@ -30,6 +31,7 @@ const DEFAULT_AUTH_CONFIG: AuthConfig = {
   magicLinkEnabled: false,
   usernamePassword: true,
   totp: false,
+  biometricEnabled: false,
   captchaEnabled: false,
   otpProvider: null,
   authMode: "OTP",
@@ -75,6 +77,7 @@ async function fetchAuthConfig(): Promise<AuthConfig> {
     magicLinkEnabled: d.magicLink ?? d.magicLinkEnabled ?? false,
     usernamePassword: d.usernamePassword ?? true,
     totp: d.totp ?? false,
+    biometricEnabled: d.biometric ?? false,
     captchaEnabled: d.captchaEnabled ?? false,
     otpProvider: d.otpProvider ?? null,
     captchaSiteKey: d.captchaSiteKey ?? undefined,

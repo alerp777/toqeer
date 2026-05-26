@@ -1,12 +1,13 @@
 import { RegisterScreen, SubmittedScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
+import { getVendorAuthConfig, usePlatformConfig } from "../useConfig";
 import { useAuth } from "./useAuth";
 import { vendorTheme } from "./theme";
 import {
   DRAFT_KEY, DRAFT_TTL_KEY,
-  loadDraft, saveDraft, fileToDataUrl, vendorSteps, registerOtpResender, markOtpSent,
+  loadDraft, saveDraft, fileToDataUrl, getVendorSteps, vendorSteps, registerOtpResender, markOtpSent,
 } from "./vendor-register-steps";
 
 function SignInFooter({ onNavigate }: { onNavigate: () => void }) {
@@ -34,7 +35,14 @@ function SignInFooter({ onNavigate }: { onNavigate: () => void }) {
 export function RegisterWizard() {
   const [, navigate] = useLocation();
   const { sendOtp, register } = useAuth();
+  const { config } = usePlatformConfig();
+  const auth = getVendorAuthConfig(config);
   const [submitted, setSubmitted] = useState(false);
+
+  const steps = useMemo(
+    () => getVendorSteps({ phoneEnabled: auth.phoneOtp, emailEnabled: auth.emailOtp }),
+    [auth.phoneOtp, auth.emailOtp]
+  );
 
   if (submitted) {
     return <SubmittedScreen onGoToLogin={() => navigate("/login")} />;
@@ -46,7 +54,7 @@ export function RegisterWizard() {
         role="vendor"
         accent={vendorTheme.primary}
         accentText="#ffffff"
-        steps={vendorSteps}
+        steps={steps}
         initialData={loadDraft()}
         onDataChange={saveDraft}
         className="vendor-register-screen"

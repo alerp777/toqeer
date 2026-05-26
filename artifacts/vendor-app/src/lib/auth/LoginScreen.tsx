@@ -167,13 +167,19 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         role="vendor"
         logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
-        enableBiometric={false}
-        enableSocial
-        enableEmailOtp
-        enableMagicLinkModal
-        loginMethodTabs={["otp", "password", "email"]}
-        googleClientId={auth.googleClientId}
-        facebookAppId={auth.facebookAppId}
+        enableBiometric={auth.phoneOtp || auth.emailOtp || auth.usernamePassword}
+        enableSocial={auth.google || auth.facebook}
+        enableEmailOtp={auth.emailOtp}
+        enableMagicLinkModal={auth.magicLink}
+        loginMethodTabs={(() => {
+          const tabs: Array<"otp" | "password" | "email"> = [];
+          if (auth.phoneOtp) tabs.push("otp");
+          if (auth.usernamePassword) tabs.push("password");
+          if (auth.emailOtp) tabs.push("email");
+          return tabs.length > 0 ? tabs : ["otp"];
+        })()}
+        googleClientId={auth.google ? auth.googleClientId : undefined}
+        facebookAppId={auth.facebook ? auth.facebookAppId : undefined}
         onSuccess={handleSuccess}
         onRegisterPress={() => navigate("/register")}
         captureDevOtp

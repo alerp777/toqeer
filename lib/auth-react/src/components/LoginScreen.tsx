@@ -201,6 +201,10 @@ export function LoginScreen({
   })();
   const showTabs = resolvedTabs.length > 1;
 
+  /* Edge case: if admin disabled all login methods, still render with the first
+     available fallback so the UI doesn't break. */
+  const fallbackMode: LoginMode = resolvedTabs[0] ?? "otp";
+
   const [step, setStep] = useState<Step>("identifier");
   const [loginMode, setLoginMode] = useState<LoginMode>(resolvedTabs[0] ?? "otp");
   const [identifier, setIdentifier] = useState("");

@@ -1,12 +1,13 @@
 import { RegisterScreen, SubmittedScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
+import { useRiderAuthConfig } from "../AuthConfigContext";
 import { useAuthOps } from "./useAuth";
 import { riderTheme } from "./theme";
 import {
   DRAFT_KEY, DRAFT_TTL_KEY,
-  loadDraft, saveDraft, fileToDataUrl, riderSteps, registerOtpResender, markOtpSent,
+  loadDraft, saveDraft, fileToDataUrl, getRiderSteps, riderSteps, registerOtpResender, markOtpSent,
 } from "./rider-register-steps";
 
 function SignInFooter({ onNavigate }: { onNavigate: () => void }) {
@@ -38,7 +39,13 @@ export interface RegisterWizardProps {
 export function RegisterWizard({ onDone }: RegisterWizardProps) {
   const [, navigate] = useLocation();
   const { sendOtp, register } = useAuthOps();
+  const authConfig = useRiderAuthConfig();
   const [submitted, setSubmitted] = useState(false);
+
+  const steps = useMemo(
+    () => getRiderSteps({ phoneEnabled: authConfig.phoneEnabled, emailEnabled: authConfig.emailEnabled }),
+    [authConfig.phoneEnabled, authConfig.emailEnabled]
+  );
 
   if (submitted) {
     return (
@@ -57,7 +64,7 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
         role="rider"
         accent={riderTheme.primary}
         accentText="#0B0E11"
-        steps={riderSteps}
+        steps={steps}
         initialData={loadDraft()}
         onDataChange={saveDraft}
         className="rider-register-screen"

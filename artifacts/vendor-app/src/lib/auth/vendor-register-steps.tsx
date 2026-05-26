@@ -298,6 +298,21 @@ export const vendorSteps: StepConfig[] = [
   },
 ];
 
+/**
+ * Build vendor registration steps dynamically based on admin auth config.
+ * Drops the OTP step when both phone + email OTP are disabled.
+ */
+export function getVendorSteps(config: {
+  phoneEnabled: boolean;
+  emailEnabled: boolean;
+}): StepConfig[] {
+  const steps = [...vendorSteps];
+  if (!config.phoneEnabled && !config.emailEnabled) {
+    return steps.filter((s) => s.id !== "otp-password");
+  }
+  return steps;
+}
+
 /* ─── FileField helper ─────────────────────────────────────────────── */
 function FileField({ label, fieldId, value, onChange }: {
   label: string; fieldId: string; value: File | null; onChange: (f: File | null) => void;

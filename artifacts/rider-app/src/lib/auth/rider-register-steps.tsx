@@ -573,3 +573,22 @@ export const riderSteps: StepConfig[] = [
       !d.terms ? "Please accept the Terms & Conditions" : null,
   },
 ];
+
+/**
+ * Build rider registration steps dynamically based on admin auth config.
+ *
+ * - When both phone + email OTP are disabled, the backend skips OTP
+ *   verification entirely (`otpMethodsDisabled`) and marks the account
+ *   verified. We therefore drop the OTP step so the wizard ends on
+ *   Documents.
+ */
+export function getRiderSteps(config: {
+  phoneEnabled: boolean;
+  emailEnabled: boolean;
+}): StepConfig[] {
+  const steps = [...riderSteps];
+  if (!config.phoneEnabled && !config.emailEnabled) {
+    return steps.filter((s) => s.id !== "otp-password");
+  }
+  return steps;
+}
