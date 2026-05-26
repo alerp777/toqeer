@@ -11,7 +11,7 @@
 
 import { isAuthMethodEnabled } from "@workspace/auth-utils/server";
 import { db } from "@workspace/db";
-import { refreshTokensTable, usersTable, walletTransactionsTable } from "@workspace/db/schema";
+import { refreshTokensTable, userRolesTable, usersTable, walletTransactionsTable } from "@workspace/db/schema";
 import { canonicalizePhone } from "@workspace/phone-utils";
 import { eq, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
@@ -334,6 +334,11 @@ router.post(
               approvalStatus: requireApproval ? "pending" : "approved",
               ...(deviceId ? { deviceId } : {}),
             });
+
+            await tx
+              .insert(userRolesTable)
+              .values({ id: generateId(), userId: newUserId, role: "customer" })
+              .onConflictDoNothing();
 
             // Signup bonus — kept inside the transaction so the balance update
             // and transaction record are atomic with the user row insert.

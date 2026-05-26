@@ -8,6 +8,7 @@ import {
   refreshTokensTable,
   ridesTable,
   savedAddressesTable,
+  userRolesTable,
   userSessionsTable,
   usersTable,
   walletTransactionsTable,
@@ -205,6 +206,11 @@ router.post("/add-role", anyUserAuth, validateBody(AddRoleSchema), async (req, r
       .update(usersTable)
       .set({ roles: newRoles, updatedAt: new Date() })
       .where(eq(usersTable.id, userId));
+
+    await db
+      .insert(userRolesTable)
+      .values({ id: generateId(), userId, role: "customer" })
+      .onConflictDoNothing();
 
     const ip = getClientIp(req);
     void writeAuthAuditLog("role_added_customer", {
