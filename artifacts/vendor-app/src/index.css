@@ -50,6 +50,7 @@
   --destructive-foreground: 0 0% 100%;
   --app-font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --radius: 0.75rem;
+  --card-bg: #0F1624; /* elevated dark surface */
 
   /* Safe area env vars */
   --sat: env(safe-area-inset-top, 0px);
@@ -433,42 +434,42 @@ select {
 
 /* ── Vendor RegisterScreen dark theme overrides ── */
 .vendor-register-screen {
-  background: #060A14 !important;
+  background: hsl(var(--background));
   min-height: 100vh;
-  padding-top: 56px !important;
+  padding-top: 56px;
 }
 
 .vendor-register-screen > div {
-  background: #0F1827 !important;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid #1E2A3F !important;
-  border-radius: 20px !important;
+  background: var(--card-bg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid hsl(var(--border));
+  border-radius: 20px;
 }
 
 .vendor-register-screen h1 {
-  color: #E2E8F4 !important;
+  color: hsl(var(--foreground));
 }
 
 .vendor-register-screen p {
-  color: #8B95A9 !important;
+  color: hsl(var(--muted-foreground));
 }
 
 .vendor-register-screen label {
-  color: #374151;
+  color: hsl(var(--muted-foreground));
 }
 
 .vendor-register-screen button[type="submit"],
 .vendor-register-screen form button[type="submit"] {
-  background: #1A56DB !important;
-  background-color: #1A56DB !important;
-  border-radius: 12px !important;
-  color: #fff !important;
+  background: var(--login-brand);
+  background-color: var(--login-brand);
+  border-radius: 12px;
+  color: hsl(var(--primary-foreground));
 }
 
 .vendor-register-screen button[type="submit"]:hover:not(:disabled),
 .vendor-register-screen form button[type="submit"]:hover:not(:disabled) {
-  background: #1348B5 !important;
-  background-color: #1348B5 !important;
+  background: var(--login-brand-hover);
+  background-color: var(--login-brand-hover);
 }
 
 .vendor-register-screen input[type="text"],
@@ -476,21 +477,21 @@ select {
 .vendor-register-screen input[type="tel"],
 .vendor-register-screen input[type="password"],
 .vendor-register-screen select {
-  background: #060A14 !important;
-  border-color: #1E2A3F !important;
-  color: #E2E8F4 !important;
-  border-radius: 12px !important;
+  background: hsl(var(--background));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+  border-radius: 12px;
 }
 
 .vendor-register-screen input:focus-visible,
 .vendor-register-screen select:focus-visible {
-  border-color: #1A56DB !important;
-  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.3) !important;
+  border-color: var(--login-brand);
+  box-shadow: 0 0 0 2px var(--login-brand-glow-sm);
 }
 
 .vendor-register-screen [role="alert"] {
-  background: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgba(239, 68, 68, 0.28) !important;
-  color: #EF4444 !important;
+  background: hsl(var(--destructive) / 0.1);
+  border-color: hsl(var(--destructive) / 0.28);
+  color: hsl(var(--destructive));
 }
 

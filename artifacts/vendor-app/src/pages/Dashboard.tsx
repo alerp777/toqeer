@@ -28,7 +28,6 @@ import { useStoreStatus } from "../hooks/useStoreStatus";
 import { StoreHoursChip } from "../components/ui/StoreHoursChip";
 import { StoreStatusBadge } from "../components/ui/StoreStatusBadge";
 import { BADGE_BLUE, CARD, DEFAULT_COMMISSION_PCT, ORDER_STATUS_BADGE, errMsg, fc, fd, STAT_LBL, STAT_VAL } from "../lib/ui";
-import { useAuthTheme } from "../lib/auth/ThemeContext";
 import { usePlatformConfig } from "../lib/useConfig";
 import { useLanguage } from "../lib/useLanguage";
 import type { StoreHours } from "../lib/vendor-auth";
@@ -45,7 +44,6 @@ function typeIcon(type: string) {
 }
 
 function QuickActions() {
-  const theme = useAuthTheme();
   return (
     <div className={`${CARD} p-4`}>
       <p className="mb-3 text-xs font-extrabold tracking-widest text-gray-400 uppercase">
@@ -54,27 +52,24 @@ function QuickActions() {
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/orders"
-          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
-          style={{ background: theme.primaryLight }}
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95 bg-green-500/10"
         >
-          <CheckSquare size={22} color={theme.success} />
-          <span className="text-xs leading-tight font-bold" style={{ color: theme.success }}>Accept Orders</span>
+          <CheckSquare size={22} className="text-green-500" />
+          <span className="text-xs leading-tight font-bold text-green-500">Accept Orders</span>
         </Link>
         <Link
           href="/chat"
-          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
-          style={{ background: theme.primaryLight }}
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95 bg-[var(--login-brand)]/10"
         >
-          <MessageSquare size={22} color={theme.primary} />
-          <span className="text-xs leading-tight font-bold" style={{ color: theme.primary }}>Open Chat</span>
+          <MessageSquare size={22} className="text-[var(--login-brand)]" />
+          <span className="text-xs leading-tight font-bold text-[var(--login-brand)]">Open Chat</span>
         </Link>
         <Link
           href="/products"
-          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95"
-          style={{ background: theme.primaryLight }}
+          className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-transform active:scale-95 bg-amber-500/10"
         >
-          <ShoppingCart size={22} color={theme.warning} />
-          <span className="text-xs leading-tight font-bold" style={{ color: theme.warning }}>Manage Products</span>
+          <ShoppingCart size={22} className="text-amber-500" />
+          <span className="text-xs leading-tight font-bold text-amber-500">Manage Products</span>
         </Link>
       </div>
     </div>

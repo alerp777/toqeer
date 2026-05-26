@@ -29,8 +29,8 @@ export const SELECT =
 export const TEXTAREA =
   "w-full px-4 py-3 bg-[#1A2236] border border-white/10 rounded-xl text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-[#1E2A44] transition-colors resize-none";
 
-/* ── Cards (white surface on dark bg — Stripe/Linear dark mode pattern) ── */
-export const CARD = "bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100";
+/* ── Cards ── */
+export const CARD = "bg-[var(--card-bg)] rounded-2xl shadow-sm overflow-hidden border border-white/10";
 export const CARD_HEADER = "px-4 py-3.5 border-b border-gray-100 flex items-center justify-between";
 export const CARD_BODY = "p-4";
 export const ROW = "flex items-center justify-between py-3 border-b border-gray-50 last:border-0";
