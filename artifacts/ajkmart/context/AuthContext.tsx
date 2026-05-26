@@ -300,7 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           registerAuth(storedToken, storedRefresh);
           syncToServer(storedToken).catch(() => {});
         }
-      } catch (err) { console.error("[AuthContext] loadAuth failed:", err); }
+      } catch (err) { if (__DEV__) console.error("[AuthContext] loadAuth failed:", err); }
       setIsLoading(false);
     };
     loadAuth();
@@ -359,6 +359,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
     setToken(userToken);
     setTwoFactorPending(null);
+    setSessionExpired(false);
     setAuthToken(userToken);
     registerAuth(userToken, refreshToken ?? null);
     syncToServer(userToken).catch(() => {});
