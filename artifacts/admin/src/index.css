@@ -571,3 +571,11 @@ html[data-admin-reduce-motion="1"] *::after {
   animation: ajkm-section-flash-kf 1.6s ease-out 1;
   scroll-margin-top: 80px;
 }
+
+/* Error shake animation — used by credential dialog */
+@keyframes shake {
+  10%, 90%  { transform: translateX(-2px); }
+  20%, 80%  { transform: translateX(3px);  }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60%  { transform: translateX(4px);  }
+}
