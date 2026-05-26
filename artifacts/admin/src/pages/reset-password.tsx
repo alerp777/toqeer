@@ -1,5 +1,9 @@
 import { Input } from "@/components/ui/input";
-import { validateStrength } from "@/lib/auth/passwordStrength";
+import {
+  computeStrength,
+  STRENGTH_META,
+  validateStrength,
+} from "@/lib/auth/passwordStrength";
 import {
   ArrowLeft,
   ArrowRight,
@@ -33,11 +37,15 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validation, setValidation] = useState<ValidationState>({ status: "checking" });
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const strengthLevel = computeStrength(password);
+  const sm = STRENGTH_META[strengthLevel];
 
   useEffect(
     () => () => {
@@ -160,18 +168,14 @@ export default function ResetPassword() {
                       : "This reset link is invalid or has expired."}
                 </p>
               </div>
-              <Link href="/forgot-password">
-                <a className="inline-flex items-center gap-1.5 text-[13px] font-medium text-indigo-400/80 transition-colors hover:text-indigo-300">
-                  Request a new reset link <ArrowRight className="h-3.5 w-3.5" />
-                </a>
+              <Link href="/forgot-password" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-indigo-400/80 transition-colors hover:text-indigo-300">
+                Request a new reset link <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <Link href="/login">
-                <a className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white/40 transition-colors hover:text-white/70">
-                  <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
-                </a>
+              <Link href="/login" className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white/40 transition-colors hover:text-white/70">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
               </Link>
 
               {validation.adminName && (
@@ -202,11 +206,27 @@ export default function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-white/30 transition-colors hover:text-white/60"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {password.length > 0 && (
+                  <div className="space-y-1.5 pt-0.5">
+                    <div className="flex gap-1">
+                      {([1, 2, 3, 4] as const).map((bar) => (
+                        <div
+                          key={bar}
+                          className={`h-1 flex-1 rounded-full transition-all duration-300 ${strengthLevel >= bar ? sm.bar : "bg-white/10"}`}
+                        />
+                      ))}
+                    </div>
+                    {strengthLevel > 0 && (
+                      <p className={`text-[11px] font-semibold ${sm.text}`}>{sm.label}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -216,20 +236,30 @@ export default function ResetPassword() {
                 >
                   Confirm password
                 </label>
-                <Input
-                  id="rp-confirm"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter the new password"
-                  className="h-11 rounded-xl border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="rp-confirm"
+                    type={showConfirm ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter the new password"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    aria-label={showConfirm ? "Hide password" : "Show password"}
+                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-white/30 transition-colors hover:text-white/60"
+                  >
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               {error && (
-                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3 py-2 text-[13px] text-red-400">
+                <p className="rounded-lg border border-red-500/20 bg-red-500/8 px-3 py-2 text-[13px] text-red-400 animate-in slide-in-from-top-1 duration-200">
                   {error}
                 </p>
               )}
@@ -237,7 +267,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={submitting || !password || !confirmPassword}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-500 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

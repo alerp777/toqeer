@@ -10,6 +10,7 @@ import {
   EyeOff,
   Loader2,
   Mail,
+  Phone,
   ShieldCheck,
   ShoppingBag,
   UserRound,
@@ -30,6 +31,52 @@ type Step = "credentials" | "mfa";
 
 function _sessionSeconds(rememberMe: boolean) {
   return rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 8;
+}
+
+/* ── Shared micro-components ──────────────────────────────────────────── */
+
+function AuthLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase"
+    >
+      {children}
+    </label>
+  );
+}
+
+function AuthBackLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white/40 transition-colors hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+    >
+      <ArrowLeft className="h-3.5 w-3.5" />
+      {children}
+    </button>
+  );
+}
+
+function AuthErrorBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      role="alert"
+      className="rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5 text-[13px] leading-snug text-red-400 animate-in slide-in-from-top-1 duration-200"
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ── Step fade wrapper ────────────────────────────────────────────────── */
+function FadeStep({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-1 duration-200">
+      {children}
+    </div>
+  );
 }
 
 export function LoginScreen({ onSuccess }: LoginScreenProps) {
@@ -111,73 +158,34 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     setLocation("/login");
   }
 
+  /* ── Maintenance screen ──────────────────────────────────────────────── */
   if (maintenance) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: theme.background,
-          padding: 16,
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            border: `1px solid ${theme.border}`,
-            borderRadius: 20,
-            background: theme.surface,
-            padding: 28,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})`,
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
-              <ShoppingBag style={{ width: 28, height: 28, color: theme.onPrimary }} />
+      <div className="grid min-h-screen place-items-center bg-[#0f1117] px-4">
+        <div className="w-full max-w-[400px] rounded-2xl border border-white/[0.07] bg-white/[0.04] p-7 shadow-2xl backdrop-blur-md">
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+              <ShoppingBag className="h-7 w-7 text-white" />
             </div>
           </div>
-          <h1
-            style={{
-              margin: 0,
-              textAlign: "center",
-              fontSize: 24,
-              fontWeight: 800,
-              color: theme.text,
-            }}
-          >
-            AJKMart Admin
-          </h1>
-          <p
-            style={{
-              margin: "10px 0 0",
-              textAlign: "center",
-              color: theme.textMuted,
-              lineHeight: 1.6,
-            }}
-          >
+          <h1 className="text-center text-2xl font-extrabold text-white">AJKMart Admin</h1>
+          <p className="mt-2.5 text-center text-[13px] leading-relaxed text-white/50">
             {maintenanceMsg ?? "The admin panel is temporarily unavailable."}
           </p>
           {(supportPhone || supportEmail) && (
-            <div
-              style={{
-                marginTop: 18,
-                border: `1px solid ${theme.border}`,
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              {supportPhone && <div>📞 {supportPhone}</div>}
-              {supportEmail && <div>{supportEmail}</div>}
+            <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3.5 text-[13px] text-white/50">
+              {supportPhone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-white/30" />
+                  {supportPhone}
+                </div>
+              )}
+              {supportEmail && (
+                <div className="mt-1 flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-white/30" />
+                  {supportEmail}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -185,319 +193,144 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     );
   }
 
+  /* ── Main login card ─────────────────────────────────────────────────── */
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "#0f1117",
-        padding: 16,
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 448, position: "relative" }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 16,
-              margin: "0 auto 14px",
-              background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-              display: "grid",
-              placeItems: "center",
-              boxShadow: "0 14px 30px rgba(99,102,241,0.3)",
-            }}
-          >
-            <ShieldCheck style={{ width: 28, height: 28, color: "#fff" }} />
+    <div className="grid min-h-screen place-items-center bg-[#0f1117] px-4 py-8">
+      <div className="w-full max-w-[448px]">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <ShieldCheck className="h-7 w-7 text-white" />
           </div>
-          <h1 style={{ margin: 0, color: "#fff", fontSize: 28, fontWeight: 800 }}>AJKMart Admin</h1>
-          <p style={{ margin: "8px 0 0", color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+          <h1 className="text-[28px] font-extrabold text-white">AJKMart Admin</h1>
+          <p className="mt-2 text-[13px] text-white/55">
             {step === "credentials" ? "Sign in to continue" : "Two-factor verification"}
           </p>
         </div>
 
-        <div
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 22,
-            padding: 28,
-            boxShadow: "0 24px 70px rgba(0,0,0,0.45)",
-          }}
-        >
-          {errorText && (
-            <div
-              data-testid="login-error"
-              role="alert"
-              style={{
-                marginBottom: 16,
-                borderRadius: 14,
-                border: "1px solid rgba(239,68,68,0.25)",
-                background: "rgba(239,68,68,0.08)",
-                padding: "10px 12px",
-                color: "#fca5a5",
-                fontSize: 13,
-              }}
-            >
-              {errorText}
-            </div>
-          )}
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur-md">
+          {errorText && <AuthErrorBanner>{errorText}</AuthErrorBanner>}
 
           {step === "credentials" ? (
-            <form onSubmit={handleCredentialsSubmit} style={{ display: "grid", gap: 16 }}>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 6,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  Username or Email
-                </label>
-                <div style={{ position: "relative" }}>
-                  <UserRound
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: 16,
-                      height: 16,
-                      color: "rgba(255,255,255,0.28)",
-                    }}
-                  />
-                  <Input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    autoComplete="username"
-                    placeholder="admin@example.com"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
-                  />
+            <FadeStep>
+              <form onSubmit={handleCredentialsSubmit} className="mt-4 grid gap-4">
+                <div className="space-y-1.5">
+                  <AuthLabel htmlFor="ls-username">Username or Email</AuthLabel>
+                  <div className="relative">
+                    <UserRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/28" />
+                    <Input
+                      id="ls-username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
+                      placeholder="admin@example.com"
+                      className="h-11 rounded-xl border-white/10 bg-white/[0.06] pl-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 6,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  Password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 40,
-                      display: "grid",
-                      placeItems: "center",
-                      border: "none",
-                      background: "transparent",
-                      color: "rgba(255,255,255,0.35)",
-                    }}
-                  >
-                    {showPassword ? (
-                      <EyeOff style={{ width: 16, height: 16 }} />
-                    ) : (
-                      <Eye style={{ width: 16, height: 16 }} />
-                    )}
-                  </button>
+
+                <div className="space-y-1.5">
+                  <AuthLabel htmlFor="ls-password">Password</AuthLabel>
+                  <div className="relative">
+                    <Input
+                      id="ls-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      className="h-11 rounded-xl border-white/10 bg-white/[0.06] pr-10 text-sm text-white placeholder:text-white/25 focus:border-indigo-400/60 focus:bg-white/[0.08] focus:ring-indigo-400/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-white/35 transition-colors hover:text-white/60 focus-visible:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    color: "rgba(255,255,255,0.72)",
-                    fontSize: 13,
-                  }}
-                >
-                  <Checkbox
-                    checked={rememberMe}
-                    onCheckedChange={(v) => setRememberMe(Boolean(v))}
-                  />
-                  Remember me
-                </label>
-                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-                  {rememberMe ? "7-day session" : "8-hour session"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setLocation("/forgot-password")}
-                style={{
-                  justifySelf: "flex-start",
-                  border: "none",
-                  background: "transparent",
-                  color: "#818cf8",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-              >
-                Forgot Password?
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading || isRateLimited || !username.trim() || !password.trim()}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  height: 46,
-                  borderRadius: 14,
-                  border: "none",
-                  background:
-                    isLoading || isRateLimited || !username.trim() || !password.trim()
-                      ? "rgba(99,102,241,0.5)"
-                      : "#6366f1",
-                  color: "#fff",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isRateLimited ? (
-                  `Try again in ${secondsLeft}s`
-                ) : (
-                  <>
-                    Sign In <ArrowRight style={{ width: 16, height: 16 }} />
-                  </>
-                )}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleMfaSubmit} style={{ display: "grid", gap: 16 }}>
-              <div
-                style={{
-                  borderRadius: 16,
-                  border: "1px solid rgba(99,102,241,0.22)",
-                  background: "rgba(99,102,241,0.08)",
-                  padding: 14,
-                  color: "rgba(255,255,255,0.86)",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                }}
-              >
-                Enter the 6-digit code from your authenticator app.
-              </div>
-              <OtpInput length={6} onComplete={setTotp} label="Authenticator code" />
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.38)",
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}
-              >
-                Resend not available — check your authenticator app.
-              </p>
-              <button
-                type="button"
-                onClick={() => setLocation("/forgot-password")}
-                style={{
-                  justifySelf: "flex-start",
-                  border: "none",
-                  background: "transparent",
-                  color: "#818cf8",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-              >
-                Lost access to authenticator? Use backup code
-              </button>
-              <div style={{ display: "flex", gap: 10 }}>
+
+                <div className="flex items-center justify-between gap-3">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-white/72">
+                    <Checkbox
+                      checked={rememberMe}
+                      onCheckedChange={(v) => setRememberMe(Boolean(v))}
+                    />
+                    Remember me
+                  </label>
+                  <span className="text-[12px] text-white/35">
+                    {rememberMe ? "7-day session" : "8-hour session"}
+                  </span>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setStep("credentials");
-                    setTempToken(null);
-                    setTotp("");
-                  }}
-                  style={{
-                    height: 42,
-                    padding: "0 16px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "rgba(255,255,255,0.8)",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
+                  onClick={() => setLocation("/forgot-password")}
+                  className="justify-self-start border-none bg-transparent p-0 text-[13px] font-semibold text-indigo-400 transition-colors hover:text-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
                 >
-                  <ArrowLeft
-                    style={{ width: 15, height: 15, display: "inline-block", marginRight: 6 }}
-                  />
-                  Back to login
+                  Forgot Password?
                 </button>
+
                 <button
                   type="submit"
-                  disabled={totp.length !== 6 || isLoading}
-                  style={{
-                    flex: 1,
-                    height: 42,
-                    borderRadius: 12,
-                    border: "none",
-                    background: isLoading ? "rgba(99,102,241,0.5)" : "#6366f1",
-                    color: "#fff",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
+                  disabled={isLoading || isRateLimited || !username.trim() || !password.trim()}
+                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 text-[14px] font-extrabold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:opacity-50"
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isRateLimited ? (
+                    `Try again in ${secondsLeft}s`
+                  ) : (
+                    <>Sign In <ArrowRight className="h-4 w-4" /></>
+                  )}
                 </button>
-              </div>
-            </form>
+              </form>
+            </FadeStep>
+          ) : (
+            <FadeStep>
+              <form onSubmit={handleMfaSubmit} className="mt-4 grid gap-4">
+                <div className="rounded-2xl border border-indigo-400/22 bg-indigo-400/[0.08] px-4 py-3.5 text-[13px] leading-relaxed text-white/86">
+                  Enter the 6-digit code from your authenticator app.
+                </div>
+
+                <OtpInput length={6} onComplete={setTotp} label="Authenticator code" />
+
+                <p className="text-[12px] leading-relaxed text-white/38">
+                  Resend not available — check your authenticator app.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setLocation("/forgot-password")}
+                  className="justify-self-start border-none bg-transparent p-0 text-[13px] font-semibold text-indigo-400 transition-colors hover:text-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
+                >
+                  Lost access to authenticator? Use backup code
+                </button>
+
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => { setStep("credentials"); setTempToken(null); setTotp(""); }}
+                    className="flex h-[42px] items-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.04] px-4 text-[13px] font-bold text-white/80 transition-all duration-200 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={totp.length !== 6 || isLoading}
+                    className="flex h-[42px] flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 text-[14px] font-extrabold text-white transition-all duration-200 hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                  </button>
+                </div>
+              </form>
+            </FadeStep>
           )}
 
-          <div
-            style={{
-              marginTop: 18,
-              color: "rgba(255,255,255,0.35)",
-              fontSize: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <span style={{ width: 14, height: 14, display: "inline-flex" }}>
-              <Mail style={{ width: 14, height: 14 }} />
-            </span>
+          <div className="mt-5 flex items-center gap-2.5 text-[12px] text-white/35">
+            <Mail className="h-3.5 w-3.5 shrink-0" />
             Contact support if you cannot access your account.
           </div>
         </div>
@@ -507,14 +340,11 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         <DialogContent className="sm:max-w-md">
           <DialogTitle>Session expired</DialogTitle>
           <DialogDescription>Please sign in again to continue.</DialogDescription>
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="grid gap-2.5">
             <button
               type="button"
-              onClick={() => {
-                setSessionExpiredOpen(false);
-                setLocation("/login");
-              }}
-              className="h-11 rounded-xl bg-indigo-600 font-semibold text-white hover:bg-indigo-500"
+              onClick={() => { setSessionExpiredOpen(false); setLocation("/login"); }}
+              className="h-11 rounded-xl bg-indigo-600 font-semibold text-white transition-all duration-200 hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60"
             >
               Sign in
             </button>
@@ -528,18 +358,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           <DialogDescription>
             You will need to sign in again to access the admin panel.
           </DialogDescription>
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <div className="flex justify-end gap-2.5">
             <button
               type="button"
               onClick={() => setLogoutOpen(false)}
-              className="h-10 rounded-xl border px-4"
+              className="h-10 rounded-xl border border-white/10 px-4 text-[13px] font-medium text-white/70 transition-colors hover:bg-white/[0.06]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleLogout}
-              className="h-10 rounded-xl bg-red-600 px-4 font-semibold text-white"
+              className="h-10 rounded-xl bg-red-600 px-4 text-[13px] font-semibold text-white transition-all duration-200 hover:bg-red-500"
             >
               Sign Out
             </button>

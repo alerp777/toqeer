@@ -63,19 +63,18 @@ export default function ForgotPassword() {
                   If {email} matches an admin account, a reset link was sent.
                 </p>
               </div>
-              <Link href="/login">
-                <button className="w-full rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-[13px] font-medium text-white/70 transition-all hover:bg-white/[0.08] hover:text-white/90">
-                  Return to sign in
-                </button>
+              <Link
+                href="/login"
+                className="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-[13px] font-medium text-white/70 transition-all hover:bg-white/[0.08] hover:text-white/90"
+              >
+                Return to sign in
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <Link href="/login">
-                <a className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white/40 transition-colors hover:text-white/70">
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Back to sign in
-                </a>
+              <Link href="/login" className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white/40 transition-colors hover:text-white/70">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to sign in
               </Link>
 
               <div className="space-y-1.5">

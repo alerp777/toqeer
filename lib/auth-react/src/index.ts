@@ -115,3 +115,7 @@ export type { UseAppStatusOptions, AppStatus, UserStatus } from "./hooks/useAppS
 // Join select page — shared role-selection component for Rider and Vendor apps
 export { JoinSelect } from "./components/JoinSelect";
 export type { JoinSelectProps, JoinSelectTheme, JoinSelectActions } from "./components/JoinSelect";
+
+// Post-registration submitted confirmation screen
+export { SubmittedScreen } from "./components/SubmittedScreen";
+export type { SubmittedScreenProps } from "./components/SubmittedScreen";

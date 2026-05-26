@@ -17,6 +17,7 @@ export default function ForgotPassword() {
     <ForgotPasswordFlow
       role="rider"
       logoSrc="/ajkmart-logo.png"
+      logoAlt="AJKMart"
       api={{
         forgotPassword: (data) =>
           api.forgotPassword(

@@ -15,7 +15,7 @@ export function GuestLanding() {
   return (
     <SharedGuestLanding
         role="rider"
-        logoSrc=""
+        logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
         appName="AJKMart Rider"
         heroTitle={{ en: "Earn More. Ride Free.", ur: "زیادہ کمائیں۔ آزاد سفر کریں۔", roman: "Zyada Kamayen. Azad Safar karen." }}

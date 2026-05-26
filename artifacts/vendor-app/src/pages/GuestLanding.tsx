@@ -6,7 +6,7 @@ export function GuestLanding() {
   return (
     <SharedGuestLanding
         role="vendor"
-        logoSrc=""
+        logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
         appName="AJKMart Vendor"
         heroTitle={{ en: "Grow Your Business with AJKMart", ur: "اپنا کاروبار بڑھائیں", roman: "Apna karobar barhayein" }}
@@ -19,7 +19,7 @@ export function GuestLanding() {
         ]}
         features={[
           {
-            icon: "trendUp",
+            icon: "grid",
             title: { en: "Order Dashboard", ur: "آرڈر ڈیش بورڈ", roman: "Order Dashboard" },
             desc: { en: "Accept, manage, and track every order in real time with push alerts.", ur: "ہر آرڈر کو حقیقی وقت میں ٹریک کریں۔", roman: "Har order real time mein track karein." },
             color: "#1A56DB",

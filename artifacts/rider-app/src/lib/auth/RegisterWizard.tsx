@@ -1,10 +1,96 @@
-import { RegisterScreen, ThemeProvider, type StepConfig } from "@workspace/auth-react";
+import {
+  RegisterScreen,
+  SubmittedScreen,
+  ThemeProvider,
+  type StepComponentProps,
+  type StepConfig,
+} from "@workspace/auth-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
-import { riderTheme } from "./theme";
 
 const DRAFT_KEY = "rider_reg_draft";
+
+async function fileToDataUrl(file: unknown): Promise<string> {
+  if (!(file instanceof File)) return String(file ?? "");
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── Document upload step component ─────────────────────────────────── */
+const DOC_FIELDS: Array<{ id: string; label: string }> = [
+  { id: "vehiclePhoto", label: "Vehicle Photo" },
+  { id: "licensePhoto", label: "License Photo" },
+  { id: "cnicFrontPhoto", label: "CNIC Front Photo" },
+  { id: "cnicBackPhoto", label: "CNIC Back Photo" },
+];
+
+function DocumentUploadStep({ data, onChange }: StepComponentProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {DOC_FIELDS.map(({ id, label }) => {
+        const file = data[id] instanceof File ? (data[id] as File) : null;
+        return (
+          <div key={id}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.07em",
+                marginBottom: 6,
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              {label} *
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                height: 48,
+                padding: "0 14px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.04)",
+                border: "1.5px solid rgba(255,255,255,0.10)",
+                color: file ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
+                fontSize: 14,
+                cursor: "pointer",
+                transition: "border-color 0.15s",
+                boxSizing: "border-box",
+                overflow: "hidden",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {file ? file.name : "Choose image file…"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onChange(id, f);
+                }}
+              />
+            </label>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const riderSteps: StepConfig[] = [
   {
@@ -55,13 +141,14 @@ const riderSteps: StepConfig[] = [
   {
     id: "documents",
     title: "Upload Documents",
-    subtitle: "Provide document photo URLs for KYC",
-    fields: [
-      { id: "vehiclePhoto", type: "text", label: "Vehicle Photo URL", required: true },
-      { id: "licensePhoto", type: "text", label: "License Photo URL", required: true },
-      { id: "cnicFrontPhoto", type: "text", label: "CNIC Front Photo URL", required: true },
-      { id: "cnicBackPhoto", type: "text", label: "CNIC Back Photo URL", required: true },
-    ],
+    subtitle: "Upload clear photos of your documents for KYC",
+    component: DocumentUploadStep,
+    validate: (data) => {
+      for (const { id, label } of DOC_FIELDS) {
+        if (!data[id]) return `${label} is required.`;
+      }
+      return null;
+    },
   },
   {
     id: "password",
@@ -79,89 +166,19 @@ export interface RegisterWizardProps {
   onDone?: () => void;
 }
 
-function SubmittedScreen({ onGoToLogin }: { onGoToLogin: () => void }) {
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: riderTheme.background,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "24px 16px",
-      fontFamily: "Inter, system-ui, sans-serif",
-    }}>
-      <div style={{
-        width: "100%",
-        maxWidth: 420,
-        background: riderTheme.surface,
-        borderRadius: 20,
-        padding: "40px 28px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 20,
-        textAlign: "center",
-      }}>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="9 12 11 14 15 10" />
-          </svg>
-        </div>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: riderTheme.text, margin: "0 0 8px" }}>
-            Application Submitted!
-          </h2>
-          <p style={{ fontSize: 14, color: riderTheme.textMuted, margin: 0, lineHeight: 1.6 }}>
-            Our team will review your details within 24–48 hours. You’ll receive
-            an SMS once your account is approved and ready to ride.
-          </p>
-        </div>
-        <div style={{
-          background: `${riderTheme.primary}18`,
-          border: `1px solid ${riderTheme.primary}40`,
-          borderRadius: 12,
-          padding: "12px 16px",
-          width: "100%",
-        }}>
-          <p style={{ fontSize: 13, color: riderTheme.textMuted, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" />
-            </svg>
-            Keep an eye on your registered phone number for status updates.
-          </p>
-        </div>
-        <button
-          onClick={onGoToLogin}
-          style={{
-            width: "100%",
-            padding: "14px",
-            borderRadius: 12,
-            border: "none",
-            background: riderTheme.primary,
-            color: riderTheme.background,
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: "pointer",
-            marginTop: 4,
-            transition: "opacity 0.15s, filter 0.15s",
-          }}
-        >
-          Go to Sign In
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function RegisterWizard({ onDone }: RegisterWizardProps) {
   const [, navigate] = useLocation();
   const [submitted, setSubmitted] = useState(false);
 
   if (submitted) {
-    return <SubmittedScreen onGoToLogin={() => navigate("/login")} />;
+    return (
+      <ThemeProvider role="rider">
+        <SubmittedScreen
+          onGoToLogin={() => navigate("/login")}
+          message="Our team will review your details within 24–48 hours. You'll receive an SMS once your account is approved and ready to ride."
+        />
+      </ThemeProvider>
+    );
   }
 
   return (
@@ -170,47 +187,58 @@ export function RegisterWizard({ onDone }: RegisterWizardProps) {
         role="rider"
         steps={riderSteps}
         onSubmit={async (raw) => {
-        try {
-          const d = raw as Record<string, unknown>;
-          /* Map wizard field IDs → API-expected keys */
-          const { fullName, plateNumber, licenseNumber, licensePhoto, cnicFrontPhoto, cnicBackPhoto, ...rest } = d;
-          await api.registerRider({
-            ...(rest as Omit<Parameters<typeof api.registerRider>[0],
-              "name" | "vehiclePlate" | "drivingLicense" | "vehiclePhoto" | "documents">),
-            name: String(fullName ?? "").trim(),
-            vehiclePlate: String(plateNumber ?? "").trim(),
-            drivingLicense: String(licenseNumber ?? "").trim(),
-            vehiclePhoto: String(d.vehiclePhoto ?? ""),
-            documents: JSON.stringify({ licensePhoto, cnicFrontPhoto, cnicBackPhoto }),
-          });
-          localStorage.removeItem(DRAFT_KEY);
-          onDone?.();
-          setSubmitted(true);
-          return { success: true };
-        } catch (e: unknown) {
-          return { success: false, error: e instanceof Error ? e.message : "Registration failed" };
-        }
-      }}
-      onDataChange={(key, value) => {
-        try {
-          const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as Record<string, unknown>;
-          const safeDraft = { ...draft, [key]: value };
-          delete safeDraft.password;
-          delete safeDraft.confirmPassword;
-          delete safeDraft.otp;
-          delete safeDraft.cnic;
-          localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
-        } catch {
-          /* non-fatal */
-        }
-      }}
-      initialData={(() => {
-        try {
-          return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as Record<string, unknown>;
-        } catch {
-          return {};
-        }
-      })()}
+          try {
+            const d = raw as Record<string, unknown>;
+            const [vehiclePhotoUrl, licensePhotoUrl, cnicFrontUrl, cnicBackUrl] = await Promise.all([
+              fileToDataUrl(d.vehiclePhoto),
+              fileToDataUrl(d.licensePhoto),
+              fileToDataUrl(d.cnicFrontPhoto),
+              fileToDataUrl(d.cnicBackPhoto),
+            ]);
+            await api.registerRider({
+              phone: d.phone as string,
+              otp: d.otp as string,
+              password: d.password as string,
+              vehicleType: d.vehicleType as string,
+              name: String(d.fullName ?? "").trim(),
+              vehiclePlate: String(d.plateNumber ?? "").trim(),
+              drivingLicense: String(d.licenseNumber ?? "").trim(),
+              vehiclePhoto: vehiclePhotoUrl,
+              documents: JSON.stringify({
+                licensePhoto: licensePhotoUrl,
+                cnicFrontPhoto: cnicFrontUrl,
+                cnicBackPhoto: cnicBackUrl,
+              }),
+            } as Parameters<typeof api.registerRider>[0]);
+            localStorage.removeItem(DRAFT_KEY);
+            onDone?.();
+            setSubmitted(true);
+            return { success: true };
+          } catch (e: unknown) {
+            return { success: false, error: e instanceof Error ? e.message : "Registration failed" };
+          }
+        }}
+        onDataChange={(key, value) => {
+          try {
+            if (value instanceof File) return;
+            const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as Record<string, unknown>;
+            const safeDraft = { ...draft, [key]: value };
+            delete safeDraft.password;
+            delete safeDraft.confirmPassword;
+            delete safeDraft.otp;
+            delete safeDraft.cnic;
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft));
+          } catch {
+            /* non-fatal */
+          }
+        }}
+        initialData={(() => {
+          try {
+            return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as Record<string, unknown>;
+          } catch {
+            return {};
+          }
+        })()}
       />
     </ThemeProvider>
   );

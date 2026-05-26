@@ -108,29 +108,34 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   /* ── Role-rejection screen ───────────────────────────────────────────────── */
   if (roleError) {
     return (
-      <div style={{
-        minHeight: "100vh", background: theme.background, color: theme.text,
-        display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", padding: 24, fontFamily: "Inter, system-ui, sans-serif",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, color: theme.error, textAlign: "center", maxWidth: 360, fontSize: 15, lineHeight: 1.5, justifyContent: "center" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span>{roleError}</span>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0b0e11] px-6 py-10 font-[Inter,system-ui,sans-serif] animate-in fade-in duration-200">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/25">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white/90">Access denied</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-red-400/90">{roleError}</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => setRoleError(null)}
+              className="flex w-full items-center justify-center rounded-xl bg-[#F0B90B] px-6 py-3 text-[14px] font-bold text-[#0b0e11] transition-all duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0B90B]/60"
+            >
+              Try another account
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              className="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-[14px] font-medium text-white/60 transition-all duration-200 hover:bg-white/[0.08] hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+            >
+              Back to landing
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setRoleError(null)}
-          style={{
-            marginTop: 20, background: theme.primary, color: theme.background,
-            border: "none", borderRadius: 8, padding: "10px 24px",
-            fontWeight: 600, cursor: "pointer", fontSize: 14,
-          }}
-        >
-          Try another account
-        </button>
       </div>
     );
   }
