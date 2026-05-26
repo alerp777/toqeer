@@ -116,6 +116,12 @@ export interface LoginScreenProps {
   loginMethodTabs?: Array<"otp" | "password" | "email">;
   /** Called when user declines biometric enrollment prompt */
   onBiometricEnrollDecline?: () => void;
+  /**
+   * B2B-style smart flow: single identifier field (phone/email/username),
+   * auto-detect type, then show primary method with fallbacks.
+   * When false (default), legacy tab-based UI is shown.
+   */
+  smartLogin?: boolean;
   /** Which social provider is currently loading — maps to per-provider loading state in SocialButtons */
   socialLoadingProvider?: "google" | "facebook" | null;
 
@@ -178,6 +184,7 @@ export function LoginScreen({
   devOtp,
   loginMethodTabs,
   onBiometricEnrollDecline,
+  smartLogin = false,
   socialLoadingProvider,
   googleClientId,
   facebookAppId,
@@ -212,6 +219,10 @@ export function LoginScreen({
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+
+  /* ── Smart-login state ── */
+  const [smartIdType, setSmartIdType] = useState<"phone" | "email" | "username" | null>(null);
+  const [smartMethods, setSmartMethods] = useState<string[]>([]);
 
   /* ── Email OTP state ── */
   const [emailAddress, setEmailAddress] = useState("");
@@ -333,16 +344,45 @@ export function LoginScreen({
   async function handleIdentifierSubmit(e: FormEvent) {
     e.preventDefault();
     if (!identifier.trim()) {
-      setError(str.enterPhoneError);
+      setError(smartLogin ? "Please enter your phone, email, or username" : str.enterPhoneError);
       return;
     }
     clearError();
     try {
       const result = await initiateLogin(identifier.trim(), customValues);
+      if (smartLogin) {
+        setSmartIdType(result.identifierType ?? null);
+        setSmartMethods(result.availableMethods ?? []);
+      }
       if (result.method === "password") setStep("password");
       else setStep("otp");
     } catch (_e) {
       // error is in the hook state
+    }
+  }
+
+  /* ── Smart-login fallback helpers ── */
+  const canUsePassword = smartMethods.includes("password");
+  const canUseOtp =
+    smartMethods.includes("phone_otp") || smartMethods.includes("email_otp");
+  const canUseMagicLink = smartMethods.includes("magic_link");
+
+  function handleSmartFallbackPassword() {
+    clearError();
+    setStep("password");
+  }
+  function handleSmartFallbackOtp() {
+    clearError();
+    if (smartIdType === "email" && enableEmailOtp) {
+      setLoginMode("email");
+    }
+    setStep("otp");
+  }
+  function handleSmartFallbackMagicLink() {
+    clearError();
+    if (onMagicLink) {
+      void onMagicLink(identifier);
+      setMagicLinkSent(true);
     }
   }
 
@@ -857,8 +897,12 @@ export function LoginScreen({
                 ? emailOtpSent
                   ? "Enter the OTP sent to your email"
                   : "Sign in with your email address"
-                : step === "identifier" && str.subtitleIdentifier}
-              {step === "otp" && loginMode !== "email" && str.subtitleOtp}
+                : step === "identifier" && (smartLogin ? "Enter your phone, email, or username" : str.subtitleIdentifier)}
+              {step === "otp" && loginMode !== "email" && (
+                smartLogin && smartIdType === "phone"
+                  ? `Enter the OTP sent to ${identifier}`
+                  : str.subtitleOtp
+              )}
               {step === "password" && str.subtitlePassword}
               {step === "twoFactor" && str.subtitleTwoFactor}
             </p>
@@ -874,8 +918,8 @@ export function LoginScreen({
             </div>
           )}
 
-          {/* Tab switcher */}
-          {showTabs && step === "identifier" && (
+          {/* Tab switcher (hidden in smart-login mode) */}
+          {showTabs && step === "identifier" && !smartLogin && (
             <div style={s.tabRow} role="tablist">
               {resolvedTabs.map((tab) => (
                 <button
@@ -1001,13 +1045,28 @@ export function LoginScreen({
                   style={{ display: "flex", flexDirection: "column", gap: "16px" }}
                 >
                   <div>
-                    <label style={s.label}>{str.phoneLabel}</label>
-                    <PhoneInput
-                      value={identifier}
-                      onChange={(e164) => {
-                        setIdentifier(e164);
-                      }}
-                    />
+                    <label style={s.label}>
+                      {smartLogin ? "Phone, email, or username" : str.phoneLabel}
+                    </label>
+                    {smartLogin ? (
+                      <input
+                        className="auth-input"
+                        style={s.input}
+                        type="text"
+                        placeholder="e.g. 03001234567 or name@example.com"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        autoComplete="username"
+                        autoFocus
+                      />
+                    ) : (
+                      <PhoneInput
+                        value={identifier}
+                        onChange={(e164) => {
+                          setIdentifier(e164);
+                        }}
+                      />
+                    )}
                   </div>
                   {renderCustomFields()}
                   <button
@@ -1122,6 +1181,21 @@ export function LoginScreen({
                     onResend={() => void initiateLogin(identifier)}
                     autoSubmit
                   />
+                  {/* Smart-login fallbacks */}
+                  {smartLogin && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {canUsePassword && (
+                        <button type="button" style={s.link} onClick={handleSmartFallbackPassword}>
+                          Use password instead
+                        </button>
+                      )}
+                      {canUseMagicLink && (
+                        <button type="button" style={s.link} onClick={handleSmartFallbackMagicLink}>
+                          Send magic link
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <button
                     type="button"
                     style={s.link}
@@ -1130,7 +1204,7 @@ export function LoginScreen({
                       setStep("identifier");
                     }}
                   >
-                    {str.changeNumber}
+                    {smartLogin ? "← Try another account" : str.changeNumber}
                   </button>
                 </div>
               )}
@@ -1171,6 +1245,21 @@ export function LoginScreen({
                       str.signInBtn
                     )}
                   </button>
+                  {/* Smart-login fallbacks */}
+                  {smartLogin && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: -6 }}>
+                      {canUseOtp && (
+                        <button type="button" style={s.link} onClick={handleSmartFallbackOtp}>
+                          {smartIdType === "phone" ? "Get OTP instead" : "Use email OTP instead"}
+                        </button>
+                      )}
+                      {canUseMagicLink && (
+                        <button type="button" style={s.link} onClick={handleSmartFallbackMagicLink}>
+                          Send magic link
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <button
                     type="button"
                     style={s.link}
@@ -1179,7 +1268,7 @@ export function LoginScreen({
                       setStep("identifier");
                     }}
                   >
-                    {str.back}
+                    {smartLogin ? "← Try another account" : str.back}
                   </button>
                 </form>
               )}

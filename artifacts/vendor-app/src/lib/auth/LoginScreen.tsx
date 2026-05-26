@@ -167,6 +167,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         role="vendor"
         logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
+        smartLogin
         enableBiometric={auth.phoneOtp || auth.emailOtp || auth.usernamePassword}
         enableSocial={auth.google || auth.facebook}
         enableEmailOtp={auth.emailOtp}

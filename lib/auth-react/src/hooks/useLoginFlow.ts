@@ -10,6 +10,10 @@ export interface IdentifierCheckResult {
   exists: boolean;
   /** True when the account has 2FA enabled */
   twoFactorEnabled?: boolean;
+  /** Detected identifier type from backend */
+  identifierType?: "phone" | "email" | "username";
+  /** All auth methods enabled for this role */
+  availableMethods?: string[];
 }
 
 interface ApiResponse<T> {
@@ -122,6 +126,8 @@ export function useLoginFlow({
           exists: rawExists,
           twoFactorEnabled:
             typeof raw.twoFactorEnabled === "boolean" ? raw.twoFactorEnabled : undefined,
+          identifierType: (raw.identifierType as "phone" | "email" | "username") ?? undefined,
+          availableMethods: rawAvailableMethods,
         };
         setMethod(result.method);
 

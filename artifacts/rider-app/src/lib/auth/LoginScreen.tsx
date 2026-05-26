@@ -246,6 +246,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         role="rider"
         logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
+        smartLogin
         enableBiometric={authConfig.biometricEnabled}
         enableSocial={authConfig.googleEnabled || authConfig.facebookEnabled}
         enableEmailOtp={authConfig.emailEnabled}

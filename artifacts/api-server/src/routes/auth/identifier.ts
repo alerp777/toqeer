@@ -246,11 +246,14 @@ router.post(
       if (whatsappOn) otpChannels.push("whatsapp");
       if (smsOn) otpChannels.push("sms");
 
+      const identifierType = looksLikePhone ? "phone" : looksLikeEmail ? "email" : "username";
+
       sendSuccess(res, {
         registrationOpen,
         action,
         reason: noMethodReason,
         availableMethods: responseAvailableMethods,
+        identifierType,
         isBanned: false,
         isLocked: false,
         otpChannels,
