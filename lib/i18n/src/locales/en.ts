@@ -1937,6 +1937,22 @@ const en = {
     you: "You",
     change: "Change",
     resendIn: "Resend in",
+    tryAgainIn: "Try again in",
+    sendingLabel: "Sending…",
+    verifyingLabel: "Verifying…",
+    resendInLabel: "Resend in {n}s",
+    identifierHint: "e.g. 03001234567 or name@example.com",
+    tryAnotherAccountLink: "← Try another account",
+    magicLinkBtnLabel: "Sign in with magic link",
+    loginLocked: "Account temporarily locked. Please try again later.",
+    tooManyAttempts: "Too many attempts. Please wait and try again.",
+    rateLimitError: "Too many requests. Please slow down.",
+    resendCooldown: "Please wait {seconds}s before resending.",
+    socialLoginError: "{provider} login cancelled or not configured.",
+    socialLoginFailed: "{provider} login failed.",
+    loginWithFingerprint: "Login with fingerprint",
+    createNewAccount: "Create a new account",
+    changeIdentifier: "Change identifier",
 };
 
 export default en;

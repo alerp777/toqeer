@@ -247,6 +247,7 @@ router.post(
       if (smsOn) otpChannels.push("sms");
 
       const identifierType = looksLikePhone ? "phone" : looksLikeEmail ? "email" : "username";
+      const userHasPassword = exists && identifierType === "username" && !!user?.passwordHash;
 
       sendSuccess(res, {
         registrationOpen,
@@ -257,6 +258,7 @@ router.post(
         isBanned: false,
         isLocked: false,
         otpChannels,
+        userHasPassword,
       });
     } catch (err) {
       logger.error(

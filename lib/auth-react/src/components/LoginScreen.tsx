@@ -77,6 +77,34 @@ export interface LoginScreenStrings {
   enterAuthCode?: string;
   /** Placeholder for the backup code text input */
   backupCodePlaceholder?: string;
+  /** Label for email address input field */
+  emailLabel?: string;
+  /** Loading state label while sending OTP */
+  sendingLabel?: string;
+  /** Button label for sending email OTP */
+  sendOtpBtn?: string;
+  /** Loading state label while verifying OTP */
+  verifyingLabel?: string;
+  /** Cooldown label shown before resend is allowed — use {n} as seconds placeholder */
+  resendInLabel?: string;
+  /** Link to go back and change email */
+  changeEmailLink?: string;
+  /** Validation error for invalid email */
+  invalidEmailError?: string;
+  /** Validation error for incomplete OTP */
+  incompleteOtpError?: string;
+  /** Validation error when identifier is empty (smart login) */
+  identifierRequiredError?: string;
+  /** Label for the identifier input in smart login mode */
+  identifierPlaceholder?: string;
+  /** Placeholder hint for the identifier input in smart login mode */
+  identifierHint?: string;
+  /** "← Try another account" link shown on OTP and password steps in smart login mode */
+  tryAnotherAccountLink?: string;
+  /** Biometric prompt label */
+  biometricBtnLabel?: string;
+  /** Inline magic link panel heading */
+  magicLinkBtnLabel?: string;
 }
 
 const DEFAULT_STRINGS: LoginScreenStrings = {
@@ -104,6 +132,20 @@ const DEFAULT_STRINGS: LoginScreenStrings = {
   twoFactorAuth: "Two-factor authentication",
   enterAuthCode: "Enter your authenticator code",
   backupCodePlaceholder: "Enter backup code",
+  emailLabel: "Email address",
+  sendingLabel: "Sending…",
+  sendOtpBtn: "Send OTP",
+  verifyingLabel: "Verifying…",
+  resendInLabel: "Resend in {n}s",
+  changeEmailLink: "← Change email",
+  invalidEmailError: "Enter a valid email address",
+  incompleteOtpError: "Enter the complete 6-digit OTP",
+  identifierRequiredError: "Please enter your phone, email, or username",
+  identifierPlaceholder: "Phone, email, or username",
+  identifierHint: "e.g. 03001234567 or name@example.com",
+  tryAnotherAccountLink: "← Try another account",
+  biometricBtnLabel: "Sign in with biometrics",
+  magicLinkBtnLabel: "Sign in with magic link",
 };
 
 export interface LoginScreenProps {
@@ -379,7 +421,7 @@ export function LoginScreen({
   async function handleIdentifierSubmit(e: FormEvent) {
     e.preventDefault();
     if (!identifier.trim()) {
-      setError(smartLogin ? "Please enter your phone, email, or username" : str.enterPhoneError);
+      setError(smartLogin ? (str.identifierRequiredError ?? "Please enter your phone, email, or username") : str.enterPhoneError);
       return;
     }
     clearError();
@@ -566,7 +608,7 @@ export function LoginScreen({
   /* ── Email OTP handlers ── */
   async function handleSendEmailOtp() {
     if (!EMAIL_REGEX.test(emailAddress)) {
-      setEmailError("Enter a valid email address");
+      setEmailError(str.invalidEmailError ?? "Enter a valid email address");
       return;
     }
     setEmailError(null);
@@ -594,7 +636,7 @@ export function LoginScreen({
   async function handleVerifyEmailOtp(otpValue?: string) {
     const code = otpValue ?? emailOtp;
     if (code.length !== 6) {
-      setEmailError("Enter the complete 6-digit OTP");
+      setEmailError(str.incompleteOtpError ?? "Enter the complete 6-digit OTP");
       return;
     }
     setEmailError(null);
@@ -950,9 +992,9 @@ export function LoginScreen({
             <p style={s.subtitle}>
               {loginMode === "email"
                 ? emailOtpSent
-                  ? "Enter the OTP sent to your email"
-                  : "Sign in with your email address"
-                : step === "identifier" && (smartLogin ? "Enter your phone, email, or username" : str.subtitleIdentifier)}
+                  ? (str.subtitleOtp ?? "Enter the OTP sent to your email")
+                  : (str.subtitleIdentifier ?? "Sign in with your email address")
+                : step === "identifier" && (smartLogin ? (str.identifierPlaceholder ?? "Phone, email, or username") : str.subtitleIdentifier)}
               {step === "otp" && loginMode !== "email" && (
                 smartLogin && smartIdType === "phone"
                   ? `Enter the OTP sent to ${identifier}`
@@ -1021,7 +1063,7 @@ export function LoginScreen({
               {!emailOtpSent ? (
                 <>
                   <div>
-                    <label style={s.label}>Email address</label>
+                    <label style={s.label}>{str.emailLabel ?? "Email address"}</label>
                     <input
                       className="auth-input"
                       style={s.input}
@@ -1040,28 +1082,28 @@ export function LoginScreen({
                   >
                     {emailSending ? (
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-                        <SpinIcon size={17} /> Sending…
+                        <SpinIcon size={17} /> {str.sendingLabel ?? "Sending…"}
                       </span>
                     ) : (
-                      "Send OTP"
+                      str.sendOtpBtn ?? "Send OTP"
                     )}
                   </button>
                 </>
               ) : (
                 <>
                   <OtpInput
-                    label="Enter the 6-digit code sent to your email"
+                    label={str.subtitleOtp ?? "Enter the 6-digit code sent to your email"}
                     onComplete={(code) => void handleVerifyEmailOtp(code)}
                     autoSubmit
                   />
                   {emailVerifying && (
                     <p style={{ textAlign: "center", fontSize: "13px", color: theme.textMuted }}>
-                      Verifying…
+                      {str.verifyingLabel ?? "Verifying…"}
                     </p>
                   )}
                   <p style={{ textAlign: "center", fontSize: "13px", color: theme.textMuted }}>
                     {emailResendCooldown > 0 ? (
-                      <span>Resend in {emailResendCooldown}s</span>
+                      <span>{(str.resendInLabel ?? "Resend in {n}s").replace("{n}", String(emailResendCooldown))}</span>
                     ) : (
                       <button
                         type="button"
@@ -1072,7 +1114,7 @@ export function LoginScreen({
                           setEmailError(null);
                         }}
                       >
-                        ← Change email
+                        {str.changeEmailLink ?? "← Change email"}
                       </button>
                     )}
                   </p>
@@ -1101,14 +1143,14 @@ export function LoginScreen({
                 >
                   <div>
                     <label style={s.label}>
-                      {smartLogin ? "Phone, email, or username" : str.phoneLabel}
+                      {smartLogin ? (str.identifierPlaceholder ?? "Phone, email, or username") : str.phoneLabel}
                     </label>
                     {smartLogin ? (
                       <input
                         className="auth-input"
                         style={s.input}
                         type="text"
-                        placeholder="e.g. 03001234567 or name@example.com"
+                        placeholder={str.identifierHint ?? "e.g. 03001234567 or name@example.com"}
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         autoComplete="username"
@@ -1165,7 +1207,7 @@ export function LoginScreen({
                         onBiometricSuccess?.(token);
                       }}
                       onDismiss={onBiometricEnrollDecline}
-                      label="Sign in with biometrics"
+                      label={str.biometricBtnLabel ?? "Sign in with biometrics"}
                     />
                   )}
                   {enableSocial && (
@@ -1188,13 +1230,13 @@ export function LoginScreen({
                   {/* Inline magic link panel */}
                   {enableMagicLinkModal && (
                     <div style={s.magicLinkPanel}>
-                      <p style={s.magicLinkPanelLabel}>Sign in with magic link</p>
+                      <p style={s.magicLinkPanelLabel}>{str.magicLinkBtnLabel ?? "Sign in with magic link"}</p>
                       {magicSent ? (
                         <p style={{ fontSize: "13px", color: theme.primary, margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          Magic link sent — check your inbox.
+                          {str.magicLinkSent ?? "Magic link sent — check your inbox."}
                         </p>
                       ) : (
                         <>
@@ -1259,7 +1301,7 @@ export function LoginScreen({
                       setStep("identifier");
                     }}
                   >
-                    {smartLogin ? "← Try another account" : str.changeNumber}
+                    {smartLogin ? (str.tryAnotherAccountLink ?? "← Try another account") : str.changeNumber}
                   </button>
                 </div>
               )}
@@ -1283,7 +1325,7 @@ export function LoginScreen({
                         href={forgotPasswordHref}
                         style={{ fontSize: "13px", color: theme.primary, fontWeight: 600, textDecoration: "none" }}
                       >
-                        Forgot password?
+                        {str.forgotPasswordLabel ?? "Forgot password?"}
                       </a>
                     </div>
                   )}
@@ -1323,7 +1365,7 @@ export function LoginScreen({
                       setStep("identifier");
                     }}
                   >
-                    {smartLogin ? "← Try another account" : str.back}
+                    {smartLogin ? (str.tryAnotherAccountLink ?? "← Try another account") : str.back}
                   </button>
                 </form>
               )}
@@ -1398,7 +1440,7 @@ export function LoginScreen({
                             disabled={backupVerifying || !backupCodeInput.trim()}
                             style={{ ...s.btnPrimary, opacity: (backupVerifying || !backupCodeInput.trim()) ? 0.6 : 1 }}
                           >
-                            {backupVerifying ? "Verifying…" : (str.signInBtn ?? "Sign in")}
+                            {backupVerifying ? (str.verifyingLabel ?? "Verifying…") : (str.signInBtn ?? "Sign in")}
                           </button>
                           <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
                             <button

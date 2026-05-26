@@ -1921,6 +1921,22 @@ const roman: Record<string, string> = {
     you: "Aap",
     change: "Tabdeel karein",
     resendIn: "Dubara bhejein",
+    tryAgainIn: "Dobara koshish karein",
+    sendingLabel: "Bheja ja raha hai…",
+    verifyingLabel: "Tasdeeq ho rahi hai…",
+    resendInLabel: "{n} second baad dubara bhejein",
+    identifierHint: "Misaal: 03001234567 ya email@example.com",
+    tryAnotherAccountLink: "← Doosra account azmaein",
+    magicLinkBtnLabel: "Magic link se login karein",
+    loginLocked: "Account waqti tor par lock hai. Baad mein koshish karein.",
+    tooManyAttempts: "Bahut zyada koshishein. Thodi der baad dobara koshish karein.",
+    rateLimitError: "Bahut zyada requests. Thodi deri karein.",
+    resendCooldown: "Dubara bhejne se pehle {seconds} second intezaar karein.",
+    socialLoginError: "{provider} login mansookh ya configure nahi kiya gaya.",
+    socialLoginFailed: "{provider} login naakam ho gaya.",
+    loginWithFingerprint: "Fingerprint se login karein",
+    createNewAccount: "Naya account banaein",
+    changeIdentifier: "Shanakht tabdeel karein",
 };
 
 export default roman;

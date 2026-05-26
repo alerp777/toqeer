@@ -403,7 +403,7 @@ export default function AuthScreen() {
     clearError();
     if (!isValidPakistaniPhone(phone)) { setError(T("enterValidPhone")); return; }
     const normalizedPhone = normalizePhone(phone);
-    if (resendCooldown > 0) { setError(`Please wait ${resendCooldown}s before resending.`); return; }
+    if (resendCooldown > 0) { setError(T("resendCooldown").replace("{seconds}", String(resendCooldown))); return; }
     setLoading(true);
     try {
       const body: Record<string, string> = { phone: normalizedPhone };
@@ -445,7 +445,7 @@ export default function AuthScreen() {
     /* FIX 15: Proper email regex validation */
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(T("enterValidEmail")); return; }
     if (emailResendCooldown > 0) {
-      const msg = `Please wait ${emailResendCooldown}s before requesting another OTP`;
+      const msg = T("resendCooldown").replace("{seconds}", String(emailResendCooldown));
       setError(msg);
       showToast(msg, "error");
       return;
@@ -559,8 +559,8 @@ export default function AuthScreen() {
           }
         }
       }
-      setError(`${provider} login cancelled or not configured.`);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : `${provider} login failed.`); }
+      setError(T("socialLoginError").replace("{provider}", provider));
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : T("socialLoginFailed").replace("{provider}", provider)); }
     setLoading(false);
   };
 
@@ -920,10 +920,10 @@ export default function AuthScreen() {
             onPress={() => router.back()}
             style={[styles.backToHome, { top: topPad + 12 }]}
             accessibilityRole="button"
-            accessibilityLabel="Back to home"
+            accessibilityLabel={T("backToHome")}
           >
             <Ionicons name="arrow-back" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.backToHomeTxt}>Back</Text>
+            <Text style={styles.backToHomeTxt}>{T("back")}</Text>
           </Pressable>
         )}
 
@@ -954,7 +954,7 @@ export default function AuthScreen() {
                     onPress={handleBiometricLogin}
                     style={styles.biometricQuickBtn}
                     accessibilityRole="button"
-                    accessibilityLabel="Login with fingerprint"
+                    accessibilityLabel={T("loginWithFingerprint")}
                   >
                     {biometricLoading ? (
                       <Text style={styles.biometricQuickTxt}>Authenticating…</Text>
@@ -1050,7 +1050,7 @@ export default function AuthScreen() {
               <Pressable
                 onPress={() => router.push("/auth/register")}
                 style={styles.linkBtn}
-                accessibilityLabel="Create a new account"
+                accessibilityLabel={T("createNewAccount")}
                 accessibilityRole="link"
               >
                 <Text style={styles.linkBtnText}>
@@ -1067,7 +1067,7 @@ export default function AuthScreen() {
                 onPress={() => { setStep("continue"); clearError(); }}
                 style={styles.identifierChip}
                 accessibilityRole="button"
-                accessibilityLabel="Change identifier"
+                accessibilityLabel={T("changeIdentifier")}
               >
                 <View style={styles.identifierChipIcon}>
                   <Ionicons name="person-circle" size={18} color={C.primary} />
@@ -1146,7 +1146,7 @@ export default function AuthScreen() {
                   onPress={() => handleSendPhoneOtp()}
                   style={[styles.resendBtn, resendCooldown > 0 && styles.resendDisabled]}
                   disabled={resendCooldown > 0}
-                  accessibilityLabel={resendCooldown > 0 ? `Resend in ${resendCooldown} seconds` : T("otpResend")}
+                  accessibilityLabel={resendCooldown > 0 ? T("resendCooldown").replace("{seconds}", String(resendCooldown)) : T("otpResend")}
                   accessibilityRole="button"
                 >
                   <Ionicons name="refresh-outline" size={16} color={resendCooldown > 0 ? C.textMuted : C.primary} />
@@ -1372,7 +1372,7 @@ export default function AuthScreen() {
                 <Pressable
                   onPress={() => router.push("/auth/register")}
                   style={[styles.linkBtn, { marginTop: spacing.xl }]}
-                  accessibilityLabel="Create a new account"
+                  accessibilityLabel={T("createNewAccount")}
                   accessibilityRole="link"
                 >
                   <Text style={styles.linkBtnText}>

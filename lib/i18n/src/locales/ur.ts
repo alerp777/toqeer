@@ -1909,6 +1909,22 @@ const ur: Record<string, string> = {
     you: "آپ",
     change: "تبدیل کریں",
     resendIn: "دوبارہ بھیجیں",
+    tryAgainIn: "دوبارہ کوشش کریں",
+    sendingLabel: "بھیجا جا رہا ہے…",
+    verifyingLabel: "تصدیق ہو رہی ہے…",
+    resendInLabel: "{n} سیکنڈ بعد دوبارہ بھیجیں",
+    identifierHint: "مثال: 03001234567 یا email@example.com",
+    tryAnotherAccountLink: "← دوسرا اکاؤنٹ آزمائیں",
+    magicLinkBtnLabel: "میجک لنک سے لاگ ان کریں",
+    loginLocked: "اکاؤنٹ عارضی طور پر لاک ہے۔ بعد میں کوشش کریں۔",
+    tooManyAttempts: "بہت زیادہ کوششیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔",
+    rateLimitError: "بہت زیادہ درخواستیں۔ ذرا سست ہو جائیں۔",
+    resendCooldown: "دوبارہ بھیجنے سے پہلے {seconds} سیکنڈ انتظار کریں۔",
+    socialLoginError: "{provider} لاگ ان منسوخ یا ترتیب نہیں دیا گیا۔",
+    socialLoginFailed: "{provider} لاگ ان ناکام ہوگیا۔",
+    loginWithFingerprint: "فنگرپرنٹ سے لاگ ان کریں",
+    createNewAccount: "نیا اکاؤنٹ بنائیں",
+    changeIdentifier: "شناخت تبدیل کریں",
 };
 
 export default ur;

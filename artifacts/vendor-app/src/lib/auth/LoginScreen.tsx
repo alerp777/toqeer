@@ -234,6 +234,20 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     useBackupCode: tDual("useBackupCode", language),
     useAuthAppInstead: tDual("useAuthAppInstead", language),
     trustDevice: tDual("trustDevice", language),
+    emailLabel: tDual("emailAddress", language),
+    sendingLabel: tDual("sendingLabel", language),
+    sendOtpBtn: tDual("sendOtpBtn", language),
+    verifyingLabel: tDual("verifyingLabel", language),
+    resendInLabel: tDual("resendInLabel", language),
+    changeEmailLink: tDual("changeEmail", language),
+    invalidEmailError: tDual("enterValidEmail", language),
+    incompleteOtpError: tDual("enterSixDigitCode", language),
+    identifierRequiredError: tDual("enterIdentifier", language),
+    identifierPlaceholder: tDual("enterIdentifierPlaceholder", language),
+    identifierHint: tDual("identifierHint", language),
+    tryAnotherAccountLink: tDual("tryAnotherAccountLink", language),
+    biometricBtnLabel: tDual("loginWithBiometrics", language),
+    magicLinkBtnLabel: tDual("magicLinkBtnLabel", language),
   };
 
   return (
@@ -269,6 +283,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
             "linked to facebook": tDual("linkedToFacebook", language),
             "not a vendor account": tDual("wrongAppVendor", language),
             "not registered as vendor": tDual("wrongAppVendor", language),
+            "account is locked": tDual("loginLocked", language),
+            "too many attempts": tDual("tooManyAttempts", language),
+            "too many requests": tDual("rateLimitError", language),
           };
           const lc = raw.toLowerCase();
           const hit = Object.keys(map).find(k => lc.includes(k));
