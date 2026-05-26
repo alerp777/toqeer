@@ -68,6 +68,7 @@ const LaunchControl = lazy(() => import("@/pages/launch-control"));
 const LiveRidersMap = lazy(() => import("@/pages/live-riders-map"));
 const Loyalty = lazy(() => import("@/pages/loyalty"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const Notifications = lazy(() => import("@/pages/notifications"));
 const OtpControl = lazy(() => import("@/pages/otp-control"));
 const Popups = lazy(() => import("@/pages/popups"));
 const PromoCodes = lazy(() => import("@/pages/promo-codes"));
@@ -466,6 +467,9 @@ function AppRoutes() {
         </Route>
         <Route path="/brand">
           <ProtectedRoute component={BrandGuidelines} requirePermission="system.settings.view" />
+        </Route>
+        <Route path="/notifications">
+          <ProtectedRoute component={Notifications} requirePermission="system.settings.view" />
         </Route>
 
         {/* Error pages */}
