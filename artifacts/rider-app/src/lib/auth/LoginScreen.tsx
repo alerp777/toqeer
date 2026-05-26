@@ -65,12 +65,24 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     const rToken = refreshToken ?? api.getRefreshToken() ?? "";
     api.storeTokens(token, rToken || undefined);
 
-    /* Fetch authoritative profile; fall back to callback payload on network error */
+    /* Fetch authoritative profile; fall back to callback payload only on
+       transient network/server errors.  Auth errors (401/403) mean the token
+       is already invalid or the account no longer exists — proceeding with
+       the synthetic callback payload would let a deleted/revoked user into the
+       app with stale data until the next API call inevitably fails again.     */
     let profile: unknown = user;
     try {
       profile = await api.getMe();
-    } catch {
-      /* getMe() failed — network issue; continue with callback payload */
+    } catch (e: unknown) {
+      const status = (e as { status?: number }).status;
+      const isAuthError = status === 401 || status === 403;
+      if (isAuthError) {
+        api.clearTokens();
+        setRoleError(tDual("sessionExpired", language));
+        return;
+      }
+      /* Non-auth errors (network timeout, 5xx) — keep fallback payload so a
+         flaky connection doesn't block a legitimate rider from logging in.    */
     }
 
     /* Approval status gate — pending/rejected riders cannot proceed to dashboard */

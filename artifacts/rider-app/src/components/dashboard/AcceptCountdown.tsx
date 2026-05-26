@@ -25,8 +25,13 @@ export const AcceptCountdown = memo(function AcceptCountdown({
   }, [serverTime]);
 
   const calcRemaining = () => {
+    const createdMs = new Date(createdAt).getTime();
+    /* If createdAt is malformed (e.g. null, empty string), treat the request
+       as expired immediately so the rider isn't shown a stuck "NaN" timer
+       that never reaches zero and hides the true expiry state.             */
+    if (!Number.isFinite(createdMs)) return 0;
     const adjustedNow = Date.now() - offsetMs.current;
-    const elapsed = Math.floor((adjustedNow - new Date(createdAt).getTime()) / 1000);
+    const elapsed = Math.floor((adjustedNow - createdMs) / 1000);
     return Math.max(0, timeout - elapsed);
   };
 
