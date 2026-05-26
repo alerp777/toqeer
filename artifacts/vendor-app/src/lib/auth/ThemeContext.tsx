@@ -17,6 +17,7 @@ export {
   DEFAULT_THEMES,
   ThemeContext,
   ThemeProvider,
+  useAuthTheme,
   useAuthTheme as useTheme,
 } from "@workspace/auth-react";
 export type { AuthTheme, ThemeProviderProps } from "@workspace/auth-react";
