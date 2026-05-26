@@ -11,7 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { createLogger } from "@/lib/logger";
 import { adminFetch } from "@/lib/adminFetcher";
+const log = createLogger("[OrderDetailDrawer]");
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/format";
 import {
   AlertTriangle,
@@ -52,7 +54,8 @@ function ReturnPanel({
     try {
       const data = await adminFetch(`/orders/${order.id}/returns`);
       setRequests(Array.isArray(data) ? data : (data?.returns ?? []));
-    } catch {
+    } catch (err) {
+      log.warn("Failed to load return requests:", err);
       setRequests([]);
     }
     setLoadingReqs(false);
@@ -259,7 +262,8 @@ function DisputePanel({ order }: { order: any }) {
     try {
       const data = await adminFetch(`/orders/${order.id}/disputes`);
       setDisputes(Array.isArray(data) ? data : (data?.disputes ?? []));
-    } catch {
+    } catch (err) {
+      log.warn("Failed to load disputes:", err);
       setDisputes([]);
     }
     setLoadingDisp(false);
@@ -611,7 +615,8 @@ export function OrderDetailDrawer({
                                 u.pathname.startsWith("/uploads/"))
                               ? rawUrl
                               : null;
-                          } catch {
+                          } catch (err) {
+                            log.warn("Invalid proof photo URL:", err);
                             return null;
                           }
                         })();

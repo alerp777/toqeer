@@ -92,13 +92,19 @@ router.post("/orders", requirePermission("orders.create"), async (req, res) => {
       .values({
         id: generateId(),
         userId: userId.trim(),
-        vendorId: (vendorId || userId).trim(),
+        vendorId: vendorId?.trim() || null,
         type: orderType,
-        items: items
-          ? typeof items === "string"
-            ? items
-            : JSON.stringify(items)
-          : JSON.stringify([{ name: "Custom item", qty: 1, price: numTotal.toString() }]),
+        items: (() => {
+          if (!items) return JSON.stringify([{ name: "Custom item", qty: 1, price: numTotal.toString() }]);
+          if (typeof items === "string") {
+            try { JSON.parse(items); return items; }
+            catch (err) {
+              logger.warn({ err: err instanceof Error ? err.message : String(err), items }, "[admin/orders] invalid items JSON string, wrapping as single item");
+              return JSON.stringify([{ name: items, qty: 1, price: numTotal.toString() }]);
+            }
+          }
+          return JSON.stringify(items);
+        })(),
         total: numTotal.toString(),
         deliveryAddress: (deliveryAddress || "Admin-created order").trim(),
         paymentMethod: payment,
@@ -832,6 +838,7 @@ router.patch(
 );
 router.get(
   "/pharmacy-enriched",
+  requirePermission("orders.view"),
   wrapAsync(async (_req, res) => {
     const orders = await db
       .select()
@@ -859,6 +866,7 @@ router.get(
 /* ── Parcel Bookings Enriched ── */
 router.get(
   "/parcel-enriched",
+  requirePermission("orders.view"),
   wrapAsync(async (_req, res) => {
     const bookings = await db
       .select()
@@ -1155,6 +1163,7 @@ async function saveJson<T>(key: string, data: T[]): Promise<void> {
 /* ── Return requests (DB-backed via platform_settings) ── */
 router.get(
   "/orders/:id/returns",
+  requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
     sendSuccess(res, await loadJson<ReturnRecord>(`return_log_${orderId}`));
@@ -1163,6 +1172,7 @@ router.get(
 
 router.post(
   "/orders/:id/return",
+  requirePermission("orders.edit"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
     const { reason, amount } = req.body;
@@ -1192,6 +1202,7 @@ router.post(
 
 router.patch(
   "/orders/:id/returns/:returnId",
+  requirePermission("orders.edit"),
   wrapAsync(async (req, res) => {
     const { id: orderId, returnId } = req.params as { id: string; returnId: string };
     const { status } = req.body;
@@ -1210,6 +1221,7 @@ router.patch(
 /* ── Dispute requests (DB-backed via platform_settings) ── */
 router.get(
   "/orders/:id/disputes",
+  requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
     sendSuccess(res, await loadJson<DisputeRecord>(`dispute_log_${orderId}`));
@@ -1218,6 +1230,7 @@ router.get(
 
 router.post(
   "/orders/:id/dispute",
+  requirePermission("orders.edit"),
   wrapAsync(async (req, res) => {
     const orderId = req.params["id"] as string;
     const { type, note } = req.body;
@@ -1247,6 +1260,7 @@ router.post(
 
 router.patch(
   "/orders/:id/disputes/:disputeId",
+  requirePermission("orders.edit"),
   wrapAsync(async (req, res) => {
     const { id: orderId, disputeId } = req.params as { id: string; disputeId: string };
     const { status } = req.body;
@@ -1287,7 +1301,8 @@ router.get("/orders-stats", async (_req, res) => {
       refunded: Number(stats["refunded"] ?? 0),
       revenue: parseFloat(String(stats["revenue"] ?? "0")),
     });
-  } catch (_e) {
+  } catch (err) {
+    logger.error({ err }, "[orders-stats] failed");
     sendError(res, "Failed to load order stats", 500);
   }
 });
@@ -1378,7 +1393,8 @@ router.post(
         result: "success",
       });
       sendSuccess(res, { invited: true, email, phone, name, channel });
-    } catch (_e) {
+    } catch (err) {
+      logger.error({ err }, "[vendor-invite] failed");
       sendError(res, "Failed to send vendor invite", 500);
     }
   }
@@ -1424,10 +1440,41 @@ router.patch(
   async (req, res) => {
     try {
       const { ids, status } = req.body as z.infer<typeof bulkOrderStatusSchema>;
+      /* Validate each requested status against the transition matrix */
+      const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+        pending: ["confirmed", "cancelled"],
+        confirmed: ["preparing", "cancelled"],
+        preparing: ["ready", "out_for_delivery", "picked_up", "cancelled"],
+        ready: ["picked_up", "out_for_delivery", "delivered", "cancelled"],
+        picked_up: ["out_for_delivery", "delivered", "cancelled"],
+        out_for_delivery: ["delivered", "cancelled"],
+        delivered: [],
+        cancelled: [],
+        completed: [],
+      };
+      if (!(ORDER_VALID_STATUSES as readonly string[]).includes(status)) {
+        sendValidationError(
+          res,
+          `Invalid order status "${status}". Valid statuses: ${ORDER_VALID_STATUSES.join(", ")}`
+        );
+        return;
+      }
+      /* Read current statuses to enforce transition rules */
+      const currentRows = await db
+        .select({ id: ordersTable.id, status: ordersTable.status })
+        .from(ordersTable)
+        .where(and(inArray(ordersTable.id, ids), isNull(ordersTable.deletedAt)));
+      const validIds = currentRows
+        .filter((r) => (ALLOWED_TRANSITIONS[r.status] || []).includes(status))
+        .map((r) => r.id);
+      if (validIds.length === 0) {
+        sendValidationError(res, "None of the selected orders can transition to the requested status");
+        return;
+      }
       const updated = await db
         .update(ordersTable)
         .set({ status, updatedAt: new Date() })
-        .where(inArray(ordersTable.id, ids))
+        .where(inArray(ordersTable.id, validIds))
         .returning({ id: ordersTable.id });
       void addAuditEntry({
         action: "orders_bulk_status",

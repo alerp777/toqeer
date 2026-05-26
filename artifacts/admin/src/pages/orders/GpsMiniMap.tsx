@@ -1,4 +1,6 @@
+import { createLogger } from "@/lib/logger";
 import { useCallback } from "react";
+const log = createLogger("[GpsMiniMap]");
 
 export function GpsMiniMap({
   cLat,
@@ -60,8 +62,7 @@ export function GpsMiniMap({
           }
         })
         .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.debug("[GpsMiniMap] Leaflet load failed:", err);
+          log.warn("Leaflet load failed:", err);
         });
     },
     [cLat, cLng, dLat, dLng]

@@ -1,6 +1,8 @@
+import { createLogger } from "@/lib/logger";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GpsMiniMap } from "./GpsMiniMap";
+const log = createLogger("[GpsStampCard]");
 
 export function GpsStampCard({ order }: { order: any }) {
   const cLat = Number(order.customerLat);
@@ -34,8 +36,7 @@ export function GpsStampCard({ order }: { order: any }) {
         }
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
-        console.debug("[GpsStampCard] Nominatim reverse geocode failed:", err);
+        log.warn("Nominatim reverse geocode failed:", err);
       });
     return () => {
       cancelled = true;
