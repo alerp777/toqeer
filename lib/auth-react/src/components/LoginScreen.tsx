@@ -71,6 +71,12 @@ export interface LoginScreenStrings {
   trustDevice?: string;
   /** "Forgot password?" link label */
   forgotPasswordLabel?: string;
+  /** Heading for the 2FA authenticator step */
+  twoFactorAuth?: string;
+  /** Label for the authenticator code input */
+  enterAuthCode?: string;
+  /** Placeholder for the backup code text input */
+  backupCodePlaceholder?: string;
 }
 
 const DEFAULT_STRINGS: LoginScreenStrings = {
@@ -95,6 +101,9 @@ const DEFAULT_STRINGS: LoginScreenStrings = {
   twoFactorLabel: "Enter your authenticator code",
   enterPhoneError: "Please enter your phone number",
   enterPasswordError: "Please enter your password",
+  twoFactorAuth: "Two-factor authentication",
+  enterAuthCode: "Enter your authenticator code",
+  backupCodePlaceholder: "Enter backup code",
 };
 
 export interface LoginScreenProps {
@@ -263,6 +272,12 @@ export function LoginScreen({
   } | null>(null);
   const [internalDevOtp, setInternalDevOtp] = useState<string | undefined>(undefined);
   const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
+
+  /* ── TOTP backup-code / trust-device state ── */
+  const [useBackup, setUseBackup] = useState(false);
+  const [backupCodeInput, setBackupCodeInput] = useState("");
+  const [trustDevice, setTrustDevice] = useState(false);
+  const [backupVerifying, setBackupVerifying] = useState(false);
 
   /* Guard: window is not defined in React Native / Expo environments.
      Default to false (narrow layout) when window is unavailable. */
@@ -520,6 +535,18 @@ export function LoginScreen({
       await verifyLoginOtp(otp);
     } catch (_e) {
       /* handled by hook */
+    }
+  }
+
+  async function handleBackupCode() {
+    if (!backupCodeInput.trim()) return;
+    setBackupVerifying(true);
+    try {
+      await twoFactorVerify(backupCodeInput.trim());
+    } catch (_e) {
+      /* handled by hook */
+    } finally {
+      setBackupVerifying(false);
     }
   }
 
@@ -1313,28 +1340,86 @@ export function LoginScreen({
                         onComplete={(otp) => void handleLoginOtp(otp)}
                         autoSubmit
                       />
+                      <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                        <button
+                          type="button"
+                          style={s.link}
+                          onClick={() => { clearError(); setStep("identifier"); }}
+                        >
+                          {str.back}
+                        </button>
+                      </p>
                     </>
                   ) : (
                     <>
-                      <OtpInput
-                        label={str.subtitleTotp ?? str.twoFactorLabel}
-                        onComplete={(code) => void handleTwoFactor(code)}
-                        autoSubmit
-                      />
-                      {forgotPasswordHref != null && (
-                        <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                      <p style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>
+                        {str.twoFactorAuth ?? str.subtitleTwoFactor}
+                      </p>
+                      {!useBackup ? (
+                        <>
+                          <OtpInput
+                            label={str.enterAuthCode ?? str.subtitleTotp ?? str.twoFactorLabel}
+                            onComplete={(code) => void handleTwoFactor(code)}
+                            autoSubmit
+                          />
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={trustDevice}
+                              onChange={e => setTrustDevice(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            {str.trustDevice ?? "Trust this device for 30 days"}
+                          </label>
+                          <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                            <button
+                              type="button"
+                              style={s.link}
+                              onClick={() => { setUseBackup(true); setBackupCodeInput(""); clearError(); }}
+                            >
+                              {str.useBackupCode ?? "Use a backup code"}
+                            </button>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={backupCodeInput}
+                            onChange={e => setBackupCodeInput(e.target.value)}
+                            placeholder={str.backupCodePlaceholder ?? "Enter backup code"}
+                            style={{ padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px", width: "100%", boxSizing: "border-box" }}
+                            autoFocus
+                            onKeyDown={e => { if (e.key === "Enter") void handleBackupCode(); }}
+                          />
                           <button
                             type="button"
-                            style={s.link}
-                            onClick={() => {
-                              clearError();
-                              setStep("identifier");
-                            }}
+                            onClick={() => void handleBackupCode()}
+                            disabled={backupVerifying || !backupCodeInput.trim()}
+                            style={{ ...s.btnPrimary, opacity: (backupVerifying || !backupCodeInput.trim()) ? 0.6 : 1 }}
                           >
-                            {str.back}
+                            {backupVerifying ? "Verifying…" : (str.signInBtn ?? "Sign in")}
                           </button>
-                        </p>
+                          <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                            <button
+                              type="button"
+                              style={s.link}
+                              onClick={() => { setUseBackup(false); setBackupCodeInput(""); clearError(); }}
+                            >
+                              {str.useAuthAppInstead ?? "Use authenticator app instead"}
+                            </button>
+                          </p>
+                        </>
                       )}
+                      <p style={{ margin: 0, textAlign: "center", fontSize: "13px" }}>
+                        <button
+                          type="button"
+                          style={s.link}
+                          onClick={() => { clearError(); setUseBackup(false); setBackupCodeInput(""); setStep("identifier"); }}
+                        >
+                          {str.back}
+                        </button>
+                      </p>
                     </>
                   )}
                 </div>

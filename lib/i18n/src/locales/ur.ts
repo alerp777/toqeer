@@ -1903,6 +1903,12 @@ const ur: Record<string, string> = {
     magicLinkEmailPlaceholder: "میجک لنک کے لیے ای میل",
     useEmailOtpInstead: "اس کے بجائے ای میل OTP استعمال کریں",
     getOtpInstead: "اس کے بجائے OTP حاصل کریں",
+    continueWith: "کے ساتھ جاری رکھیں",
+    notAvailable: "(دستیاب نہیں)",
+    magicLinkSentMsg: "میجک لنک بھیج دیا گیا! اپنی ای میل چیک کریں۔",
+    you: "آپ",
+    change: "تبدیل کریں",
+    resendIn: "دوبارہ بھیجیں",
 };
 
 export default ur;

@@ -1007,7 +1007,7 @@ export default function AuthScreen() {
                       <SocialButton
                         key={sm.key}
                         provider={sm.label}
-                        label={isConfigured ? `Continue with ${sm.label}` : `${sm.label} (Not Available)`}
+                        label={isConfigured ? `${T("continueWith")} ${sm.label}` : `${sm.label} ${T("notAvailable")}`}
                         icon={sm.icon}
                         color={sm.color}
                         onPress={() => handleSocialLogin(sm.key as "google" | "facebook")}
@@ -1023,7 +1023,7 @@ export default function AuthScreen() {
                           <InputField
                             value={magicEmail}
                             onChangeText={setMagicEmail}
-                            placeholder="Email for magic link"
+                            placeholder={T("magicLinkEmailPlaceholder")}
                             keyboardType="email-address"
                             autoCapitalize="none"
                           />
@@ -1038,7 +1038,7 @@ export default function AuthScreen() {
                       ) : (
                         <AlertBox
                           type="success"
-                          message={`Magic link sent! Check your email.${magicCooldown > 0 ? ` Resend in ${magicCooldown}s` : ""}`}
+                          message={`${T("magicLinkSentMsg")}${magicCooldown > 0 ? ` ${T("resendIn")} ${magicCooldown}s` : ""}`}
                           icon="checkmark-circle"
                         />
                       )}
@@ -1073,10 +1073,10 @@ export default function AuthScreen() {
                   <Ionicons name="person-circle" size={18} color={C.primary} />
                 </View>
                 <Text style={styles.identifierChipTxt} numberOfLines={1}>
-                  {identifier || phone || email || username || "You"}
+                  {identifier || phone || email || username || T("you")}
                 </Text>
                 <View style={styles.identifierChipChange}>
-                  <Text style={styles.identifierChipChangeTxt}>Change</Text>
+                  <Text style={styles.identifierChipChangeTxt}>{T("change")}</Text>
                   <Ionicons name="pencil" size={11} color={C.primary} />
                 </View>
               </Pressable>
@@ -1360,7 +1360,7 @@ export default function AuthScreen() {
                         ) : (
                           <AlertBox
                             type="success"
-                            message={`Magic link sent! Check your email.${magicCooldown > 0 ? ` Resend in ${magicCooldown}s` : ""}`}
+                            message={`${T("magicLinkSentMsg")}${magicCooldown > 0 ? ` ${T("resendIn")} ${magicCooldown}s` : ""}`}
                             icon="checkmark-circle"
                           />
                         )}

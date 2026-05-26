@@ -268,6 +268,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
             "linked to google": tDual("linkedToGoogle", language),
             "linked to facebook": tDual("linkedToFacebook", language),
             "not a vendor account": tDual("wrongAppVendor", language),
+            "not registered as vendor": tDual("wrongAppVendor", language),
           };
           const lc = raw.toLowerCase();
           const hit = Object.keys(map).find(k => lc.includes(k));

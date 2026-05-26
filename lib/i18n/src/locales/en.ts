@@ -1931,6 +1931,12 @@ const en = {
     magicLinkEmailPlaceholder: "Email for magic link",
     useEmailOtpInstead: "Use email OTP instead",
     getOtpInstead: "Get OTP instead",
+    continueWith: "Continue with",
+    notAvailable: "(Not Available)",
+    magicLinkSentMsg: "Magic link sent! Check your email.",
+    you: "You",
+    change: "Change",
+    resendIn: "Resend in",
 };
 
 export default en;

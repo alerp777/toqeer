@@ -1915,6 +1915,12 @@ const roman: Record<string, string> = {
     magicLinkEmailPlaceholder: "Magic link ke liye email",
     useEmailOtpInstead: "Iske bajaye email OTP istemaal karein",
     getOtpInstead: "Iske bajaye OTP haasil karein",
+    continueWith: "Ke saath jaari rakhen",
+    notAvailable: "(Dastiyaab Nahi)",
+    magicLinkSentMsg: "Magic link bhej diya gaya! Apni email check karein.",
+    you: "Aap",
+    change: "Tabdeel karein",
+    resendIn: "Dubara bhejein",
 };
 
 export default roman;

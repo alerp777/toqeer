@@ -288,6 +288,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
             "linked to google": tDual("linkedToGoogle", language),
             "linked to facebook": tDual("linkedToFacebook", language),
             "not a rider account": tDual("wrongAppRider", language),
+            "not registered as rider": tDual("wrongAppRider", language),
           };
           const lc = raw.toLowerCase();
           const hit = Object.keys(map).find(k => lc.includes(k));
