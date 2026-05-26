@@ -7,7 +7,6 @@ AJKMart is a full-stack super-app for Azad Jammu & Kashmir (AJK), Pakistan. It p
 
 ## User Preferences
 - Iterative development — ask before major changes.
-- **Do NOT modify** `artifacts/ajkmart/` folder.
 - **Do NOT modify** `artifacts/api-server/src/routes/auth.ts`.
 - Prefer clear and concise explanations.
 

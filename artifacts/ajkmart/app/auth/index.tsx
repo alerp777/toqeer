@@ -158,6 +158,10 @@ export default function AuthScreen() {
     return () => clearTimeout(t);
   }, [magicCooldown]);
 
+  /* Smart-login state */
+  const [smartIdType, setSmartIdType] = useState<"phone" | "email" | "username" | null>(null);
+  const [smartMethods, setSmartMethods] = useState<string[]>([]);
+
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideXAnim = useRef(new Animated.Value(0)).current;
   const animateTransition = useCallback((cb: () => void) => {
@@ -276,6 +280,11 @@ export default function AuthScreen() {
         }
         return;
       }
+
+      /* Smart-login: capture auto-detected type + available methods */
+      setSmartIdType(res.identifierType ?? null);
+      setSmartMethods(Array.isArray(res.availableMethods) ? res.availableMethods : []);
+
       if (res.action === "send_phone_otp") {
         const normalized = normalizePhone(id);
         setPhone(normalized);
@@ -335,6 +344,37 @@ export default function AuthScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /* Smart-login fallback helpers */
+  const canUsePassword = smartMethods.includes("password") && isMethodEnabled(authCfg.usernamePasswordEnabled);
+  const canUseOtp      = smartMethods.includes("otp") && isMethodEnabled(authCfg.phoneOtpEnabled);
+  const canUseMagic    = smartMethods.includes("magic_link") && isMethodEnabled(authCfg.magicLinkEnabled);
+
+  const handleSmartFallbackOtp = () => {
+    clearError();
+    if (smartIdType === "phone") {
+      setMethod("phone");
+      animateTransition(() => void handleSendPhoneOtp());
+    } else if (smartIdType === "email") {
+      setEmail(identifier.trim());
+      setMethod("email");
+      animateTransition(() => void handleSendEmailOtp());
+    }
+  };
+  const handleSmartFallbackPassword = () => {
+    clearError();
+    setUsername(identifier.trim());
+    setMethod("username");
+    animateTransition(() => setStep("method"));
+  };
+  const handleSmartFallbackMagicLink = () => {
+    clearError();
+    setMagicEmail(identifier.trim());
+    animateTransition(() => {
+      setMethod("magic");
+      setStep("method");
+    });
   };
 
   const enabledMethods: { key: LoginMethod; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [];
@@ -1048,6 +1088,23 @@ export default function AuthScreen() {
                     {resendCooldown > 0 ? `${T("otpResendIn")} (${resendCooldown}s)` : T("otpResend")}
                   </Text>
                 </Pressable>
+                {/* Smart-login fallbacks */}
+                {smartIdType === "phone" && (
+                  <View style={{ marginTop: 8, gap: 6 }}>
+                    {canUsePassword && (
+                      <Pressable onPress={handleSmartFallbackPassword} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="lock-closed-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>Use password instead</Text>
+                      </Pressable>
+                    )}
+                    {canUseMagic && (
+                      <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="link-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>Send magic link</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
               </>
             )}
 
@@ -1100,6 +1157,23 @@ export default function AuthScreen() {
                     {emailResendCooldown > 0 ? `${T("otpResendIn")} (${emailResendCooldown}s)` : T("otpResend")}
                   </Text>
                 </Pressable>
+                {/* Smart-login fallbacks */}
+                {smartIdType === "email" && (
+                  <View style={{ marginTop: 8, gap: 6 }}>
+                    {canUsePassword && (
+                      <Pressable onPress={handleSmartFallbackPassword} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="lock-closed-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>Use password instead</Text>
+                      </Pressable>
+                    )}
+                    {canUseMagic && (
+                      <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="link-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>Send magic link</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
               </>
             )}
 
@@ -1130,6 +1204,25 @@ export default function AuthScreen() {
                 >
                   <Text style={styles.forgotText}>Forgot Password?</Text>
                 </Pressable>
+                {/* Smart-login fallbacks */}
+                {(smartIdType === "username" || smartIdType === "email") && (
+                  <View style={{ marginTop: 8, gap: 6 }}>
+                    {canUseOtp && (
+                      <Pressable onPress={handleSmartFallbackOtp} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="chatbubble-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>
+                          {smartIdType === "email" ? "Use email OTP instead" : "Get OTP instead"}
+                        </Text>
+                      </Pressable>
+                    )}
+                    {canUseMagic && (
+                      <Pressable onPress={handleSmartFallbackMagicLink} style={styles.fallbackBtn} accessibilityRole="button">
+                        <Ionicons name="link-outline" size={14} color={C.primary} />
+                        <Text style={styles.fallbackText}>Send magic link</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
               </>
             )}
 
@@ -1333,6 +1426,8 @@ const styles = StyleSheet.create({
 
   forgotBtn: { alignSelf: "flex-end", marginBottom: spacing.md, marginTop: -4 },
   forgotText: { ...typography.captionMedium, color: C.primary },
+  fallbackBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 2 },
+  fallbackText: { ...typography.captionMedium, color: C.primary },
 
   linkBtn: { alignItems: "center", marginTop: spacing.md },
   linkBtnText: { ...typography.bodyMedium, color: C.primary },
