@@ -69,8 +69,8 @@ ensureBroadcastsTable().catch((err: unknown) => {
 ───────────────────────────────────────────────────────── */
 router.get("/broadcasts", async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(String(req.query["page"] ?? "1")));
-    const limit = Math.min(200, parseInt(String(req.query["limit"] ?? "50")));
+    const page = Math.max(1, parseInt(String(req.query["page"] ?? "1"), 10));
+    const limit = Math.min(200, parseInt(String(req.query["limit"] ?? "50"), 10));
     const offset = (page - 1) * limit;
 
     try {

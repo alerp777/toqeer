@@ -51,7 +51,7 @@ type AdminReq = AdminRequest & Request & { adminId?: string; adminName?: string 
 const router = Router();
 router.get("/rides", async (req: Request, res: Response) => {
   try {
-    const limit = Math.min(parseInt(req.query["limit"] as string) || 50, 200);
+    const limit = Math.min(parseInt(req.query["limit"] as string, 10) || 50, 200);
     const after = req.query["after"] as string | undefined;
     const result = await FleetService.getRidesList(limit, after);
     sendSuccess(res, {

@@ -8,7 +8,7 @@ const router = Router();
 
 router.get("/search-analytics/interaction-timeline", async (req, res) => {
   try {
-    const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 90);
     const since = new Date();
     since.setDate(since.getDate() - days);
 
@@ -58,7 +58,7 @@ router.get("/search-analytics/interaction-timeline", async (req, res) => {
 
 router.get("/search-analytics/interaction-stats", async (req, res) => {
   try {
-    const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 90);
     const since = new Date();
     since.setDate(since.getDate() - days);
 
@@ -101,8 +101,8 @@ router.get("/search-analytics/interaction-stats", async (req, res) => {
 
 router.get("/search-analytics/zero-results", async (req, res) => {
   try {
-    const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 90);
-    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 200);
+    const days = Math.min(Math.max(parseInt(req.query.days as string, 10) || 30, 1), 90);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 50, 1), 200);
     const since = new Date();
     since.setDate(since.getDate() - days);
 
@@ -126,8 +126,8 @@ router.get("/search-analytics/zero-results", async (req, res) => {
 
 router.get("/search-analytics/top-terms", async (req, res) => {
   try {
-    const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 90);
-    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 30, 1), 100);
+    const days = Math.min(Math.max(parseInt(req.query.days as string, 10) || 30, 1), 90);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 30, 1), 100);
     const since = new Date();
     since.setDate(since.getDate() - days);
 

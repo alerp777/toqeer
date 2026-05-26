@@ -422,8 +422,8 @@ router.post(
 
 router.get("/", adminAuth, async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(String(req.query["page"] || "1")));
-    const limit = Math.min(100, Math.max(1, parseInt(String(req.query["limit"] || "50"))));
+    const page = Math.max(1, parseInt(String(req.query["page"] || "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query["limit"] || "50"), 10)));
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [];
@@ -896,8 +896,8 @@ router.post("/customer-report", validateBody(customerReportSchema), async (req, 
 
 router.get("/customer-reports", adminAuth, async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(String(req.query["page"] || "1")));
-    const limit = Math.min(100, Math.max(1, parseInt(String(req.query["limit"] || "30"))));
+    const page = Math.max(1, parseInt(String(req.query["page"] || "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query["limit"] || "30"), 10)));
     const offset = (page - 1) * limit;
 
     const statusParam = req.query["status"] as string | undefined;

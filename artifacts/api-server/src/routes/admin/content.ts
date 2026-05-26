@@ -72,7 +72,7 @@ router.get("/products", async (req, res) => {
     }
 
     const { buildCursorPage, decodeCursor } = await import("../../lib/pagination/cursor.js");
-    const limit = Math.min(Math.max(parseInt(String(req.query["limit"] || "50")), 1), 200);
+    const limit = Math.min(Math.max(parseInt(String(req.query["limit"] || "50"), 10), 1), 200);
     const after = req.query["after"] as string | undefined;
     const cursor = after ? decodeCursor(after) : null;
 
@@ -322,8 +322,8 @@ router.get("/products/:id/stock-history", async (req, res) => {
     const vendorId = req.query["vendorId"] as string | undefined;
     const from = req.query["from"] as string | undefined;
     const to = req.query["to"] as string | undefined;
-    const page = Math.max(1, parseInt(req.query["page"] as string) || 1);
-    const limit = Math.min(100, parseInt(req.query["limit"] as string) || 50);
+    const page = Math.max(1, parseInt(req.query["page"] as string, 10) || 1);
+    const limit = Math.min(100, parseInt(req.query["limit"] as string, 10) || 50);
     const offset = (page - 1) * limit;
 
     const [product] = await db

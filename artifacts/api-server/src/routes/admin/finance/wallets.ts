@@ -42,7 +42,7 @@ import {
 const router = Router();
 router.get("/transactions", async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query["limit"] as string) || 50, 200);
+    const limit = Math.min(parseInt(req.query["limit"] as string, 10) || 50, 200);
     const after = req.query["after"] as string | undefined;
     const cursor = after ? decodeCursor(after) : null;
 
@@ -95,7 +95,7 @@ router.get("/transactions", async (req, res) => {
 /* ── Platform Settings ── */
 router.get("/transactions-enriched", async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query["limit"] as string) || 50, 300);
+    const limit = Math.min(parseInt(req.query["limit"] as string, 10) || 50, 300);
     const after = req.query["after"] as string | undefined;
     const cursor = after ? decodeCursor(after) : null;
 

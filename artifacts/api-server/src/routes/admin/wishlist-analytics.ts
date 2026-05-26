@@ -45,7 +45,7 @@ router.get("/wishlist-analytics", async (_req, res) => {
 ─────────────────────────────────────────────────────────── */
 router.get("/wishlist-analytics/timeline", async (req, res) => {
   try {
-    const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 90);
     const since = new Date();
     since.setDate(since.getDate() - days);
 

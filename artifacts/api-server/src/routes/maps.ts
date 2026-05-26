@@ -397,7 +397,10 @@ router.get("/autocomplete", async (req, res, next) => {
     }
 
     try {
-      const lat = req.query.lat ? `&location=${req.query.lat},${req.query.lng}&radius=50000` : "";
+      const rawLat = parseFloat(String(req.query.lat ?? ""));
+      const rawLng = parseFloat(String(req.query.lng ?? ""));
+      const lat =
+        !isNaN(rawLat) && !isNaN(rawLng) ? `&location=${rawLat},${rawLng}&radius=50000` : "";
       const url = `${GOOGLE_BASE}/place/autocomplete/json?input=${encodeURIComponent(input)}${lat}&components=country:pk&language=en&key=${key}`;
       const raw = await fetch(url);
       const data = (await raw.json()) as GoogleAutocompleteResponse;
