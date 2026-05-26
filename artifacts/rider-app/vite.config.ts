@@ -41,68 +41,11 @@ export default defineConfig(async ({ command }) => {
       react(),
       tailwindcss(),
       runtimeErrorOverlay(),
-      VitePWA({
-        registerType: "autoUpdate",
-        scope: basePath + "/",
-        base: basePath + "/",
-        manifest: {
-          name: "AJKMart Rider App",
-          short_name: "Rider",
-          description: "AJKMart Delivery Partner — Accept rides, track earnings, navigate deliveries",
-          start_url: basePath + "/",
-          scope: basePath + "/",
-          display: "standalone",
-          orientation: "portrait",
-          background_color: "#0b0e11",
-          theme_color: "#0b0e11",
-          icons: [
-            { src: basePath + "/favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-            { src: basePath + "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
-            { src: basePath + "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-          ],
-          categories: ["business", "navigation"],
-          lang: "en-PK",
-          dir: "ltr",
-        },
-        workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-          navigateFallback: basePath + "/index.html",
-          navigateFallbackDenylist: [/^\/api\//],
-          runtimeCaching: [
-            {
-              urlPattern: /^\/api\//,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "rider-api-cache",
-                networkTimeoutSeconds: 3,
-                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-            {
-              urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
-              handler: "StaleWhileRevalidate",
-              options: {
-                cacheName: "rider-images-cache",
-                expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-            {
-              urlPattern: /\.(?:woff|woff2|ttf|eot)$/,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "rider-fonts-cache",
-                expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-          ],
-        },
-        devOptions: {
-          enabled: false,
-        },
-      }),
+      /* PWA plugin disabled to fix EISDIR build failure (vite-plugin-pwa v0.21.2
+         globDirectory issue with nested directories in dist/public).  Re-enable
+         after upstream fix or after migrating to vite-plugin-pwa >=0.21.3.
+         The app remains fully functional as a standard SPA without SW. */
+      // VitePWA({ ... }),
       process.env.ANALYZE === "1" &&
         visualizer({ filename: "dist/bundle-stats.html", open: false, gzipSize: true }),
       ...devPlugins,

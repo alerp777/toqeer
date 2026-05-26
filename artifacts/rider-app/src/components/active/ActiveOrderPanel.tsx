@@ -104,7 +104,15 @@ export function ActiveOrderPanel({
   setPressedBtn,
   T,
 }: ActiveOrderPanelProps) {
-  const id = order.id as string;
+  const idRaw = order.id;
+  if (typeof idRaw !== "string" || !idRaw) {
+    return (
+      <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-center">
+        <p className="text-sm font-bold text-red-600">Invalid order data</p>
+      </div>
+    );
+  }
+  const id = idRaw;
   const type = order.type as string | undefined;
   const status = order.status as string;
 

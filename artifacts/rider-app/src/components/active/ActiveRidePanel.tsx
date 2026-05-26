@@ -69,7 +69,15 @@ export function ActiveRidePanel({
   showToast,
   T,
 }: ActiveRidePanelProps) {
-  const id = ride.id as string;
+  const idRaw = ride.id;
+  if (typeof idRaw !== "string" || !idRaw) {
+    return (
+      <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-center">
+        <p className="text-sm font-bold text-red-600">Invalid ride data</p>
+      </div>
+    );
+  }
+  const id = idRaw;
   const type = ride.type as string | undefined;
   const status = ride.status as string;
   const riderEarning = parseFloat(String(ride.fare ?? 0)) * (riderEarningPct / 100);

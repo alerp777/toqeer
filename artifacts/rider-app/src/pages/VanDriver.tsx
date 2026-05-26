@@ -370,6 +370,7 @@ export default function VanDriver() {
           setRiderPos([pos.coords.latitude, pos.coords.longitude]);
           sendLocation(schedId, schedDate, pos.coords.latitude, pos.coords.longitude).catch(
             (err) => {
+              if (gpsStoppedRef.current) return;
               setGpsError(
                 err instanceof Error ? err.message : "Failed to send location to server"
               );

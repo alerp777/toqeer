@@ -99,6 +99,10 @@ export default function Profile() {
     mutationFn: () => api.requestKycReview(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["rider-me"] });
+      showToast("KYC review request submitted");
+    },
+    onError: (e: Error) => {
+      showToast(e.message || "KYC request failed — please try again", true);
     },
   });
 

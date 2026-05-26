@@ -79,11 +79,13 @@ export default function Home() {
   const [audioLocked, setAudioLocked] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     void sweepAndLoadDismissed().then((ids) => {
-      if (ids.size > 0) setDismissed(ids);
+      if (mounted && ids.size > 0) setDismissed(ids);
     });
     /* Check audio lock state on mount */
     setAudioLocked(isAudioLocked());
+    return () => { mounted = false; };
   }, []);
 
   const [silenceOn, setSilenceOn] = useState(getSilenceMode());
@@ -362,6 +364,7 @@ export default function Home() {
         setAudioLocked(isAudioLocked());
         /* Sweep expired dismissed entries before triggering the refetch */
         void sweepAndLoadDismissed().then((freshIds) => {
+          if (!isMountedRef.current) return;
           setDismissed(freshIds);
           void qc.invalidateQueries({ queryKey: ["rider-requests"] });
           void qc.invalidateQueries({ queryKey: ["rider-active"] });
