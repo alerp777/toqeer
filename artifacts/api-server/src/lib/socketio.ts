@@ -348,20 +348,23 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
     if (!_io) return;
     const staleThreshold = new Date(Date.now() - STALE_THRESHOLD_MS);
 
-    db.select({
-      userId: liveLocationsTable.userId,
-      updatedAt: liveLocationsTable.updatedAt,
-    })
-      .from(liveLocationsTable)
+    /* Atomic DELETE...RETURNING eliminates the SELECT→DELETE race window:
+       a rider whose heartbeat arrives between a SELECT and a separate DELETE
+       would previously get their live_locations row deleted and isOnline set
+       to false even though they are active.  With RETURNING we only act on
+       rows that were *actually* stale at the moment of deletion.            */
+    db
+      .delete(liveLocationsTable)
       .where(lt(liveLocationsTable.updatedAt, staleThreshold))
-      .then(async (staleRows) => {
-        if (staleRows.length === 0) return;
-        const staleUserIds = staleRows.map((r) => r.userId);
+      .returning({
+        userId: liveLocationsTable.userId,
+        updatedAt: liveLocationsTable.updatedAt,
+      })
+      .then(async (deletedRows) => {
+        if (deletedRows.length === 0) return;
 
-        /* Emit rider:offline to admin-fleet for each stale rider.
-           updatedAt here is the row's last GPS ping time — i.e. when the
-           rider was actually last seen — not the current cleanup time.     */
-        for (const { userId, updatedAt } of staleRows) {
+        /* Emit rider:offline only for riders whose row was truly deleted. */
+        for (const { userId, updatedAt } of deletedRows) {
           _io!.to("admin-fleet").emit("rider:offline", {
             userId,
             isOnline: false,
@@ -370,13 +373,13 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
           });
         }
 
-        /* Mark riders offline in DB (batch) */
+        /* Mark confirmed-stale riders offline in DB (batch) */
         await Promise.all(
-          staleUserIds.map((userId) =>
+          deletedRows.map(({ userId }) =>
             db
               .update(usersTable)
               .set({ isOnline: false, updatedAt: new Date() })
-              .where(eq(usersTable.id, userId))
+              .where(and(eq(usersTable.id, userId)))
               .catch((e: Error) =>
                 logger.warn(
                   { userId, err: e.message },
@@ -386,28 +389,13 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
           )
         );
 
-        /* Delete stale live_locations rows */
-        await Promise.all(
-          staleUserIds.map((userId) =>
-            db
-              .delete(liveLocationsTable)
-              .where(eq(liveLocationsTable.userId, userId))
-              .catch((e: Error) =>
-                logger.warn(
-                  { userId, err: e.message },
-                  "[socketio/cleanup] failed to delete stale live_locations"
-                )
-              )
-          )
-        );
-
         logger.info(
-          { count: staleUserIds.length },
+          { count: deletedRows.length },
           "[socketio/cleanup] ghost riders removed from fleet map"
         );
       })
       .catch((e: Error) =>
-        logger.warn({ err: e.message }, "[socketio/cleanup] stale query failed")
+        logger.warn({ err: e.message }, "[socketio/cleanup] stale delete+returning failed")
       );
   }, GHOST_CLEANUP_MS);
 
@@ -1034,10 +1022,13 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       else _ipSocketCount.set(ip, prev - 1);
 
       _sessionCache.delete(socket.id);
-      _pendingRideJoins.delete(socket.id); // cleanup all buffers for this socket
-      for (const key of _pendingRideJoins.keys()) {
-        if (key.startsWith(`${socket.id}::`)) _pendingRideJoins.delete(key);
-      }
+      /* Collect keys first, then delete — never mutate a Map while iterating it.
+         Keys are formatted as `${socketId}::${roomName}`; bare socket.id is never
+         a key so the former delete(socket.id) call was always a no-op.          */
+      const keysToDelete = Array.from(_pendingRideJoins.keys()).filter((k) =>
+        k.startsWith(`${socket.id}::`)
+      );
+      for (const key of keysToDelete) _pendingRideJoins.delete(key);
     });
   });
 
