@@ -76,7 +76,10 @@ function ReturnPanel({
     try {
       await adminFetch(`/orders/${order.id}/return`, {
         method: "POST",
-        body: JSON.stringify({ reason: reason.trim(), amount: parseFloat(amount) || order.total }),
+        body: JSON.stringify({
+          reason: reason.trim(),
+          amount: Number.isFinite(parseFloat(amount)) ? parseFloat(amount) : order.total,
+        }),
       });
       toast({ title: "Return request created", description: "Return request logged." });
       setReason("");

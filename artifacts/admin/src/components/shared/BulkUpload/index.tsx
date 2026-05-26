@@ -23,7 +23,25 @@ function parseCsv(text: string): Record<string, string>[] {
   if (lines.length < 2) return [];
   const headers = lines[0]!.split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
   return lines.slice(1).map((line) => {
-    const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+    /* Naïve split-by-comma breaks when a field itself contains a comma
+       wrapped in quotes (e.g. `"Product Name, Large"`).  This parser handles
+       the most common CSV-escaped-comma case so bulk uploads don't silently
+       shift columns and corrupt data.                                 */
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        values.push(current.trim().replace(/^"|"$/g, ""));
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    values.push(current.trim().replace(/^"|"$/g, ""));
     const row: Record<string, string> = {};
     headers.forEach((h, i) => {
       row[h] = values[i] ?? "";

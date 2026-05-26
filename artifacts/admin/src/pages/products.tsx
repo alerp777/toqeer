@@ -525,7 +525,8 @@ export default function Products() {
     setBulkApplying(true);
     const ids = Array.from(selectedProductIds);
     const update: Record<string, unknown> = {};
-    if (bulkPrice) update.price = parseFloat(bulkPrice);
+    const parsedPrice = parseFloat(bulkPrice);
+    if (bulkPrice && Number.isFinite(parsedPrice)) update.price = parsedPrice;
     if (bulkCategory) update.category = bulkCategory;
     if (bulkStock === "in") update.inStock = true;
     if (bulkStock === "out") update.inStock = false;

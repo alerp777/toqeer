@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LastUpdated } from "@/components/ui/LastUpdated";
+import { useToast } from "@/hooks/use-toast";
 import { adminFetch, getAdminAccessToken } from "@/lib/adminFetcher";
 import {
   AlertTriangle,
@@ -351,6 +352,7 @@ function AlertCard({
 }
 
 export default function SosAlerts() {
+  const { toast } = useToast();
   const [alerts, setAlerts] = useState<SosAlert[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(0);
   const [total, setTotal] = useState(0);
@@ -481,9 +483,16 @@ export default function SosAlerts() {
     setAcknowledging(id);
     try {
       await adminFetch(`/sos/alerts/${id}/acknowledge`, { method: "PATCH", body: "{}" });
-      // eslint-disable-next-line ajk-local/no-silent-catch -- socket will update UI state regardless of HTTP call outcome
-    } catch {
-      /* socket will update UI anyway */
+    } catch (e: unknown) {
+      /* If the HTTP PATCH fails the socket *may* still update the UI later, but
+         the admin must be told immediately so they don't assume the action
+         succeeded and move on to the next alert.  The UI badge won't flip until
+         the server confirms it, which may never arrive if the call failed.     */
+      toast({
+        variant: "destructive",
+        title: "Acknowledge failed",
+        description: (e as Error).message || "Server did not confirm the alert.",
+      });
     }
     setAcknowledging(null);
   };

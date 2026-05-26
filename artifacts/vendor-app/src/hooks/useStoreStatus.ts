@@ -25,7 +25,12 @@ export function useStoreStatus(options?: UseStoreStatusOptions) {
   return {
     isOpen: !!user?.storeIsOpen,
     storeHours: (user?.storeHours ?? null) as StoreHours | null,
-    toggle: () => mut.mutate(!user?.storeIsOpen),
+    toggle: () => {
+      /* Guard against null user (e.g. during session handover) to avoid firing
+         a mutation with an unintended value while auth state is undefined.  */
+      if (!user) return;
+      mut.mutate(!user.storeIsOpen);
+    },
     isPending: mut.isPending,
   };
 }
