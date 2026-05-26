@@ -894,6 +894,7 @@ router.get(
 /* ── GET /admin/orders-enriched — paginated, filtered, user-enriched order list ── */
 router.get(
   "/orders-enriched",
+  requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const q = req.query as Record<string, string | undefined>;
     const page = Math.max(1, parseInt(q["page"] ?? "1", 10) || 1);
@@ -973,6 +974,7 @@ router.get(
 /* ── GET /admin/orders-export — full filtered list for CSV download ── */
 router.get(
   "/orders-export",
+  requirePermission("orders.view"),
   wrapAsync(async (req, res) => {
     const q = req.query as Record<string, string | undefined>;
     const filterConds = buildOrderFilters(q);
@@ -1277,7 +1279,10 @@ router.patch(
 );
 
 /* ── GET /admin/orders-stats — summary stats for orders dashboard ── */
-router.get("/orders-stats", async (_req, res) => {
+router.get(
+  "/orders-stats",
+  requirePermission("orders.view"),
+  async (_req, res) => {
   try {
     const result = await db.execute(sql`
       SELECT
