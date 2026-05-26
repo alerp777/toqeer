@@ -36,6 +36,14 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useLocation } from "wouter";
 import { api, getTokenStorage } from "./api";
 import { getVendorApiBase } from "./envValidation";
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  verifyBiometric,
+  getBiometricToken,
+  setBiometricEnabled,
+  clearBiometric,
+} from "./biometric";
 const log = createLogger("[auth]");
 
 export interface StoreHours {
@@ -88,6 +96,10 @@ interface AuthCtx {
   login: (token: string, user: AuthUser, refreshToken?: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  /** Attempt biometric login using the stored refresh token */
+  attemptBiometricLogin: () => Promise<boolean>;
+  /** Whether biometric is available and enrolled on this device */
+  biometricEnabled: boolean;
 }
 
 const Ctx = createContext<AuthCtx>({} as AuthCtx);
@@ -113,6 +125,7 @@ function VendorAuthInner({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
 
   /* ── Proactive token refresh via shared SDK hook ────────────────────────
      useTokenRefresh handles scheduling, retry (up to 5 attempts, exponential
@@ -264,6 +277,8 @@ function VendorAuthInner({ children }: { children: ReactNode }) {
     } catch (err) {
       log.warn("[vendor-auth] sessionStorage.clear failed:", err);
     }
+    void clearBiometric();
+    setBiometricEnabledState(false);
     sharedAuth.logout();
     setToken(null);
     setUser(null);
@@ -301,6 +316,58 @@ function VendorAuthInner({ children }: { children: ReactNode }) {
     }
   };
 
+  /* ── Biometric state ──────────────────────────────────────────────── */
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [available, enrolled] = await Promise.all([isBiometricAvailable(), isBiometricEnabled()]);
+        setBiometricEnabledState(available && enrolled);
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  const attemptBiometricLogin = async (): Promise<boolean> => {
+    try {
+      const [available, enrolled] = await Promise.all([isBiometricAvailable(), isBiometricEnabled()]);
+      if (!available || !enrolled) return false;
+      const success = await verifyBiometric("Sign in to AJKMart Vendor");
+      if (!success) return false;
+      const storedRefresh = await getBiometricToken();
+      if (!storedRefresh) return false;
+      /* Route through api.refreshToken() — mutex-guarded, single refresh path.
+         api.refreshToken() returns a status string ("refreshed"|"transient"|"auth_failed"),
+         NOT a token payload — tokens are written directly to storage on success. */
+      api.storeTokens(api.getToken(), storedRefresh);
+      const status = await api.refreshToken();
+      if (status !== "refreshed") return false;
+      const newToken = api.getToken();
+      if (!newToken) return false;
+      const u = await api.getMe();
+      const rawRoles = u.roles;
+      const roles: string[] = Array.isArray(rawRoles)
+        ? rawRoles
+        : typeof (u as unknown as { role?: string }).role === "string"
+          ? [(u as unknown as { role: string }).role]
+          : [];
+      u.roles = roles;
+      if (roles.length > 0 && !roles.includes("vendor")) {
+        api.clearTokens();
+        setToken(null);
+        return false;
+      }
+      sharedAuth.login(
+        { id: u.id, phone: u.phone, email: u.email, role: "vendor" } satisfies SharedAuthUser,
+        newToken
+      );
+      setToken(newToken);
+      setUser(u);
+      return true;
+    } catch (e) {
+      log.warn("biometric login failed:", e);
+      return false;
+    }
+  };
+
   const clearSessionExpired = () => setSessionExpired(false);
 
   return (
@@ -315,6 +382,8 @@ function VendorAuthInner({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshUser,
+        attemptBiometricLogin,
+        biometricEnabled,
       }}
     >
       {children}

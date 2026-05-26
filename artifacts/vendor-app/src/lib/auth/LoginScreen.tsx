@@ -1,4 +1,5 @@
 import {
+  BiometricEnrollOverlay,
   LoginScreen as SharedLoginScreen,
   PendingOverlay,
   RejectedOverlay,
@@ -43,6 +44,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [pendingStatusMsg, setPendingStatusMsg] = useState<string | null>(null);
+  const [enrollData, setEnrollData] = useState<{
+    token: string; refreshToken: string; profile: VendorAuthUser;
+  } | null>(null);
   const capturedTokenRef = useRef("");
   const capturedRefreshRef = useRef<string | undefined>(undefined);
 
@@ -69,6 +73,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         return;
       }
       if (!normalizeRoles(profile).includes("vendor")) { api.clearTokens(); return; }
+
+      /* Biometric enrollment prompt — if available but not yet enrolled */
+      const rToken = refreshToken ?? api.getRefreshToken() ?? "";
+      try {
+        const { isBiometricAvailable, isBiometricEnabled } = await import("../biometric");
+        const [available, enrolled] = await Promise.all([isBiometricAvailable(), isBiometricEnabled()]);
+        if (available && !enrolled && rToken) {
+          setEnrollData({ token, refreshToken: rToken, profile });
+          return;
+        }
+      } catch { /* biometric unavailable — proceed normally */ }
+
       login(token, profile, refreshToken);
       onSuccess?.(token, profile);
       navigate("/");
@@ -107,6 +123,34 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     setOverlay(null);
     setErrorMsg("");
   }, []);
+
+  const [enrollingBiometric, setEnrollingBiometric] = useState(false);
+
+  const handleEnrollAccept = async () => {
+    if (!enrollData) return;
+    setEnrollingBiometric(true);
+    try {
+      const { storeBiometricToken, setBiometricEnabled: setBioEnabled } = await import("../biometric");
+      await storeBiometricToken(enrollData.refreshToken);
+      await setBioEnabled(true);
+    } catch { /* non-fatal */ } finally {
+      setEnrollingBiometric(false);
+    }
+    const { token, refreshToken, profile } = enrollData;
+    setEnrollData(null);
+    login(token, profile, refreshToken);
+    onSuccess?.(token, profile);
+    navigate("/");
+  };
+
+  const handleEnrollDecline = () => {
+    if (!enrollData) return;
+    const { token, refreshToken, profile } = enrollData;
+    setEnrollData(null);
+    login(token, profile, refreshToken);
+    onSuccess?.(token, profile);
+    navigate("/");
+  };
 
   if (overlay === "pending")
     return (
@@ -161,6 +205,17 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       </div>
     );
 
+  if (enrollData)
+    return (
+      <ThemeProvider role="vendor">
+        <BiometricEnrollOverlay
+          onEnroll={handleEnrollAccept}
+          onSkip={handleEnrollDecline}
+          enrolling={enrollingBiometric}
+        />
+      </ThemeProvider>
+    );
+
   return (
     <ThemeProvider role="vendor">
       <SharedLoginScreen
@@ -168,7 +223,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         logoSrc="/ajkmart-logo.png"
         logoAlt="AJKMart"
         smartLogin
-        enableBiometric={auth.phoneOtp || auth.emailOtp || auth.usernamePassword}
+        enableBiometric={auth.biometricEnabled}
         enableSocial={auth.google || auth.facebook}
         enableEmailOtp={auth.emailOtp}
         enableMagicLinkModal={auth.magicLink}

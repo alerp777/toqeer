@@ -1,0 +1,285 @@
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import {
+  OtpDigitInput,
+  AuthButton,
+  AlertBox,
+  PhoneInput,
+  DevOtpBanner,
+  authColors as C,
+} from "@/components/auth-shared";
+import { isValidPakistaniPhone, normalizePhone } from "@/utils/phone";
+import { API_BASE as API } from "@/utils/api";
+import type { StepPhoneVerifyProps } from "./types";
+
+const FIELD_LABEL: TextStyle = {
+  fontFamily: "Inter_500Medium",
+  fontSize: 13,
+  color: C.textSecondary,
+  marginBottom: 8,
+};
+const FIELD_SUB: TextStyle = {
+  fontFamily: "Inter_400Regular",
+  fontSize: 13,
+  color: C.textMuted,
+  marginBottom: 12,
+};
+const RESEND_BTN: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  paddingVertical: 10,
+  marginBottom: 12,
+};
+const RESEND_TEXT: TextStyle = {
+  fontFamily: "Inter_500Medium",
+  fontSize: 14,
+  color: C.primary,
+};
+const CHANGE_BTN: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 5,
+  marginBottom: 12,
+};
+const CHANGE_TEXT: TextStyle = {
+  fontFamily: "Inter_500Medium",
+  fontSize: 14,
+  color: C.primary,
+};
+const STEP_HEADER: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 12,
+  backgroundColor: "#EFF6FF",
+  borderRadius: 16,
+  padding: 14,
+  marginBottom: 20,
+  borderWidth: 1,
+  borderColor: "#DBEAFE",
+};
+const STEP_HEADER_ICON: ViewStyle = {
+  width: 40,
+  height: 40,
+  borderRadius: 12,
+  backgroundColor: "#DBEAFE",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+const STEP_HEADER_TITLE: TextStyle = {
+  fontFamily: "Inter_700Bold",
+  fontSize: 15,
+  color: C.text,
+  marginBottom: 2,
+};
+const STEP_HEADER_SUB: TextStyle = {
+  fontFamily: "Inter_400Regular",
+  fontSize: 13,
+  color: C.textMuted,
+  lineHeight: 16,
+};
+
+type TextStyle = import("react-native").TextStyle;
+type ViewStyle = import("react-native").ViewStyle;
+
+export default function StepPhoneVerify({
+  data,
+  onChange,
+  onError,
+  onClearError,
+  loading,
+  onLoadingChange,
+  error,
+  onOtpVerified,
+}: StepPhoneVerifyProps) {
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [devOtp, setDevOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const normalizedPhone = normalizePhone(data.phone);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleSendOtp = async () => {
+    onClearError();
+    if (!isValidPakistaniPhone(data.phone)) {
+      onError("Please enter a valid Pakistani phone number (e.g. 03XX-XXXXXXX)");
+      return;
+    }
+    if (resendCooldown > 0) return;
+    onLoadingChange(true);
+    try {
+      let checkData: Record<string, unknown>;
+      try {
+        const checkRes = await fetch(`${API}/auth/check-identifier`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier: `0${normalizedPhone}`, role: "customer" }),
+        });
+        checkData = await checkRes.json();
+        if (!checkRes.ok) {
+          onError((checkData?.error as string) || "Could not verify phone number. Please try again.");
+          onLoadingChange(false);
+          return;
+        }
+      } catch {
+        onError("Network error. Please check your connection and try again.");
+        onLoadingChange(false);
+        return;
+      }
+      const action = checkData?.action;
+      if (action === "registration_closed") {
+        onError("New registrations are currently closed. Please try again later.");
+        onLoadingChange(false);
+        return;
+      }
+      if (action === "blocked") {
+        onError("This phone number has been suspended. Please contact support.");
+        onLoadingChange(false);
+        return;
+      }
+      if (action === "locked") {
+        const mins = (checkData?.lockedMinutes as string | number) ?? "";
+        onError(`Too many attempts. Please try again${mins ? ` in ${mins} minute(s)` : " later"}.`);
+        onLoadingChange(false);
+        return;
+      }
+      const sendOtpRes = await fetch(`${API}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: `0${normalizedPhone}`, role: "customer" }),
+      });
+      const sendOtpData = await sendOtpRes.json();
+      if (!sendOtpRes.ok) {
+        const msg: string = sendOtpData.error || "Could not send OTP.";
+        onError(msg);
+        const match = msg.match(/wait (\d+) second/);
+        if (match) setResendCooldown(parseInt(match[1]!, 10));
+        onLoadingChange(false);
+        return;
+      }
+      if (sendOtpData.otpRequired === false && sendOtpData.accessToken) {
+        const SecureStore = await import("expo-secure-store");
+        await SecureStore.setItemAsync("ajkmart_reg_token", sendOtpData.accessToken);
+        onOtpVerified(
+          sendOtpData.accessToken,
+          sendOtpData.refreshToken || "",
+          sendOtpData.user as import("@/context/AuthContext").AppUser
+        );
+        onLoadingChange(false);
+        return;
+      }
+      if (sendOtpData.otp) setDevOtp(sendOtpData.otp);
+      setResendCooldown(60);
+      setOtpSent(true);
+    } catch (e: unknown) {
+      onError(e instanceof Error ? e.message : "Could not send OTP.");
+    }
+    onLoadingChange(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    onClearError();
+    if (!otp || otp.length < 6) { onError("Please enter the 6-digit OTP"); return; }
+    onLoadingChange(true);
+    try {
+      const res = await fetch(`${API}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalizedPhone, otp }),
+      });
+      const verifyData = await res.json();
+      if (!res.ok) { onError(verifyData.error || "Invalid OTP."); onLoadingChange(false); return; }
+      if (verifyData.accessToken) {
+        const SecureStore = await import("expo-secure-store");
+        await SecureStore.setItemAsync("ajkmart_reg_token", verifyData.accessToken);
+      }
+      let user: import("@/context/AuthContext").AppUser | undefined;
+      if (verifyData.user) {
+        const rawUser = verifyData.user as Record<string, unknown>;
+        const rolesStr = typeof rawUser.roles === "string" ? rawUser.roles : "";
+        const derivedRole = (rolesStr.split(",")[0]?.trim() || rawUser.role || "customer") as import("@/context/AuthContext").UserRole;
+        user = { ...rawUser, role: derivedRole } as import("@/context/AuthContext").AppUser;
+      }
+      onOtpVerified(verifyData.accessToken, verifyData.refreshToken || "", user!);
+    } catch (e: unknown) { onError(e instanceof Error ? e.message : "Verification failed."); }
+    onLoadingChange(false);
+  };
+
+  return (
+    <View>
+      <View style={STEP_HEADER}>
+        <View style={STEP_HEADER_ICON}>
+          <Ionicons name="call-outline" size={20} color="#0066FF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={STEP_HEADER_TITLE}>Verify Phone</Text>
+          <Text style={STEP_HEADER_SUB}>We’ll send a one-time code to confirm your number</Text>
+        </View>
+      </View>
+
+      {!otpSent ? (
+        <>
+          <Text style={FIELD_LABEL}>Phone Number</Text>
+          <PhoneInput
+            value={data.phone}
+            onChangeText={v => { onChange({ phone: v }); onClearError(); }}
+            autoFocus
+          />
+        </>
+      ) : (
+        <>
+          <Pressable
+            onPress={() => { setOtpSent(false); setOtp(""); onClearError(); }}
+            style={CHANGE_BTN}
+            accessibilityRole="button"
+          >
+            <Ionicons name="arrow-back" size={14} color={C.primary} />
+            <Text style={CHANGE_TEXT}>Change Number</Text>
+          </Pressable>
+
+          <Text style={FIELD_LABEL}>Enter Verification Code</Text>
+          <Text style={FIELD_SUB}>Code sent to +92 {data.phone}</Text>
+
+          <OtpDigitInput
+            value={otp}
+            onChangeText={v => { setOtp(v); onClearError(); }}
+            hasError={!!error}
+            onComplete={() => handleVerifyOtp()}
+          />
+
+          <DevOtpBanner otp={devOtp} />
+
+          <Pressable
+            onPress={handleSendOtp}
+            style={[RESEND_BTN, resendCooldown > 0 && { opacity: 0.5 }]}
+            disabled={resendCooldown > 0}
+            accessibilityRole="button"
+          >
+            <Ionicons name="refresh-outline" size={16} color={resendCooldown > 0 ? C.textMuted : C.primary} />
+            <Text style={[RESEND_TEXT, resendCooldown > 0 && { color: C.textMuted }]}>
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+            </Text>
+          </Pressable>
+        </>
+      )}
+
+      {error ? <AlertBox type="error" message={error} /> : null}
+
+      <AuthButton
+        label={otpSent ? "Verify OTP" : "Send OTP"}
+        onPress={otpSent ? handleVerifyOtp : handleSendOtp}
+        loading={loading}
+        icon={!otpSent ? "send-outline" : undefined}
+      />
+    </View>
+  );
+}

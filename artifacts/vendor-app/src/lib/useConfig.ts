@@ -113,6 +113,7 @@ export interface PlatformConfig {
     googleEnabled?: boolean | { customer?: boolean; rider?: boolean; vendor?: boolean };
     facebookEnabled?: boolean | { customer?: boolean; rider?: boolean; vendor?: boolean };
     magicLinkEnabled?: boolean | { customer?: boolean; rider?: boolean; vendor?: boolean };
+    biometricEnabled?: boolean | { customer?: boolean; rider?: boolean; vendor?: boolean };
     captchaEnabled?: boolean;
     captchaSiteKey?: string;
     googleClientId?: string;
@@ -288,6 +289,7 @@ export interface VendorAuthConfig {
   google: boolean;
   facebook: boolean;
   magicLink: boolean;
+  biometricEnabled: boolean;
   captchaEnabled: boolean;
   captchaSiteKey: string;
   lockoutEnabled: boolean;
@@ -307,6 +309,7 @@ export function getVendorAuthConfig(config: PlatformConfig): VendorAuthConfig {
       google: false,
       facebook: false,
       magicLink: false,
+      biometricEnabled: false,
       captchaEnabled: false,
       captchaSiteKey: "",
       lockoutEnabled: false,
@@ -320,6 +323,7 @@ export function getVendorAuthConfig(config: PlatformConfig): VendorAuthConfig {
     google: resolveVendorFlag(a.googleEnabled),
     facebook: resolveVendorFlag(a.facebookEnabled),
     magicLink: resolveVendorFlag(a.magicLinkEnabled),
+    biometricEnabled: resolveVendorFlag(a.biometricEnabled),
     captchaEnabled: a.captchaEnabled ?? false,
     captchaSiteKey: a.captchaSiteKey ?? "",
     lockoutEnabled: a.lockoutEnabled ?? false,
