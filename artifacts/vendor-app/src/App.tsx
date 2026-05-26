@@ -308,14 +308,47 @@ function MagicLinkPage() {
         const accessToken = (res.accessToken ?? res.token) as string;
         const refreshToken = (res.refreshToken ?? res.refresh_token) as string | undefined;
         api.storeTokens(accessToken, refreshToken);
-        let profile: Record<string, unknown> = { id: "", roles: ["vendor"] };
+        let profile: Record<string, unknown>;
         try {
           profile = (await api.getMe()) as Record<string, unknown>;
-        } catch (profileErr) {
-          /* getMe() failed — token may be valid but profile fetch failed (network blip).
-             Log a warning so this is visible in Sentry/dev tools.
-             The app will re-fetch the profile on first authenticated request. */
-          console.warn("[magic-link] getMe() failed after token exchange; proceeding with empty fallback", profileErr);
+        } catch (err: unknown) {
+          const e = err as Record<string, unknown>;
+          const code = (e.code as string) || "";
+          if (code === "APPROVAL_PENDING") {
+            api.clearTokens();
+            setStatus("error");
+            setErrorMsg("Your account is pending admin approval. You'll be notified once approved.");
+            return;
+          }
+          if (code === "APPROVAL_REJECTED") {
+            api.clearTokens();
+            const reason = (e.rejectionReason as string) || "Contact support for details.";
+            setStatus("error");
+            setErrorMsg(`Your account application was rejected. ${reason}`);
+            return;
+          }
+          if (code === "ACCOUNT_BANNED") {
+            api.clearTokens();
+            setStatus("error");
+            setErrorMsg("Your account has been permanently banned. Please contact support.");
+            return;
+          }
+          setStatus("error");
+          setErrorMsg("We couldn't verify your account. Please try logging in directly.");
+          return;
+        }
+        if (profile.approvalStatus === "pending") {
+          api.clearTokens();
+          setStatus("error");
+          setErrorMsg("Your account is pending admin approval. You'll be notified once approved.");
+          return;
+        }
+        if (profile.approvalStatus === "rejected") {
+          api.clearTokens();
+          const reason = (profile.rejectionReason as string) || "Contact support for details.";
+          setStatus("error");
+          setErrorMsg(`Your account application was rejected. ${reason}`);
+          return;
         }
         login(accessToken, profile as never, refreshToken);
         navigate("/", { replace: true });

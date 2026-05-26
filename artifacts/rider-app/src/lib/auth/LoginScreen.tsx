@@ -27,6 +27,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [overlay, setOverlay] = useState<"pending" | "rejected" | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | undefined>();
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [pendingStatusMsg, setPendingStatusMsg] = useState<string | null>(null);
   const [enrollData, setEnrollData] = useState<{
     token: string; refreshToken: string; profile: unknown;
   } | null>(null);
@@ -95,12 +96,16 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   const handleCheckStatus = useCallback(async () => {
     setCheckingStatus(true);
+    setPendingStatusMsg(null);
     try {
       const profile = (await api.getMe()) as {
         approvalStatus?: string;
         rejectionReason?: string | null;
       };
-      if (profile.approvalStatus === "pending") return;
+      if (profile.approvalStatus === "pending") {
+        setPendingStatusMsg("Your application is still under review. Please check back later.");
+        return;
+      }
       if (profile.approvalStatus === "rejected") {
         setRejectionReason(profile.rejectionReason ?? undefined);
         setOverlay("rejected");
@@ -168,6 +173,11 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
           supportPhone={supportPhone}
           checking={checkingStatus}
         />
+        {pendingStatusMsg && (
+          <div className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-3rem)] max-w-sm -translate-x-1/2 rounded-xl bg-amber-50 px-4 py-3 text-center text-[13px] font-medium text-amber-800 shadow-lg ring-1 ring-amber-200">
+            {pendingStatusMsg}
+          </div>
+        )}
       </ThemeProvider>
     );
   }
