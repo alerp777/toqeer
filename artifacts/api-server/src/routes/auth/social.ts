@@ -1,6 +1,6 @@
 import { isAuthMethodEnabled, isAuthMethodEnabledStrict } from "@workspace/auth-utils/server";
 import { db } from "@workspace/db";
-import { trustedDevicesTable, usersTable } from "@workspace/db/schema";
+import { trustedDevicesTable, userRolesTable, usersTable } from "@workspace/db/schema";
 import { randomBytes } from "crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { Router, type IRouter, type Request } from "express";
@@ -237,6 +237,10 @@ router.post("/social/google", sharedValidateBody(SocialGoogleSchema), async (req
           approvalStatus: requireApproval ? "pending" : "approved",
         })
         .returning();
+      await db
+        .insert(userRolesTable)
+        .values({ id: generateId(), userId: id, role: "customer" })
+        .onConflictDoNothing();
       fireAndForget(
         emitWebhookEvent("user_registered", {
           userId: id,
@@ -487,6 +491,10 @@ router.post("/social/facebook", sharedValidateBody(SocialFacebookSchema), async 
           approvalStatus: requireApproval ? "pending" : "approved",
         })
         .returning();
+      await db
+        .insert(userRolesTable)
+        .values({ id: generateId(), userId: id, role: "customer" })
+        .onConflictDoNothing();
       fireAndForget(
         emitWebhookEvent("user_registered", {
           userId: id,
@@ -924,6 +932,12 @@ router.post("/firebase-verify", sharedValidateBody(FirebaseVerifySchema), async 
       });
       const [created] = await db.select().from(usersTable).where(eq(usersTable.id, newId)).limit(1);
       user = created;
+      for (const r of role.split(",").map((x: string) => x.trim()).filter(Boolean)) {
+        await db
+          .insert(userRolesTable)
+          .values({ id: generateId(), userId: newId, role: r as typeof userRolesTable.$inferInsert["role"] })
+          .onConflictDoNothing();
+      }
     } else if (!user.firebaseUid) {
       /* Link firebaseUid to existing account */
       await db

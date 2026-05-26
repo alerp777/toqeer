@@ -8,6 +8,7 @@ import {
   productStockHistoryTable,
   promoCodesTable,
   stockSubscriptionsTable,
+  userRolesTable,
   usersTable,
 } from "@workspace/db/schema";
 import {
@@ -401,6 +402,10 @@ async function ensureSystemVendor(): Promise<void> {
       isActive: true,
       walletBalance: "0",
     });
+    await db
+      .insert(userRolesTable)
+      .values({ id: generateId(), userId: SYSTEM_VENDOR_ID, role: "vendor" })
+      .onConflictDoNothing();
   }
 }
 

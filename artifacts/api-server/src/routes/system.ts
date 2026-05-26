@@ -18,6 +18,7 @@ import {
   savedAddressesTable,
   serviceZonesTable,
   systemSnapshotsTable,
+  userRolesTable,
   userSettingsTable,
   usersTable,
   vendorProfilesTable,
@@ -870,6 +871,10 @@ async function ensureProductVendors(): Promise<void> {
         isActive: true,
         walletBalance: "0",
       });
+      await db
+        .insert(userRolesTable)
+        .values({ id: generateId(), userId: vid, role: "vendor" })
+        .onConflictDoNothing();
     }
   }
 }
@@ -1786,6 +1791,12 @@ router.post("/seed-demo", async (_req, res, next: NextFunction) => {
             deletedAt: null,
           },
         });
+      for (const r of (u.roles ?? "customer").split(",").map((x: string) => x.trim()).filter(Boolean)) {
+        await db
+          .insert(userRolesTable)
+          .values({ id: generateId(), userId: u.id, role: r as typeof userRolesTable.$inferInsert["role"] })
+          .onConflictDoNothing();
+      }
     }
     counts.users = DEMO_USERS.length;
 
