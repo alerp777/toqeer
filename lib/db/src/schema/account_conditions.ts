@@ -65,7 +65,11 @@ export const accountConditionsTable = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (t) => [index("ac_u_idx").on(t.userId), index("ac_t_idx").on(t.conditionType)]
+  (t) => [
+    index("ac_u_idx").on(t.userId),
+    index("ac_t_idx").on(t.conditionType),
+    index("ac_user_active_severity_idx").on(t.userId, t.isActive, t.severity),
+  ]
 );
 
 export const conditionRulesTable = pgTable("condition_rules", {

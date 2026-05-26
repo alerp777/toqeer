@@ -4,6 +4,7 @@ import {
   notificationsTable,
   refreshTokensTable,
   riderProfilesTable,
+  userRolesTable,
   usersTable,
   vendorProfilesTable,
   walletTransactionsTable,
@@ -330,7 +331,7 @@ router.post(
         const admins = await db
           .select({ id: usersTable.id })
           .from(usersTable)
-          .where(ilike(usersTable.roles, "%admin%"));
+          .where(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'admin')`);
         const adminNotifs = admins.map((a) => ({
           id: generateId(),
           userId: a.id,

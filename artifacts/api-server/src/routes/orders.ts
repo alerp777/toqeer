@@ -8,6 +8,7 @@ import {
   productStockHistoryTable,
   productVariantsTable,
   promoCodesTable,
+  userRolesTable,
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
@@ -285,7 +286,7 @@ async function notifyOnlineRidersOfOrder(orderId: string, orderType: string): Pr
       .where(
         and(
           eq(liveLocationsTable.role, "rider"),
-          ilike(usersTable.roles, "%rider%"),
+          sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
           eq(usersTable.isOnline, true),
           gte(liveLocationsTable.updatedAt, tenMinAgo)
         )
@@ -347,7 +348,7 @@ async function notifyOnlineRidersOfOrder(orderId: string, orderType: string): Pr
         .where(
           and(
             eq(liveLocationsTable.role, "rider"),
-            ilike(usersTable.roles, "%rider%"),
+            sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
             eq(usersTable.isOnline, true),
             gte(liveLocationsTable.updatedAt, tenMinAgo)
           )

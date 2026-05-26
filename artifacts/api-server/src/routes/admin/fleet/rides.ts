@@ -18,6 +18,7 @@ import {
   reviewsTable,
   schoolRoutesTable,
   schoolSubscriptionsTable,
+  userRolesTable,
   usersTable,
   vanBookingsTable,
   vendorProfilesTable,
@@ -976,7 +977,7 @@ router.get("/leaderboard", async (_req: Request, res: Response) => {
           isNull(ordersTable.deletedAt)
         )
       )
-      .where(and(ilike(usersTable.roles, "%vendor%"), isNull(usersTable.deletedAt)))
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')`, isNull(usersTable.deletedAt)))
       .groupBy(usersTable.id, vendorProfilesTable.storeName)
       .orderBy(sql`coalesce(sum(${ordersTable.total}),0) desc`)
       .limit(5);
@@ -994,7 +995,7 @@ router.get("/leaderboard", async (_req: Request, res: Response) => {
         ridesTable,
         and(eq(ridesTable.riderId, usersTable.id), eq(ridesTable.status, "completed"))
       )
-      .where(and(ilike(usersTable.roles, "%rider%"), isNull(usersTable.deletedAt)))
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`, isNull(usersTable.deletedAt)))
       .groupBy(usersTable.id)
       .orderBy(sql`count(${ridesTable.id}) desc`)
       .limit(5);

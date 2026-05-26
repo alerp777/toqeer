@@ -4,6 +4,7 @@ import {
   ordersTable,
   rideRatingsTable,
   riderPenaltiesTable,
+  userRolesTable,
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
@@ -247,7 +248,7 @@ router.get("/vendors", requirePermission("vendors.view"), async (_req, res) => {
   const vendors = await db
     .select()
     .from(usersTable)
-    .where(or(ilike(usersTable.roles, "%vendor%"), eq(usersTable.roles, "vendor")))
+    .where(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')`)
     .orderBy(desc(usersTable.createdAt));
 
   const vendorIds = vendors.map((v) => v.id);
@@ -508,7 +509,7 @@ router.get("/riders", requirePermission("fleet.rides.view"), async (_req, res) =
   const riders = await db
     .select()
     .from(usersTable)
-    .where(or(ilike(usersTable.roles, "%rider%"), eq(usersTable.roles, "rider")))
+    .where(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`)
     .orderBy(desc(usersTable.createdAt));
 
   const riderIds = riders.map((r) => r.id);

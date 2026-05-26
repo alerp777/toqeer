@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { productsTable, reviewsTable, usersTable, vendorProfilesTable } from "@workspace/db/schema";
+import { productsTable, reviewsTable, userRolesTable, usersTable, vendorProfilesTable } from "@workspace/db/schema";
 import { and, eq, ilike, isNotNull, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import { sendError, sendNotFound, sendSuccess } from "../lib/response.js";
@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     const { category, slim } = req.query as Record<string, string | undefined>;
 
     const conditions: ReturnType<typeof eq>[] = [
-      ilike(usersTable.roles, "%vendor%") as ReturnType<typeof eq>,
+      sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')` as unknown as ReturnType<typeof eq>,
     ];
     if (category) {
       conditions.push(eq(vendorProfilesTable.storeCategory, category) as ReturnType<typeof eq>);
@@ -115,7 +115,7 @@ router.get("/:id/store", async (req, res) => {
       })
       .from(usersTable)
       .leftJoin(vendorProfilesTable, eq(usersTable.id, vendorProfilesTable.userId))
-      .where(and(eq(usersTable.id, id), ilike(usersTable.roles, "%vendor%")))
+      .where(and(eq(usersTable.id, id), sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')`))
       .limit(1);
 
     if (!vendor) {

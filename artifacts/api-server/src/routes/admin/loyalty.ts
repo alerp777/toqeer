@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import {
   loyaltyCampaignsTable,
   loyaltyRewardsTable,
+  userRolesTable,
   usersTable,
   walletTransactionsTable,
 } from "@workspace/db/schema";
@@ -59,7 +60,7 @@ router.get(
     const q = ((req.query?.q as string) ?? "").trim();
 
     const conditions: ReturnType<typeof eq>[] = [
-      ilike(usersTable.roles, "%customer%") as ReturnType<typeof eq>,
+      sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'customer')` as unknown as ReturnType<typeof eq>,
     ];
     if (q) {
       conditions.push(

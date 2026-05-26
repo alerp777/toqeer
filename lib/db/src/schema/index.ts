@@ -97,6 +97,7 @@ export * from "./terms_versions";
 export * from "./totp_recovery_codes";
 export * from "./trusted_devices";
 export * from "./user_interactions";
+export * from "./user_roles";
 export * from "./user_sessions";
 export * from "./user_settings";
 export * from "./user_totp_setup";

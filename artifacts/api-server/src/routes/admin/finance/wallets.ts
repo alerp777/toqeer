@@ -4,6 +4,7 @@ import {
   ordersTable,
   rideRatingsTable,
   riderPenaltiesTable,
+  userRolesTable,
   usersTable,
   vendorProfilesTable,
   walletTransactionsTable,
@@ -205,7 +206,7 @@ router.get("/vendors", requirePermission("vendors.view"), async (_req, res) => {
       })
       .from(usersTable)
       .leftJoin(vendorProfilesTable, eq(usersTable.id, vendorProfilesTable.userId))
-      .where(and(ilike(usersTable.roles, "%vendor%"), isNull(usersTable.deletedAt)))
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'vendor')`, isNull(usersTable.deletedAt)))
       .orderBy(desc(usersTable.createdAt));
 
     const vendorIds = vendors.map((v) => v.id);
@@ -644,7 +645,7 @@ router.get("/riders", async (_req, res) => {
     const riders = await db
       .select()
       .from(usersTable)
-      .where(and(ilike(usersTable.roles, "%rider%"), isNull(usersTable.deletedAt)))
+      .where(and(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`, isNull(usersTable.deletedAt)))
       .orderBy(desc(usersTable.createdAt));
 
     const riderIds = riders.map((r) => r.id);

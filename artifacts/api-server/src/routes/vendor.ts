@@ -10,6 +10,7 @@ import {
   productStockHistoryTable,
   promoCodesTable,
   reviewsTable,
+  userRolesTable,
   usersTable,
   vendorProfilesTable,
   vendorSchedulesTable,
@@ -683,7 +684,7 @@ router.get("/orders/available-riders", async (req, res, next) => {
       .where(
         and(
           eq(liveLocationsTable.role, "rider"),
-          ilike(usersTable.roles, "%rider%"),
+          sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
           eq(usersTable.isOnline, true),
           gte(liveLocationsTable.updatedAt, tenMinAgo)
         )
@@ -1134,7 +1135,7 @@ router.patch("/orders/:id/status", async (req, res, next) => {
             .where(
               and(
                 eq(liveLocationsTable.role, "rider"),
-                ilike(usersTable.roles, "%rider%"),
+                sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
                 eq(usersTable.isOnline, true),
                 gte(liveLocationsTable.updatedAt, tenMinAgo)
               )
@@ -2172,7 +2173,7 @@ router.get("/orders/:id/available-riders", async (req, res, next) => {
       .where(
         and(
           eq(liveLocationsTable.role, "rider"),
-          ilike(usersTable.roles, "%rider%"),
+          sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
           eq(usersTable.isOnline, true),
           gte(liveLocationsTable.updatedAt, tenMinAgo)
         )
@@ -2206,7 +2207,7 @@ router.post("/orders/:id/assign-rider", async (req, res, next) => {
     const [rider] = await db
       .select({ id: usersTable.id, name: usersTable.name })
       .from(usersTable)
-      .where(and(eq(usersTable.id, riderId), ilike(usersTable.roles, "%rider%")))
+      .where(and(eq(usersTable.id, riderId), sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`))
       .limit(1);
     if (!rider) {
       sendNotFound(res, "Rider not found");
@@ -2261,7 +2262,7 @@ router.post("/orders/:id/auto-assign", async (req, res, next) => {
       .where(
         and(
           eq(liveLocationsTable.role, "rider"),
-          ilike(usersTable.roles, "%rider%"),
+          sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')`,
           eq(usersTable.isOnline, true),
           gte(liveLocationsTable.updatedAt, tenMinAgo)
         )

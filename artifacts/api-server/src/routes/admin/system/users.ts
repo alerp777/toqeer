@@ -11,6 +11,7 @@ import {
   refreshTokensTable,
   riderProfilesTable,
   ridesTable,
+  userRolesTable,
   userSessionsTable,
   usersTable,
   vendorProfilesTable,
@@ -169,7 +170,7 @@ router.get("/users/search-riders", requirePermission("users.view"), async (req, 
   try {
     const conditions = [
       isNull(usersTable.deletedAt) as ReturnType<typeof eq>,
-      ilike(usersTable.roles, "%rider%") as ReturnType<typeof eq>,
+      sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = 'rider')` as unknown as ReturnType<typeof eq>,
       eq(usersTable.isActive, true),
       ne(usersTable.approvalStatus, "rejected"),
     ];
@@ -231,7 +232,7 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
     );
   }
   if (role) {
-    conditions.push(ilike(usersTable.roles, `%${role}%`));
+    conditions.push(sql`EXISTS (SELECT 1 FROM ${userRolesTable} WHERE ${userRolesTable.userId} = ${usersTable.id} AND ${userRolesTable.role} = ${role})`);
   }
   if (dateFrom) {
     const fromDate = new Date(dateFrom);
