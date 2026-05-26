@@ -24,6 +24,7 @@ import { authenticateAdmin, csrfProtection } from "../middleware/admin-auth.js";
 import { adminAuthLimiter } from "../middleware/rate-limit.js";
 import { writeAuthAuditLog } from "../middleware/security.js";
 import { AuditService } from "../services/admin-audit.service.js";
+import { validatePasswordStrength } from "../services/password.js";
 import {
   adminLogin,
   createAdminSession,
@@ -833,6 +834,12 @@ router.post(
         return;
       }
 
+      const pwStrength = validatePasswordStrength(body.newPassword);
+      if (!pwStrength.ok) {
+        res.status(400).json({ error: pwStrength.message });
+        return;
+      }
+
       const verified = await verifyAdminPasswordResetToken(body.token);
       if (!verified) {
         await logAdminAudit("admin_reset_password_invalid_token", {
@@ -923,6 +930,12 @@ router.post(
           return;
         }
         res.status(400).json({ error: "Invalid request" });
+        return;
+      }
+
+      const pwStrengthChange = validatePasswordStrength(body.newPassword);
+      if (!pwStrengthChange.ok) {
+        res.status(400).json({ error: pwStrengthChange.message });
         return;
       }
 

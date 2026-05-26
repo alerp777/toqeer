@@ -90,6 +90,8 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     if (p.approvalStatus === "pending") {
       capturedTokenRef.current = token;
       capturedRefreshRef.current = rToken;
+      /* Populate auth context so a reload sees the same state as a fresh login */
+      login(token, profile as AuthUser, rToken || undefined);
       setOverlay("pending");
       return;
     }
@@ -196,9 +198,15 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
     setSocialTotpLoading(true);
     setSocialTotpError(null);
     try {
+      const deviceFingerprint =
+        typeof navigator !== "undefined"
+          ? btoa(`${navigator.userAgent}${screen.width}x${screen.height}`).slice(0, 64)
+          : undefined;
       const res = (await api.twoFactorVerify({
         code: socialTotpCode,
         tempToken: pendingTwoFactor.twoFactorToken,
+        deviceFingerprint,
+        trustDevice: false,
       })) as { token?: string; refreshToken?: string; user?: unknown };
       if (!res.token) throw new Error("Verification failed — no token returned");
       setPendingTwoFactor(null);
@@ -211,6 +219,27 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
       setSocialTotpLoading(false);
     }
   };
+
+  const handleBiometricSuccess = useCallback(async (storedRefresh: string) => {
+    try {
+      if (!storedRefresh) throw new Error(tDual("biometricFailed", language));
+      api.storeTokens(api.getToken() || "", storedRefresh);
+      const status = await api.refreshToken();
+      if (status !== "refreshed") throw new Error(tDual("biometricFailed", language));
+      const newToken = api.getToken();
+      if (!newToken) throw new Error(tDual("biometricFailed", language));
+      const rToken = api.getRefreshToken() ?? storedRefresh;
+      await handleSuccess(null, newToken, rToken);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : tDual("biometricFailed", language);
+      setRoleError(msg);
+      if (roleErrorTimerRef.current) clearTimeout(roleErrorTimerRef.current);
+      roleErrorTimerRef.current = setTimeout(() => {
+        roleErrorTimerRef.current = null;
+        setRoleError(null);
+      }, 3500);
+    }
+  }, [language]);
 
   const handleEnrollAccept = async () => {
     if (!enrollData) return;
@@ -434,6 +463,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
         onSuccess={(user, token, refreshToken) => { void handleSuccess(user, token, refreshToken); }}
         onGoogle={authConfig.googleEnabled ? () => { void handleGoogle(); } : undefined}
         onFacebook={authConfig.facebookEnabled ? () => { void handleFacebook(); } : undefined}
+        onBiometricSuccess={authConfig.biometricEnabled ? (tok) => { void handleBiometricSuccess(tok); } : undefined}
         onRegisterPress={() => navigate("/register")}
       />
     </ThemeProvider>

@@ -32,8 +32,10 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   /**
-   * @deprecated Always false. The forced password-change flow has been
-   * removed; kept on the type so existing readers do not break.
+   * True when the server requires the admin to change their password before
+   * accessing the dashboard. Read from the login / 2FA response; callers
+   * should gate further navigation on this flag until a change-password
+   * call succeeds.
    */
   mustChangePassword: boolean;
   /**
@@ -394,7 +396,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error || "MFA verification failed");
+            const err = new Error(error.error || "MFA verification failed");
+            (err as Error & { status: number }).status = response.status;
+            throw err;
           }
 
           const data = await response.json();
@@ -427,7 +431,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || "Login failed");
+          const err = new Error(error.error || "Login failed");
+          (err as Error & { status: number }).status = response.status;
+          throw err;
         }
 
         const data = await response.json();

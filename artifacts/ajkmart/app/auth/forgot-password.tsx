@@ -17,7 +17,7 @@ import Colors, { spacing, radii, shadows, typography } from "@/constants/colors"
 import { useLanguage } from "@/context/LanguageContext";
 import { usePlatformConfig, isMethodEnabled } from "@/context/PlatformConfigContext";
 import { tDual, type TranslationKey } from "@workspace/i18n";
-import { API_BASE as API } from "@/utils/api";
+import { apiPost } from "@/utils/api";
 import { normalizePhone, isValidPakistaniPhone } from "@/utils/phone";
 
 import {
@@ -101,14 +101,9 @@ export default function ForgotPasswordScreen() {
       if (method === "phone") body.phone = normalizePhone(phone);
       else body.email = email.trim().toLowerCase();
 
-      const res = await fetch(`${API}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Request failed."); setLoading(false); return; }
-      if (data.otp) setDevOtp(data.otp);
+      const { ok: resOk, data } = await apiPost("/auth/forgot-password", body);
+      if (!resOk) { setError((data.error as string) || "Request failed."); setLoading(false); return; }
+      if (data.otp) setDevOtp(data.otp as string);
       setResendCooldown(60);
       setStep("otp");
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Please try again."); }
@@ -123,14 +118,9 @@ export default function ForgotPasswordScreen() {
       const body: Record<string, string> = { otp };
       if (method === "phone") body.phone = normalizePhone(phone);
       else body.email = email.trim().toLowerCase();
-      const res = await fetch(`${API}/auth/verify-reset-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Invalid verification code. Please try again.");
+      const { ok: resOk, data } = await apiPost("/auth/verify-reset-otp", body);
+      if (!resOk) {
+        setError((data.error as string) || "Invalid verification code. Please try again.");
         setLoading(false);
         return;
       }
@@ -155,19 +145,14 @@ export default function ForgotPasswordScreen() {
       else body.email = email.trim().toLowerCase();
       if (withTotp) body.totpCode = withTotp;
 
-      const res = await fetch(`${API}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const { ok: resOk, data } = await apiPost("/auth/reset-password", body);
+      if (!resOk) {
         if (data.requires2FA) {
           setLoading(false);
           setShowTotpModal(true);
           return;
         }
-        setError(data.error || "Reset failed.");
+        setError((data.error as string) || "Reset failed.");
         setLoading(false);
         return;
       }
@@ -185,14 +170,9 @@ export default function ForgotPasswordScreen() {
       if (method === "phone") body.phone = normalizePhone(phone);
       else body.email = email.trim().toLowerCase();
 
-      const res = await fetch(`${API}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setTotpError(data.error || "Invalid 2FA code. Please try again.");
+      const { ok: resOk, data } = await apiPost("/auth/reset-password", body);
+      if (!resOk) {
+        setTotpError((data.error as string) || "Invalid 2FA code. Please try again.");
         setTotpLoading(false);
         return;
       }

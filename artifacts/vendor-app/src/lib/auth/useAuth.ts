@@ -54,7 +54,7 @@ export function useAuth() {
   async function sendOtp(
     phoneOrEmail: string,
     channel?: string
-  ): Promise<AuthResult<{ otp?: string; channel?: string; fallbackChannels?: string[] }>> {
+  ): Promise<AuthResult<{ otp?: string; channel?: string; fallbackChannels?: string[]; otpRequired?: boolean; token?: string; accessToken?: string }>> {
     return wrap(async () => {
       try {
         const isPhone = !phoneOrEmail.includes("@");

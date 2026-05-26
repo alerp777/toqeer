@@ -1,5 +1,5 @@
 import { RegisterScreen, SubmittedScreen, ThemeProvider, useAuthTheme } from "@workspace/auth-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { api } from "../api";
 import { getVendorAuthConfig, usePlatformConfig } from "../useConfig";
@@ -7,7 +7,7 @@ import { useAuth } from "./useAuth";
 import { vendorTheme } from "./theme";
 import {
   DRAFT_KEY, DRAFT_TTL_KEY,
-  loadDraft, saveDraft, fileToDataUrl, getVendorSteps, vendorSteps, registerOtpResender, markOtpSent,
+  loadDraft, saveDraft, getVendorSteps, vendorSteps, registerOtpResender, markOtpSent,
 } from "./vendor-register-steps";
 
 function SignInFooter({ onNavigate }: { onNavigate: () => void }) {
@@ -38,10 +38,15 @@ export function RegisterWizard() {
   const { config } = usePlatformConfig();
   const auth = getVendorAuthConfig(config);
   const [submitted, setSubmitted] = useState(false);
+  const [otpBypassed, setOtpBypassed] = useState(false);
+  const bypassTokenRef = useRef<string | undefined>(undefined);
 
   const steps = useMemo(
-    () => getVendorSteps({ phoneEnabled: auth.phoneOtp, emailEnabled: auth.emailOtp }),
-    [auth.phoneOtp, auth.emailOtp]
+    () => getVendorSteps({
+      phoneEnabled: auth.phoneOtp && !otpBypassed,
+      emailEnabled: auth.emailOtp && !otpBypassed,
+    }),
+    [auth.phoneOtp, auth.emailOtp, otpBypassed]
   );
 
   if (submitted) {
@@ -62,15 +67,32 @@ export function RegisterWizard() {
           registerOtpResender(sendOtp);
           const result = await sendOtp(phone);
           if (result.success) {
-            markOtpSent();
+            const d = result.data as { otpRequired?: boolean; token?: string; accessToken?: string } | undefined;
+            if (d?.otpRequired === false) {
+              bypassTokenRef.current = d.token ?? d.accessToken;
+              setOtpBypassed(true);
+            } else {
+              bypassTokenRef.current = undefined;
+              setOtpBypassed(false);
+              markOtpSent();
+            }
           }
           return { success: result.success, error: result.error };
         }}
         onSubmit={async (data) => {
+          async function uploadDocIfFile(field: unknown): Promise<string | undefined> {
+            if (!(field instanceof File)) return undefined;
+            try {
+              const { url } = (await api.uploadRegistrationDoc(field)) as { url: string };
+              return url;
+            } catch {
+              return undefined;
+            }
+          }
           const [cnicFront, cnicBack, storeFront] = await Promise.all([
-            fileToDataUrl(data.cnicFrontPhoto),
-            fileToDataUrl(data.cnicBackPhoto),
-            fileToDataUrl(data.storeFrontPhoto),
+            uploadDocIfFile(data.cnicFrontPhoto),
+            uploadDocIfFile(data.cnicBackPhoto),
+            uploadDocIfFile(data.storeFrontPhoto),
           ]);
           const documents = (cnicFront || cnicBack || storeFront)
             ? JSON.stringify({ cnicFront, cnicBack, storeFront })
@@ -87,7 +109,7 @@ export function RegisterWizard() {
             bankAccount: data.bankAccount as string | undefined,
             bankAccountTitle: data.bankAccountTitle as string | undefined,
             password: data.password as string,
-            otp: data.otp as string,
+            otp: otpBypassed ? "" : data.otp as string,
             documents,
             acceptedTermsVersion: "1.0",
           });

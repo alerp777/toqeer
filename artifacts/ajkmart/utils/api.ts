@@ -16,3 +16,16 @@ export function unwrapApiResponse<T>(json: unknown): T {
   }
   return json as T;
 }
+
+export async function apiPost(
+  path: string,
+  body: Record<string, unknown>
+): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json()) as Record<string, unknown>;
+  return { ok: res.ok, status: res.status, data };
+}

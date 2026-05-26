@@ -298,9 +298,68 @@ export const vendorSteps: StepConfig[] = [
   },
 ];
 
+/* ─── PasswordOnlyStep — shown when OTP is disabled but password is required ─ */
+function PasswordOnlyStep({ data, onChange, onError }: StepComponentProps) {
+  const { t, inp, lbl } = useStyles();
+  const password = (data.password as string) ?? "";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <label style={lbl}>Password *</label>
+        <input
+          type="password"
+          autoComplete="new-password"
+          placeholder="Min 8 characters"
+          style={inp}
+          value={password}
+          onChange={(e) => { onChange("password", e.target.value); onError(""); }}
+        />
+        <PasswordStrengthBar password={password} />
+      </div>
+      <div>
+        <label style={lbl}>Confirm Password *</label>
+        <input
+          type="password"
+          autoComplete="new-password"
+          placeholder="Repeat password"
+          style={inp}
+          value={(data.confirmPassword as string) ?? ""}
+          onChange={(e) => { onChange("confirmPassword", e.target.value); onError(""); }}
+        />
+        {!!data.password && !!data.confirmPassword && data.password !== data.confirmPassword &&
+          <p style={{ color: t.error, fontSize: 11, margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Passwords do not match
+          </p>}
+      </div>
+      <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={!!data.terms}
+          onChange={(e) => onChange("terms", e.target.checked)}
+          style={{ marginTop: 2 }}
+        />
+        <span style={{ color: t.textMuted, fontSize: 13 }}>
+          I agree to the{" "}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: t.primary, textDecoration: "underline" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            Terms &amp; Conditions
+          </a>
+        </span>
+      </label>
+    </div>
+  );
+}
+
 /**
  * Build vendor registration steps dynamically based on admin auth config.
- * Drops the OTP step when both phone + email OTP are disabled.
+ * When both phone + email OTP are disabled, replaces the combined OTP+password
+ * step with a password-only step so vendors can still set a password.
  */
 export function getVendorSteps(config: {
   phoneEnabled: boolean;
@@ -308,7 +367,19 @@ export function getVendorSteps(config: {
 }): StepConfig[] {
   const steps = [...vendorSteps];
   if (!config.phoneEnabled && !config.emailEnabled) {
-    return steps.filter((s) => s.id !== "otp-password");
+    return [
+      ...steps.filter((s) => s.id !== "otp-password"),
+      {
+        id: "password",
+        title: "Set Password",
+        subtitle: "Create a password to protect your account",
+        component: PasswordOnlyStep,
+        validate: (d) =>
+          !d.password ? "Password is required" :
+          d.password !== d.confirmPassword ? "Passwords do not match" :
+          !d.terms ? "Please accept the Terms & Conditions" : null,
+      },
+    ];
   }
   return steps;
 }

@@ -404,7 +404,9 @@ export const api = {
       method: "POST",
       headers: { "X-App": "vendor" },
       body: JSON.stringify({ refreshToken }),
-    }).finally(clearTokens),
+    }).finally(() => {
+      if (_memAccessToken || _memRefreshToken) clearTokens();
+    }),
   refreshToken: () => _resiClient.refresh(),
   checkAvailable: (
     data: { phone?: string; email?: string; username?: string },

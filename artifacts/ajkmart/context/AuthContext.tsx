@@ -18,6 +18,7 @@ import {
 import { useLanguage } from "./LanguageContext";
 import { io, type Socket } from "socket.io-client";
 import { API_BASE, SOCKET_BASE } from "@/utils/api";
+import { bootstrapSdkAuth, syncAccessToken, syncRefreshToken, clearSdkTokens } from "@/lib/sdkAuthClient";
 
 export type UserRole = "customer" | "rider" | "vendor";
 
@@ -165,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const expiresAt = exp * 1000;
     const refreshIn = Math.max((expiresAt - Date.now()) - 60_000, 10_000);
     refreshTimerRef.current = setTimeout(async () => {
+      refreshTimerRef.current = null;
       try {
         const refreshToken = await secureGet(REFRESH_TOKEN_KEY);
         if (!refreshToken) {
@@ -204,6 +206,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setRefreshTokenGetter(() => data.refreshToken!);
         }
         setAuthTokenGetter(() => data.token!);
+        syncAccessToken(data.token!);
+        if (data.refreshToken) syncRefreshToken(data.refreshToken);
         scheduleProactiveRefresh(data.token!);
       } catch {
         await doLogoutRef.current();
@@ -230,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearCustomerLocation(u.id, tok).catch(() => {});
     }
     clearRefreshTimer();
+    clearSdkTokens();
     await AsyncStorage.multiRemove([USER_KEY]);
     await secureDelete(TOKEN_KEY);
     await secureDelete(REFRESH_TOKEN_KEY);
@@ -284,6 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadAuth = async () => {
       try {
+        await bootstrapSdkAuth();
         await migrateTokensToSecureStore();
         const [[, storedUser], [, bioPref]] = await AsyncStorage.multiGet([
           USER_KEY,
@@ -355,13 +361,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (userData: AppUser, userToken: string, refreshToken?: string) => {
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
     await secureSet(TOKEN_KEY, userToken);
-    if (refreshToken) await secureSet(REFRESH_TOKEN_KEY, refreshToken);
+    if (refreshToken) {
+      await secureSet(REFRESH_TOKEN_KEY, refreshToken);
+      const bioPref = await AsyncStorage.getItem(BIOMETRIC_KEY).catch(() => null);
+      if (bioPref === "true") {
+        await secureSet(BIOMETRIC_TOKEN, refreshToken).catch(() => {});
+      }
+    }
     setUser(userData);
     setToken(userToken);
     setTwoFactorPending(null);
     setSessionExpired(false);
     setAuthToken(userToken);
     registerAuth(userToken, refreshToken ?? null);
+    syncAccessToken(userToken);
+    if (refreshToken) syncRefreshToken(refreshToken);
     syncToServer(userToken).catch(() => {});
     /* Capture customer location on login (foreground only) */
     if (userData.role === "customer") {

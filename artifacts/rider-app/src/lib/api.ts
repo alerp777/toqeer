@@ -696,7 +696,7 @@ export const api = {
   }) =>
     apiFetch("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ ...data, role: "rider", vehicleRegNo: data.vehicleRegistration }),
+      body: JSON.stringify({ ...data, role: "rider", vehicleRegNo: data.vehicleRegistration ?? data.vehiclePlate }),
     }),
   emailRegisterRider: (data: {
     name: string;
@@ -718,7 +718,7 @@ export const api = {
   }) =>
     apiFetch("/auth/email-register", {
       method: "POST",
-      body: JSON.stringify({ ...data, role: "rider", vehicleRegNo: data.vehicleRegistration }),
+      body: JSON.stringify({ ...data, role: "rider", vehicleRegNo: data.vehicleRegistration ?? data.vehiclePlate }),
     }),
   verifyTotpCode: (code: string, phone: string, captchaToken?: string) =>
     apiFetch("/auth/verify-otp", {
