@@ -424,6 +424,16 @@ export default function Home() {
     return () => window.removeEventListener("ajkmart:logout", handleLogout);
   }, []);
 
+  /* Show a warning toast when the offline queue falls back to in-memory storage
+     (IndexedDB unavailable). The action is queued but will not survive a reload. */
+  useEffect(() => {
+    const handlePersistFail = () => {
+      showToast("Action queued offline — reopen the app to ensure it is saved.", "error");
+    };
+    window.addEventListener("ajkm:queue-persistence-failed", handlePersistFail);
+    return () => window.removeEventListener("ajkm:queue-persistence-failed", handlePersistFail);
+  }, [showToast]);
+
   const [gpsWarning, setGpsWarning] = useState<string | null>(null);
   const gpsWarningRef = useRef<string | null>(null);
 
@@ -534,11 +544,13 @@ export default function Home() {
         const now = Date.now();
         const { latitude, longitude, accuracy, speed, heading } = pos.coords;
 
-        /* Heuristic mock-GPS check: real devices rarely have accuracy=0 AND
-           speed=0 AND no heading simultaneously. A single zero is not enough
-           to trigger because some chipsets legitimately return accuracy=0 on a
-           perfect fix. Server-side spoof detection is the authoritative gate. */
-        const isMockGps = accuracy === 0 && speed === 0 && heading == null;
+        /* Heuristic mock-GPS check: accuracy below the configurable threshold
+           combined with zero speed and no heading is a strong mock-location
+           signal. Threshold comes from platform config (default: 5 m) so ops
+           can tune it without a code deploy. Server-side spoof detection is
+           the authoritative gate. */
+        const _gpsThreshold = config?.security?.minGpsAccuracy ?? 5;
+        const isMockGps = accuracy < _gpsThreshold && speed === 0 && heading == null;
         if (isMockGps) {
           setGpsWarningWithRef(
             "Suspicious GPS accuracy detected. Please disable mock location apps."

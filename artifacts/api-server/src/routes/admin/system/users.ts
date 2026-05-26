@@ -2413,12 +2413,21 @@ router.post("/users/:userId/recovery", requirePermission("users.edit"), async (r
     });
 
     /* Build recovery URL pointing to public reset endpoint */
-    const baseUrl =
+    const replitDomain = process.env["REPLIT_DEV_DOMAIN"];
+    const resolvedBase =
       process.env["APP_BASE_URL"] ??
-      (process.env["REPLIT_DEV_DOMAIN"]
-        ? `https://${process.env["REPLIT_DEV_DOMAIN"]}`
-        : "http://localhost:3000");
-    const recoveryUrl = `${baseUrl}/recover?token=${encodeURIComponent(rawToken)}`;
+      (replitDomain ? `https://${replitDomain}` : null);
+    if (!resolvedBase) {
+      if (process.env["NODE_ENV"] === "production") {
+        logger.error(
+          "[admin/users] APP_BASE_URL must be set in production — skipping recovery email (would produce a localhost URL)"
+        );
+        res.json({ success: true, warning: "Recovery email skipped: APP_BASE_URL is not configured" });
+        return;
+      }
+      logger.warn("[admin/users] APP_BASE_URL unset — recovery URL will reference localhost (dev only)");
+    }
+    const recoveryUrl = `${resolvedBase ?? "http://localhost:8080"}/recover?token=${encodeURIComponent(rawToken)}`;
 
     /* Send email (fire-and-forget for response speed) */
     const { sendRecoveryEmail } = await import("../../../services/email.js");

@@ -219,12 +219,23 @@ export async function sendMagicLinkEmail(
 ): Promise<EmailResult> {
   const appName = settings["app_name"] ?? "AJKMart";
 
+  const replitDomain = process.env["REPLIT_DEV_DOMAIN"];
   const baseUrl =
     process.env["APP_BASE_URL"] ??
-    (process.env["REPLIT_DEV_DOMAIN"]
-      ? `https://${process.env["REPLIT_DEV_DOMAIN"]}`
-      : "http://localhost:3000");
-  const magicUrl = `${baseUrl}/auth/magic-link?token=${encodeURIComponent(token)}`;
+    (replitDomain ? `https://${replitDomain}` : null);
+  if (!baseUrl) {
+    if (process.env["NODE_ENV"] === "production") {
+      logger.error(
+        "[email] APP_BASE_URL must be set in production — magic link not sent (would produce a localhost URL)"
+      );
+      return { sent: false, error: "APP_BASE_URL is not configured" };
+    }
+    logger.warn(
+      "[email] APP_BASE_URL and REPLIT_DEV_DOMAIN are both unset — using localhost:8080 (dev only)"
+    );
+  }
+  const resolvedBase = baseUrl ?? "http://localhost:8080";
+  const magicUrl = `${resolvedBase}/auth/magic-link?token=${encodeURIComponent(token)}`;
 
   const lang = resolveLanguage(language);
   const dir = lang === "ur" ? "rtl" : "ltr";

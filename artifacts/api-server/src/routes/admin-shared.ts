@@ -759,6 +759,11 @@ export function formatSvc(svc: unknown): unknown {
 }
 
 /* ── MIGRATION STUBS ────────────────────────────────────────────────────── */
+/* All schema changes represented by these stubs are now applied via the
+   Drizzle schema in lib/db/src/schema. The stub functions are kept as
+   no-ops for backward compatibility with call sites in admin/launch.ts
+   and other routers that may still invoke them at startup. Removing a
+   call site is the correct long-term fix; until then these are harmless. */
 
 export async function ensureAuthMethodColumn(): Promise<void> {}
 export async function ensureRideBidsMigration(): Promise<void> {}
@@ -792,8 +797,33 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
 
 /* ── SOS ────────────────────────────────────────────────────────────────── */
 
-export function serializeSosAlert(alert: unknown): unknown {
-  return alert;
+export interface SosAlertDTO {
+  id: string;
+  type: string;
+  userId: string;
+  riderId: string | null;
+  location: { lat: number; lng: number } | null;
+  createdAt: string;
+}
+
+export function serializeSosAlert(alert: unknown): SosAlertDTO | null {
+  if (!alert || typeof alert !== "object") return null;
+  const a = alert as Record<string, unknown>;
+  const lat = typeof a["lat"] === "number" ? a["lat"] : typeof a["latitude"] === "number" ? a["latitude"] : null;
+  const lng = typeof a["lng"] === "number" ? a["lng"] : typeof a["longitude"] === "number" ? a["longitude"] : null;
+  return {
+    id: typeof a["id"] === "string" ? a["id"] : String(a["id"] ?? ""),
+    type: typeof a["type"] === "string" ? a["type"] : "sos",
+    userId: typeof a["userId"] === "string" ? a["userId"] : String(a["userId"] ?? ""),
+    riderId: typeof a["riderId"] === "string" ? a["riderId"] : null,
+    location: lat !== null && lng !== null ? { lat: lat as number, lng: lng as number } : null,
+    createdAt:
+      a["createdAt"] instanceof Date
+        ? (a["createdAt"] as Date).toISOString()
+        : typeof a["createdAt"] === "string"
+          ? a["createdAt"]
+          : new Date().toISOString(),
+  };
 }
 
 /* ── AUDIT LOG PROXY ─────────────────────────────────────────────────────── */

@@ -17,6 +17,12 @@ export interface QueuedAction {
   createdAt: number;
 }
 
+/* In-memory fallback array used when IndexedDB is unavailable (e.g. private
+   browsing on some browsers, or during IDB initialisation failures). The queue
+   is ephemeral — it survives page-level state but not a hard reload. Callers
+   receive the same action ID so retry logic is consistent. */
+const _memQueue: QueuedAction[] = [];
+
 const DB_NAME = "ajkmart_action_queue";
 const STORE = "actions";
 /* DB version 2 adds the dead_letter object store.
@@ -94,8 +100,27 @@ export async function enqueueAction(
     });
     notifyListeners();
   } catch (err) {
-    console.warn("[artifacts/rider-app/src/lib/offline/queueManager.ts]", err);
-  } // eslint-disable-line no-console
+    /* IndexedDB unavailable (private browsing, quota exceeded, etc.) — fall back
+       to the in-memory queue so the action is not silently dropped. The queue is
+       ephemeral but still retried by the background flush loop via getAll(). */
+    console.warn(
+      "[queueManager] IndexedDB write failed — using in-memory fallback. Action will not survive a reload.",
+      err
+    ); // eslint-disable-line no-console
+    _memQueue.push(action);
+    /* Dispatch a browser event so UI components can surface a warning toast
+       without coupling this non-React module to any component tree. */
+    try {
+      window.dispatchEvent(
+        new CustomEvent("ajkm:queue-persistence-failed", {
+          detail: { actionType: action.type, actionId: action.id },
+        })
+      );
+    } catch {
+      /* window may be unavailable in SSR/test contexts — ignore */
+    }
+    notifyListeners();
+  }
   return action.id;
 }
 
@@ -110,14 +135,22 @@ async function getAll(): Promise<QueuedAction[]> {
     });
     /* Sort strictly FIFO by creation time so status transitions replay in the
        correct order (e.g. accepted → in_transit → completed, never reversed). */
-    return all.sort((a, b) => a.createdAt - b.createdAt);
+    /* Merge in any actions that fell back to in-memory storage */
+    const merged = [...all, ..._memQueue.filter((m) => !all.some((a) => a.id === m.id))];
+    return merged.sort((a, b) => a.createdAt - b.createdAt);
   } catch (err) {
-    console.warn("[artifacts/rider-app/src/lib/offline/queueManager.ts]", err);
-    return [];
-  } // eslint-disable-line no-console
+    console.warn("[queueManager] IndexedDB read failed — returning in-memory queue only", err); // eslint-disable-line no-console
+    return [..._memQueue].sort((a, b) => a.createdAt - b.createdAt);
+  }
 }
 
 async function removeAction(id: string): Promise<void> {
+  /* Always purge from in-memory fallback first — even if IndexedDB succeeds,
+     the action may have been written to _memQueue on a previous write failure
+     and would otherwise be replayed indefinitely. */
+  const memIdx = _memQueue.findIndex((a) => a.id === id);
+  if (memIdx !== -1) _memQueue.splice(memIdx, 1);
+
   try {
     const db = await openDB();
     await new Promise<void>((resolve, reject) => {
@@ -127,11 +160,18 @@ async function removeAction(id: string): Promise<void> {
       tx.onerror = () => reject(tx.error);
     });
   } catch (err) {
-    console.warn("[artifacts/rider-app/src/lib/offline/queueManager.ts]", err);
-  } // eslint-disable-line no-console
+    console.warn("[queueManager] removeAction IndexedDB delete failed:", err); // eslint-disable-line no-console
+  }
 }
 
 async function bumpRetryCount(action: QueuedAction): Promise<void> {
+  /* Update retry count in both storage layers so the counter stays consistent
+     regardless of which layer holds the authoritative copy. */
+  const memIdx = _memQueue.findIndex((a) => a.id === action.id);
+  if (memIdx !== -1) {
+    _memQueue[memIdx] = { ..._memQueue[memIdx]!, retryCount: action.retryCount + 1 };
+  }
+
   try {
     const db = await openDB();
     const updated: QueuedAction = { ...action, retryCount: action.retryCount + 1 };
@@ -142,8 +182,8 @@ async function bumpRetryCount(action: QueuedAction): Promise<void> {
       tx.onerror = () => reject(tx.error);
     });
   } catch (err) {
-    console.warn("[artifacts/rider-app/src/lib/offline/queueManager.ts]", err);
-  } // eslint-disable-line no-console
+    console.warn("[queueManager] bumpRetryCount IndexedDB write failed:", err); // eslint-disable-line no-console
+  }
 }
 
 /* ── PermanentQueueError ───────────────────────────────────────────────────────

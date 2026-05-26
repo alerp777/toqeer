@@ -2599,4 +2599,121 @@ router.post(
   }
 );
 
+/* ── PATCH /wallet/freeze-p2p/:uid — toggle P2P freeze for a user ────────── */
+router.patch(
+  "/wallet/freeze-p2p/:uid",
+  requirePermission("finance.wallet.adjust"),
+  async (req, res) => {
+    try {
+      const uid = req.params["uid"] as string;
+      if (!uid) {
+        sendValidationError(res, "User ID is required");
+        return;
+      }
+
+      const [user] = await db
+        .select({ id: usersTable.id, blockedServices: usersTable.blockedServices })
+        .from(usersTable)
+        .where(eq(usersTable.id, uid))
+        .limit(1);
+
+      if (!user) {
+        sendNotFound(res, "User not found");
+        return;
+      }
+
+      const services = (user.blockedServices || "")
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+
+      const alreadyFrozen = services.includes("wallet_p2p");
+      let updatedServices: string[];
+      if (alreadyFrozen) {
+        updatedServices = services.filter((s: string) => s !== "wallet_p2p");
+      } else {
+        updatedServices = [...services, "wallet_p2p"];
+      }
+
+      await db
+        .update(usersTable)
+        .set({ blockedServices: updatedServices.join(","), updatedAt: new Date() })
+        .where(eq(usersTable.id, uid));
+
+      const adminReq = req as AdminRequest;
+      void addAuditEntry({
+        action: alreadyFrozen ? "wallet_p2p_unfreeze" : "wallet_p2p_freeze",
+        adminId: adminReq.adminId,
+        ip: getClientIp(req),
+        details: `p2pFrozen=${String(!alreadyFrozen)} uid=${uid}`,
+        result: "success",
+        affectedUserId: uid,
+      });
+
+      sendSuccess(res, { p2pFrozen: !alreadyFrozen, userId: uid });
+    } catch (err) {
+      logger.error(
+        { error: err instanceof Error ? err.message : String(err) },
+        "[wallets] freeze-p2p error"
+      );
+      res.status(500).json({ success: false, error: "Internal server error" });
+    }
+  }
+);
+
+/* ── POST /wallet/transfers/:id/approve — approve a pending P2P transfer ─── */
+router.post(
+  "/wallet/transfers/:id/approve",
+  requirePermission("finance.wallet.adjust"),
+  async (req, res) => {
+    try {
+      const txId = req.params["id"] as string;
+      if (!txId) {
+        sendValidationError(res, "Transfer ID is required");
+        return;
+      }
+
+      const [txn] = await db
+        .select()
+        .from(walletTransactionsTable)
+        .where(eq(walletTransactionsTable.id, txId))
+        .limit(1);
+
+      if (!txn) {
+        sendNotFound(res, "Transfer not found");
+        return;
+      }
+
+      if (txn.reference && txn.reference !== "pending") {
+        sendError(res, `Transfer is already processed (status: ${txn.reference})`, 409);
+        return;
+      }
+
+      const refNo = `P2P-APPROVED-${Date.now()}`;
+      await db
+        .update(walletTransactionsTable)
+        .set({ reference: refNo })
+        .where(eq(walletTransactionsTable.id, txId));
+
+      const adminReq = req as AdminRequest;
+      void addAuditEntry({
+        action: "wallet_transfer_approve",
+        adminId: adminReq.adminId,
+        ip: getClientIp(req),
+        details: `txId=${txId} ref=${refNo}`,
+        result: "success",
+        affectedUserId: txn.userId,
+      });
+
+      sendSuccess(res, { approved: true, reference: refNo, id: txId });
+    } catch (err) {
+      logger.error(
+        { error: err instanceof Error ? err.message : String(err) },
+        "[wallets] transfer-approve error"
+      );
+      res.status(500).json({ success: false, error: "Internal server error" });
+    }
+  }
+);
+
 export default router;

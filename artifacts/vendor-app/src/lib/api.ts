@@ -1,9 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import {
-  CircuitOpenError,
-  createCircuitBreaker,
-  createResilientFetcher,
-} from "@workspace/api-client-react";
+import { createResilientFetcher } from "@workspace/api-client-react";
 import { createAuthClient } from "@workspace/auth-react";
 import { getVendorApiBase } from "./envValidation";
 import { compressImage } from "./imageUtils";
@@ -159,98 +155,40 @@ function readCsrfFromCookie(): string {
 
 /* ── authPost ─────────────────────────────────────────────────────────────────
    Routes authentication API calls (login, register, OTP, social login) through
-   a direct fetch() rather than authClient, because:
-     1. Auth endpoints never return 401 — they ARE the auth endpoints, so they
-        don't need 401→refresh handling.
-     2. This makes _vendorFetcher the sole owner of token refresh, eliminating
-        the race condition between authClient and _vendorFetcher both attempting
-        a concurrent /auth/refresh call when a session expires.
-   CSRF header is included so the server's csrf middleware accepts the request. */
+   _resiClient rather than a separate fetch() + manual circuit breaker, so all
+   outbound calls share one circuit-breaker and timeout surface.
+   Auth endpoints never return 401 so the 401→refresh retry path in _resiClient
+   is benign (it fires only on 401, which these endpoints never emit). */
 async function authPost(path: string, body?: unknown): Promise<unknown> {
-  /* Circuit breaker guard */
-  try {
-    _circuitBreaker.check(path);
-  } catch (err) {
-    if (err instanceof CircuitOpenError) {
-      const coe = err as CircuitOpenError;
-      const retryS = Math.ceil(coe.retryAfterMs / 1000);
-      throw Object.assign(
-        new Error(`Service temporarily unavailable. Please try again in ${retryS}s.`),
-        { status: 503, transient: true, circuitOpen: true }
-      );
-    }
-    throw err;
-  }
   const csrfToken = readCsrfFromCookie();
-  const accessToken = _tokenStorage.getAccessToken();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), _apiTimeoutMs);
-  let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, {
+    return await _resiClient.fetch(path, {
       method: "POST",
-      credentials: "include",
-      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    _circuitBreaker.onSuccess(path);
   } catch (err: unknown) {
-    _circuitBreaker.onFailure(path);
-    if (err instanceof DOMException && err.name === "AbortError") {
-      throw Object.assign(new Error("Request timed out — check your connection and try again"), {
-        status: 0,
-        transient: true,
-        timedOut: true,
-      });
+    /* Re-map structured server error shapes for vendor-specific flows */
+    const e = err as { status?: number; responseData?: Record<string, unknown> };
+    if (e.responseData) {
+      const d = e.responseData;
+      if (d["pendingApproval"])
+        throw Object.assign(new Error((d["error"] as string) || "Pending approval"), {
+          status: e.status,
+          pendingApproval: true,
+        });
+      if (d["rejected"])
+        throw Object.assign(new Error((d["error"] as string) || "Application rejected"), {
+          status: e.status,
+          rejected: true,
+          approvalNote: d["approvalNote"],
+        });
     }
-    throw Object.assign(new Error("Network error — please check your connection"), {
-      status: 0,
-      transient: true,
-    });
-  } finally {
-    clearTimeout(timeoutId);
+    throw err;
   }
-
-  /* Parse the JSON response body regardless of status */
-  let parsed: {
-    data?: unknown;
-    error?: string;
-    message?: string;
-    pendingApproval?: boolean;
-    rejected?: boolean;
-    approvalNote?: string;
-  } = {};
-  try {
-    parsed = (await res.json()) as typeof parsed;
-  } catch (e) {
-    log.debug("[api] non-JSON response body:", e);
-  }
-
-  if (!res.ok) {
-    const status = res.status;
-    if (parsed.pendingApproval)
-      throw Object.assign(new Error(parsed.error || "Pending approval"), {
-        status,
-        pendingApproval: true,
-      });
-    if (parsed.rejected)
-      throw Object.assign(new Error(parsed.error || "Application rejected"), {
-        status,
-        rejected: true,
-        approvalNote: parsed.approvalNote,
-      });
-    throw Object.assign(new Error(parsed.error || parsed.message || `Request failed (${status})`), {
-      status,
-    });
-  }
-
-  /* Unwrap server envelope { data: T } → T, or return the raw parsed body */
-  return parsed != null && typeof parsed === "object" && "data" in parsed ? parsed.data : parsed;
 }
 
 function clearTokens() {
@@ -294,11 +232,6 @@ export function setApiTimeoutMs(ms: number): void {
   if (Number.isFinite(ms) && ms > 0) _apiTimeoutMs = Math.min(ms, 300_000);
 }
 
-/* ── Per-endpoint circuit breaker for authPost ───────────────────────────────
-   authPost uses a dedicated circuit breaker because it is a separate code path
-   from the main _resiClient (which has its own internal circuit breaker).     */
-const CB_DEFAULT_RETRIES = 3;
-const _circuitBreaker = createCircuitBreaker({ failureThreshold: 3, cooldownMs: 30_000 });
 
 /* ── Resilient API fetcher (createResilientFetcher from @workspace/api-client-react) ──
    Replaces the previous createApiFetcher + manual circuit-breaker combination.
@@ -322,7 +255,7 @@ const _resiClient = createResilientFetcher({
   extraRefreshHeaders: () => ({ "X-App": "vendor" }),
   timeoutMs: () => _apiTimeoutMs,
   credentialsMode: "include",
-  maxRetries: CB_DEFAULT_RETRIES,
+  maxRetries: 3,
   failureThreshold: 3,
   cooldownMs: 30_000,
 });

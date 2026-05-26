@@ -167,6 +167,7 @@ export interface PlatformConfig {
     sessionDays: number;
     riderTokenDays: number;
     maxSpeedKmh?: number;
+    minGpsAccuracy?: number;
   };
   uploads?: {
     maxImageMb?: number;

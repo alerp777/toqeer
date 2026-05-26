@@ -37,8 +37,14 @@ export interface DemoSnapshot {
   source?: string;
 }
 
+const _snapshotCache = new Map<string, DemoSnapshot>();
+
 export async function getDemoSnapshot(): Promise<DemoSnapshot> {
-  return { vendors: [], orders: [], riders: [], products: [] };
+  const cached = _snapshotCache.get("snapshot");
+  if (cached) return cached;
+  const snap: DemoSnapshot = { vendors: [], orders: [], riders: [], products: [] };
+  _snapshotCache.set("snapshot", snap);
+  return snap;
 }
 
 export async function setDemoMode(enabled: boolean) {
@@ -68,4 +74,6 @@ export async function setDemoMode(enabled: boolean) {
     return { success: false, error: String(err) };
   }
 }
-export function invalidateDemoSnapshotCache() {}
+export function invalidateDemoSnapshotCache(): void {
+  _snapshotCache.clear();
+}

@@ -289,6 +289,7 @@ router.get("/", async (req, res) => {
       gpsTracking: (s["security_gps_tracking"] ?? "on") === "on",
       gpsInterval: parseInt(s["security_gps_interval"] ?? "10"),
       gpsAccuracy: parseInt(s["security_gps_accuracy"] ?? "50"),
+      minGpsAccuracy: parseInt(s["min_gps_accuracy_m"] ?? "5"),
       geoFence: (s["security_geo_fence"] ?? "off") === "on",
       spoofDetection: (s["security_spoof_detection"] ?? "on") === "on",
       maxSpeedKmh: parseInt(s["security_max_speed_kmh"] ?? "150"),
