@@ -17,7 +17,7 @@ const router: IRouter = Router();
 
 const notifReadLimiter = rateLimit({
   windowMs: 60_000,
-  max: 30,
+  max: 100,
   keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
   standardHeaders: true,
   legacyHeaders: false,

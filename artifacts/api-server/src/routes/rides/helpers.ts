@@ -65,8 +65,8 @@ export const bargainLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: async () => {
     const s = await getCachedSettings();
-    const n = parseInt(s["rate_bargain_per_min"] ?? "5", 10);
-    return Number.isFinite(n) && n > 0 ? n : 5;
+    const n = parseInt(s["rate_bargain_per_min"] ?? "20", 10);
+    return Number.isFinite(n) && n > 0 ? n : 20;
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -78,8 +78,8 @@ export const bookRideLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: async () => {
     const s = await getCachedSettings();
-    const n = parseInt(s["rate_booking_per_min"] ?? "5", 10);
-    return Number.isFinite(n) && n > 0 ? n : 5;
+    const n = parseInt(s["rate_booking_per_min"] ?? "20", 10);
+    return Number.isFinite(n) && n > 0 ? n : 20;
   },
   keyGenerator: (req) => req.customerId ?? "anonymous",
   standardHeaders: true,
@@ -92,8 +92,8 @@ export const cancelRideLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: async () => {
     const s = await getCachedSettings();
-    const n = parseInt(s["rate_cancel_per_min"] ?? "3", 10);
-    return Number.isFinite(n) && n > 0 ? n : 3;
+    const n = parseInt(s["rate_cancel_per_min"] ?? "10", 10);
+    return Number.isFinite(n) && n > 0 ? n : 10;
   },
   keyGenerator: (req) => req.customerId ?? "anonymous",
   standardHeaders: true,
@@ -106,8 +106,8 @@ export const estimateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: async () => {
     const s = await getCachedSettings();
-    const n = parseInt(s["rate_estimate_per_min"] ?? "30", 10);
-    return Number.isFinite(n) && n > 0 ? n : 30;
+    const n = parseInt(s["rate_estimate_per_min"] ?? "100", 10);
+    return Number.isFinite(n) && n > 0 ? n : 100;
   },
   standardHeaders: true,
   legacyHeaders: false,

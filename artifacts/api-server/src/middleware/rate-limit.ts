@@ -339,65 +339,65 @@ const WINDOW_1_MIN = 60 * 1000;
 
 /* ── Broad traffic limiters ──────────────────────────────────────────────── */
 
-/** 500 req / 15 min (5000 in non-production) — blanket guard for all /api traffic. */
+/** 1500 req / 15 min (5000 in non-production) — blanket guard for all /api traffic. */
 export const globalLimiter = createRateLimiter({
   prefix: "global",
-  max: process.env.NODE_ENV !== "production" ? 5000 : 500,
+  max: process.env.NODE_ENV !== "production" ? 5000 : 1500,
   windowMs: WINDOW_15_MIN,
 });
 
-/** 20 req / 15 min — legacy guard for OTP/login/social-auth routes (use specific limiters where possible). */
-export const authLimiter = createRateLimiter({ prefix: "auth", max: 20, windowMs: WINDOW_15_MIN });
+/** 100 req / 15 min — legacy guard for OTP/login/social-auth routes (use specific limiters where possible). */
+export const authLimiter = createRateLimiter({ prefix: "auth", max: 100, windowMs: WINDOW_15_MIN });
 
-/** 10 req / 15 min — admin login and password-reset. */
+/** 30 req / 15 min — admin login and password-reset. */
 export const adminAuthLimiter = createRateLimiter({
   prefix: "admin-auth",
-  max: process.env.NODE_ENV !== "production" ? 200 : 10,
+  max: process.env.NODE_ENV !== "production" ? 200 : 30,
   windowMs: WINDOW_15_MIN,
   tier: "strict",
 });
 
-/** 30 req / 15 min — wallet and payment routes. */
+/** 120 req / 15 min — wallet and payment routes. */
 export const paymentLimiter = createRateLimiter({
   prefix: "payment",
-  max: 30,
+  max: 120,
   windowMs: WINDOW_15_MIN,
 });
 
 /**
- * publicLimiter — 60 req / 15 min for public, scraping-prone endpoints.
+ * publicLimiter — 200 req / 15 min for public, scraping-prone endpoints.
  * Applied to banners, categories, products, promotions/public,
  * recommendations, public-vendors, and deep-links endpoints.
  */
 export const publicLimiter = createRateLimiter({
   prefix: "public",
-  max: 60,
+  max: 200,
   windowMs: WINDOW_15_MIN,
 });
 
-/* ── Auth-specific tight limiters ────────────────────────────────────────── */
+/* ── Auth-specific limiters (relaxed for real-world usage) ──────────────── */
 
 /**
- * loginLimiter — 5 login attempts / 60 s / IP.
+ * loginLimiter — 20 login attempts / 60 s / IP.
  * Apply to POST /api/auth/login and similar credential-checking endpoints.
  */
 export const loginLimiter = createRateLimiter({
   prefix: "login",
-  max: 5,
+  max: 20,
   windowMs: WINDOW_1_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => ipKey(req),
 });
 
 /**
- * otpLimiter — 3 OTP send/verify attempts / 60 s / phone (fallback to IP).
+ * otpLimiter — 15 OTP send/verify attempts / 60 s / phone (fallback to IP).
  * Apply to POST /api/auth/send-otp and POST /api/auth/verify-otp.
  */
 export const otpLimiter = createRateLimiter({
   prefix: "otp",
-  max: 3,
+  max: 15,
   windowMs: WINDOW_1_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => {
     const phone = req.body?.phone ?? req.body?.identifier;
     if (phone && typeof phone === "string" && phone.length > 0) {
@@ -408,14 +408,14 @@ export const otpLimiter = createRateLimiter({
 });
 
 /**
- * emailOtpLimiter — 5 email OTP send/verify attempts / 60 s / email (fallback to IP).
+ * emailOtpLimiter — 20 email OTP send/verify attempts / 60 s / email (fallback to IP).
  * Apply to POST /api/auth/send-email-otp and POST /api/auth/verify-email-otp.
  */
 export const emailOtpLimiter = createRateLimiter({
   prefix: "email-otp",
-  max: 5,
+  max: 20,
   windowMs: WINDOW_1_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => {
     const email = req.body?.email ?? req.body?.identifier;
     if (email && typeof email === "string" && (email as string).includes("@")) {
@@ -426,14 +426,14 @@ export const emailOtpLimiter = createRateLimiter({
 });
 
 /**
- * magicLinkLimiter — 3 magic link requests / 15 min / email (fallback to IP).
+ * magicLinkLimiter — 10 magic link requests / 15 min / email (fallback to IP).
  * Apply to POST /api/auth/magic-link/send to prevent spam.
  */
 export const magicLinkLimiter = createRateLimiter({
   prefix: "magic-link",
-  max: 3,
+  max: 10,
   windowMs: WINDOW_15_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => {
     const email = req.body?.email;
     if (email && typeof email === "string" && (email as string).includes("@")) {
@@ -444,85 +444,85 @@ export const magicLinkLimiter = createRateLimiter({
 });
 
 /**
- * registrationLimiter — 10 registration attempts / 60 min / IP.
+ * registrationLimiter — 30 registration attempts / 60 min / IP.
  * Apply to POST /api/auth/register, /api/auth/email-register, /api/auth/vendor-register.
  */
 export const registrationLimiter = createRateLimiter({
   prefix: "registration",
-  max: 10,
+  max: 30,
   windowMs: WINDOW_60_MIN,
   tier: "standard",
   keyGenerator: (req) => ipKey(req),
 });
 
 /**
- * refreshTokenLimiter — 30 token refresh requests / 15 min / userId (fallback to IP).
+ * refreshTokenLimiter — 100 token refresh requests / 15 min / userId (fallback to IP).
  * Apply to POST /api/auth/refresh to prevent token-cycling abuse.
  */
 export const refreshTokenLimiter = createRateLimiter({
   prefix: "refresh-token",
-  max: 30,
+  max: 100,
   windowMs: WINDOW_15_MIN,
   tier: "lenient",
   keyGenerator: (req) => userOrIpKey(req),
 });
 
 /**
- * passwordResetLimiter — 5 password reset requests / 60 min / IP.
+ * passwordResetLimiter — 15 password reset requests / 60 min / IP.
  * Apply to POST /api/auth/forgot-password to prevent account enumeration.
  */
 export const passwordResetLimiter = createRateLimiter({
   prefix: "password-reset",
-  max: 5,
+  max: 15,
   windowMs: WINDOW_60_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => ipKey(req),
 });
 
 /**
- * redeemLimiter — 5 redemptions / 15 min / authenticated user ID (fallback to IP).
+ * redeemLimiter — 30 redemptions / 15 min / authenticated user ID (fallback to IP).
  * Apply to POST /api/loyalty/redeem to prevent rapid point farming.
  */
 export const redeemLimiter = createRateLimiter({
   prefix: "redeem",
-  max: 5,
+  max: 30,
   windowMs: WINDOW_15_MIN,
   tier: "standard",
   keyGenerator: (req) => userOrIpKey(req),
 });
 
 /**
- * exportDataLimiter — 3 exports / 15 min / authenticated user ID (fallback to IP).
+ * exportDataLimiter — 10 exports / 15 min / authenticated user ID (fallback to IP).
  * Apply to POST /api/users/export-data to prevent bulk personal data extraction.
  */
 export const exportDataLimiter = createRateLimiter({
   prefix: "export-data",
-  max: 3,
+  max: 10,
   windowMs: WINDOW_15_MIN,
   tier: "standard",
   keyGenerator: (req) => userOrIpKey(req),
 });
 
 /**
- * registerUploadLimiter — 10 uploads / 60 min / IP.
+ * registerUploadLimiter — 30 uploads / 60 min / IP.
  * Apply to POST /api/uploads/register (unauthenticated pre-signup document upload).
  * Prevents storage/bandwidth exhaustion by anonymous callers.
  */
 export const registerUploadLimiter = createRateLimiter({
   prefix: "register-upload",
-  max: 10,
+  max: 30,
   windowMs: WINDOW_60_MIN,
   tier: "standard",
   keyGenerator: (req) => ipKey(req),
 });
 
 /**
- * userApiLimiter — 100 requests / 60 s / authenticated user ID (fallback to IP).
+ * userApiLimiter — 300 requests / 60 s / authenticated user ID (fallback to IP).
  * Apply to authenticated /api/* routes that should be throttled per-user.
  */
 export const userApiLimiter = createRateLimiter({
   prefix: "user-api",
-  max: 100,
+  max: 300,
   windowMs: WINDOW_1_MIN,
   tier: "lenient",
   keyGenerator: (req) => userOrIpKey(req),
@@ -530,13 +530,13 @@ export const userApiLimiter = createRateLimiter({
 });
 
 /**
- * uploadLimiter — 30 uploads / 60 min / IP.
+ * uploadLimiter — 60 uploads / 60 min / IP.
  * Applied globally to /api/uploads to prevent storage and bandwidth abuse
  * by unauthenticated or authenticated callers uploading at scale.
  */
 export const uploadLimiter = createRateLimiter({
   prefix: "upload",
-  max: 30,
+  max: 60,
   windowMs: WINDOW_60_MIN,
   tier: "standard",
   keyGenerator: (req) => ipKey(req),
@@ -544,28 +544,26 @@ export const uploadLimiter = createRateLimiter({
 });
 
 /**
- * kycSubmitLimiter — 3 KYC submissions / 60 min / authenticated user ID (fallback to IP).
+ * kycSubmitLimiter — 10 KYC submissions / 60 min / authenticated user ID (fallback to IP).
  * Apply to POST /api/kyc/submit and POST /api/kyc/submit-base64.
- * KYC requires 3 document photos each up to 5 MB — strict throttle prevents
- * storage exhaustion and CNIC-scanning abuse.
  */
 export const kycSubmitLimiter = createRateLimiter({
   prefix: "kyc-submit",
-  max: 3,
+  max: 10,
   windowMs: WINDOW_60_MIN,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => userOrIpKey(req),
   message: { success: false, error: "Too many KYC submissions. Please wait 1 hour before trying again." },
 });
 
 /**
- * orderPlacementLimiter — 15 orders / 15 min / authenticated user ID (fallback to IP).
+ * orderPlacementLimiter — 50 orders / 15 min / authenticated user ID (fallback to IP).
  * Apply to POST /api/orders to prevent COD spam, fake order flooding, and
  * stock-depletion attacks where an attacker places many orders then cancels.
  */
 export const orderPlacementLimiter = createRateLimiter({
   prefix: "order-place",
-  max: 15,
+  max: 50,
   windowMs: WINDOW_15_MIN,
   tier: "standard",
   keyGenerator: (req) => userOrIpKey(req),
@@ -573,21 +571,21 @@ export const orderPlacementLimiter = createRateLimiter({
 });
 
 /**
- * adminActionLimiter — 100 requests / 10 min / admin ID (fallback to IP).
+ * adminActionLimiter — 300 requests / 10 min / admin ID (fallback to IP).
  * Apply to sensitive admin mutation endpoints (bulk deletes, payouts, config
  * changes) to prevent runaway scripts or compromised tokens from causing damage.
  */
 export const adminActionLimiter = createRateLimiter({
   prefix: "admin-action",
-  max: 100,
+  max: 300,
   windowMs: 10 * 60 * 1000,
-  tier: "strict",
+  tier: "standard",
   keyGenerator: (req) => (req as Request & { adminId?: string }).adminId ?? ipKey(req),
   message: { success: false, error: "Admin action rate limit exceeded." },
 });
 
 /**
- * healthCheckLimiter — 300 req / 15 min / IP with skipOnSuccess.
+ * healthCheckLimiter — 1000 req / 15 min / IP with skipOnSuccess.
  * Applied to GET /api/health. Mobile apps poll this endpoint on startup
  * and during connectivity checks; successful pings do not consume quota so
  * normal polling never triggers a 429. Only repeated failures (e.g. a
@@ -595,14 +593,14 @@ export const adminActionLimiter = createRateLimiter({
  */
 export const healthCheckLimiter = createRateLimiter({
   prefix: "health-check",
-  max: process.env.NODE_ENV !== "production" ? 3000 : 300,
+  max: process.env.NODE_ENV !== "production" ? 3000 : 1000,
   windowMs: WINDOW_15_MIN,
   skipOnSuccess: true,
   tier: "lenient",
 });
 
 /**
- * homeFeedLimiter — 300 req / 15 min / IP with skipOnSuccess.
+ * homeFeedLimiter — 1000 req / 15 min / IP with skipOnSuccess.
  * Applied to high-frequency home-screen polling endpoints:
  *   GET /api/recommendations/trending
  *   GET /api/products/flash-deals
@@ -613,7 +611,7 @@ export const healthCheckLimiter = createRateLimiter({
  */
 export const homeFeedLimiter = createRateLimiter({
   prefix: "home-feed",
-  max: process.env.NODE_ENV !== "production" ? 3000 : 300,
+  max: process.env.NODE_ENV !== "production" ? 3000 : 1000,
   windowMs: WINDOW_15_MIN,
   skipOnSuccess: true,
   tier: "lenient",

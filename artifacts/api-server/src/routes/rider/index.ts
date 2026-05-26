@@ -97,10 +97,10 @@ function csrfDoubleSubmit(req: Request, res: Response, next: NextFunction): void
 
 /* ── Ride-action rate limiters (defined early so they can be referenced anywhere in the file) ── */
 
-/** Ride-accept limiter: 10 accept attempts per rider per minute (prevents accept-spam) */
+/** Ride-accept limiter: 30 accept attempts per rider per minute (relaxed for real-world usage) */
 const rideAcceptLimiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: 30,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -110,10 +110,10 @@ const rideAcceptLimiter = rateLimit({
   },
 });
 
-/** Ride-bid limiter: 10 counter bids per rider per minute */
+/** Ride-bid limiter: 30 counter bids per rider per minute */
 const rideBidLimiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: 30,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -123,10 +123,10 @@ const rideBidLimiter = rateLimit({
   },
 });
 
-/** Ride-status limiter: 20 status updates per rider per minute */
+/** Ride-status limiter: 60 status updates per rider per minute (riders update location/status frequently) */
 const rideStatusLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: 60,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -136,10 +136,10 @@ const rideStatusLimiter = rateLimit({
   },
 });
 
-/** OTP brute-force limiter: 5 attempts per rider per minute */
+/** OTP limiter: 15 attempts per rider per minute (relaxed for real-world delivery verification) */
 const otpLimiter = rateLimit({
   windowMs: 60_000,
-  max: 5,
+  max: 15,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -149,10 +149,10 @@ const otpLimiter = rateLimit({
   },
 });
 
-/** Ride-cancel rate limiter: 10 cancellations per rider per minute (spec requirement) */
+/** Ride-cancel rate limiter: 20 cancellations per rider per minute (relaxed for real-world usage) */
 const rideCancelLimiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: 20,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -173,10 +173,10 @@ const conditionalCancelLimiter = (req: Request, res: Response, next: NextFunctio
 /* ── Additional rate limiters (H-03, M-05) ───────────────────────────────── */
 };
 
-/** H-03: Request-feed limiter — 30 polls/min prevents broadcast-endpoint spam */
+/** H-03: Request-feed limiter — 120 polls/min (rider polls every 2-3s during shift) */
 const requestFeedLimiter = rateLimit({
   windowMs: 60_000,
-  max: 30,
+  max: 120,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -186,10 +186,10 @@ const requestFeedLimiter = rateLimit({
   },
 });
 
-/** M-05: Notifications-feed limiter — 30 fetches/min */
+/** M-05: Notifications-feed limiter — 100 fetches/min */
 const notificationsFeedLimiter = rateLimit({
   windowMs: 60_000,
-  max: 30,
+  max: 100,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -199,10 +199,10 @@ const notificationsFeedLimiter = rateLimit({
   },
 });
 
-/** M-05: COD remittance limiter — 10 submissions per rider per 15 minutes */
+/** M-05: COD remittance limiter — 30 submissions per rider per 15 minutes */
 const codRemitLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 10,
+  max: 30,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -212,10 +212,10 @@ const codRemitLimiter = rateLimit({
   },
 });
 
-/** M-05: Wallet deposit limiter — 10 deposits per rider per 15 minutes */
+/** M-05: Wallet deposit limiter — 30 deposits per rider per 15 minutes */
 const riderDepositLimiter = rateLimit({
   windowMs: 15 * 60_000,
-  max: 10,
+  max: 30,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,
@@ -5311,7 +5311,7 @@ export function clearSpoofHits(riderId: string): void {
 
 const locationRateLimiter = rateLimit({
   windowMs: 60_000,
-  max: 60,
+  max: 120,
   keyGenerator: (req) => req.riderId ?? getClientIp(req) ?? "unknown",
   standardHeaders: true,
   legacyHeaders: false,

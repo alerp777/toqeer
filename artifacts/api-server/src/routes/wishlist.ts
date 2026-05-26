@@ -14,7 +14,7 @@ const router: IRouter = Router();
 
 const wishlistMutateLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: 50,
   keyGenerator: (req) => req.customerId ?? req.ip ?? "anon",
   standardHeaders: true,
   legacyHeaders: false,

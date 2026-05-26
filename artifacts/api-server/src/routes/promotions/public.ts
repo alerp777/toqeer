@@ -33,7 +33,7 @@ const router = Router();
 
 const promoActionLimiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: 50,
   keyGenerator: (req) => (req as Request & { customerId?: string }).customerId ?? req.ip ?? "anon",
   standardHeaders: true,
   legacyHeaders: false,
