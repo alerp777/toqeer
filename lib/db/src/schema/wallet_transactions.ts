@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, decimal, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { check, decimal, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -24,7 +24,7 @@ export const walletTransactionsTable = pgTable(
     /** P2P transfer: optional note attached by the sender. */
     p2pNote: text("p2p_note"),
     /** Idempotency key to prevent duplicate transactions from replayed requests. */
-    idempotencyKey: text("idempotency_key").unique(),
+    idempotencyKey: text("idempotency_key"),
   },
   (t) => [
     index("wallet_txn_user_id_idx").on(t.userId),
@@ -32,6 +32,13 @@ export const walletTransactionsTable = pgTable(
     index("wallet_txn_reference_idx").on(t.reference),
     index("idx_wallet_txn_receiver").on(t.receiverId),
     check("wallet_txn_amount_non_negative", sql`${t.amount} >= 0`),
+    // PERF-05: Explicit named unique index on idempotency_key (partial — NULLs excluded).
+    // The deployed index also carries INCLUDE (type, amount) for index-only scan support
+    // during idempotency lookups; the INCLUDE clause is applied via migration 0058 because
+    // Drizzle's index builder does not yet expose INCLUDE column syntax.
+    uniqueIndex("wallet_txn_idempotency_key_idx")
+      .on(t.idempotencyKey)
+      .where(sql`${t.idempotencyKey} IS NOT NULL`),
   ]
 );
 

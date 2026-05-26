@@ -295,18 +295,6 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
     return [dir(usersTable.createdAt)];
   })();
 
-  const finalBaseQuery = db
-    .select({
-      user: usersTable,
-      vendorProfile: vendorProfilesTable,
-      riderProfile: riderProfilesTable,
-    })
-    .from(usersTable)
-    .leftJoin(vendorProfilesTable, eq(usersTable.id, vendorProfilesTable.userId))
-    .leftJoin(riderProfilesTable, eq(usersTable.id, riderProfilesTable.userId))
-    .where(finalWhere)
-    .orderBy(...(sortOrder as [ReturnType<typeof asc>]));
-
   try {
     const globalStatsQuery = db
       .select({
@@ -318,26 +306,47 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
       .from(usersTable)
       .where(isNull(usersTable.deletedAt));
 
-    const condCounts = await db
-      .select({
-        userId: accountConditionsTable.userId,
-        activeCount: count(),
-        maxSeverity: sql<string>`MAX(CASE ${accountConditionsTable.severity}::text WHEN 'ban' THEN 5 WHEN 'suspension' THEN 4 WHEN 'restriction_strict' THEN 3 WHEN 'restriction_normal' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END)`,
-        maxSeverityLabel: sql<string>`(ARRAY['warning','warning','restriction_normal','restriction_strict','suspension','ban'])[1 + MAX(CASE ${accountConditionsTable.severity}::text WHEN 'ban' THEN 5 WHEN 'suspension' THEN 4 WHEN 'restriction_strict' THEN 3 WHEN 'restriction_normal' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END)]`,
-      })
-      .from(accountConditionsTable)
-      .where(eq(accountConditionsTable.isActive, true))
-      .groupBy(accountConditionsTable.userId);
-
-    const condMap = new Map(
-      condCounts.map((c) => [
-        c.userId,
-        { count: Number(c.activeCount), maxSeverity: c.maxSeverityLabel },
-      ])
+    // PERF-02: Single CTE aggregates active account_conditions per user.
+    // LEFT JOIN into the paginated select so condCounts + main fetch = 1 DB round-trip
+    // instead of the previous pattern: separate condCounts query → condMap → enrich loop.
+    const condAgg = db.$with("cond_agg").as(
+      db
+        .select({
+          userId: accountConditionsTable.userId,
+          activeCount: sql<number>`COUNT(*)::int`.as("active_count"),
+          maxSeverityLabel: sql<string>`(ARRAY['warning','warning','restriction_normal','restriction_strict','suspension','ban'])[1 + MAX(CASE ${accountConditionsTable.severity}::text WHEN 'ban' THEN 5 WHEN 'suspension' THEN 4 WHEN 'restriction_strict' THEN 3 WHEN 'restriction_normal' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END)]`.as("max_severity_label"),
+        })
+        .from(accountConditionsTable)
+        .where(eq(accountConditionsTable.isActive, true))
+        .groupBy(accountConditionsTable.userId)
     );
 
-    const enrich = (rows: Awaited<typeof finalBaseQuery>) =>
-      rows.map(({ user: u, vendorProfile, riderProfile }) => ({
+    // All three queries fire in parallel: count, page (with CTE), global stats.
+    const [countResult, rows, [globalStats]] = await Promise.all([
+      db.select({ total: count() }).from(usersTable).where(finalWhere),
+      db
+        .with(condAgg)
+        .select({
+          user: usersTable,
+          vendorProfile: vendorProfilesTable,
+          riderProfile: riderProfilesTable,
+          conditionCount: condAgg.activeCount,
+          maxConditionSeverity: condAgg.maxSeverityLabel,
+        })
+        .from(usersTable)
+        .leftJoin(vendorProfilesTable, eq(usersTable.id, vendorProfilesTable.userId))
+        .leftJoin(riderProfilesTable, eq(usersTable.id, riderProfilesTable.userId))
+        .leftJoin(condAgg, eq(condAgg.userId, usersTable.id))
+        .where(finalWhere)
+        .orderBy(...(sortOrder as [ReturnType<typeof asc>]))
+        .limit(pageSize)
+        .offset((pageNum - 1) * pageSize),
+      globalStatsQuery,
+    ]);
+
+    const total = Number(countResult[0]?.total ?? 0);
+    const enrichedUsers = rows.map(
+      ({ user: u, vendorProfile, riderProfile, conditionCount, maxConditionSeverity }) => ({
         ...stripUser(u),
         roles: (u.roles ?? "customer")
           .split(",")
@@ -346,8 +355,8 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
         walletBalance: parseFloat(u.walletBalance ?? "0"),
         createdAt: u.createdAt.toISOString(),
         updatedAt: u.updatedAt.toISOString(),
-        conditionCount: condMap.get(u.id)?.count || 0,
-        maxConditionSeverity: condMap.get(u.id)?.maxSeverity || null,
+        conditionCount: (conditionCount as number | null) ?? 0,
+        maxConditionSeverity: (maxConditionSeverity as string | null) ?? null,
         isMpinLocked: !!(u.walletPinLockedUntil && u.walletPinLockedUntil.getTime() > Date.now()),
         hasMpin: !!u.walletPinHash,
         vendorProfile:
@@ -371,16 +380,9 @@ router.get("/users", requirePermission("users.view"), async (req, res) => {
                 documents: riderProfile.documents,
               }
             : null,
-      }));
+      })
+    );
 
-    // Pure DB pagination: COUNT query + paginated fetch + global stats run in parallel
-    const [countResult, rows, [globalStats]] = await Promise.all([
-      db.select({ total: count() }).from(usersTable).where(finalWhere),
-      finalBaseQuery.limit(pageSize).offset((pageNum - 1) * pageSize),
-      globalStatsQuery,
-    ]);
-    const total = Number(countResult[0]?.total ?? 0);
-    const enrichedUsers = enrich(rows);
     sendSuccess(res, {
       users: enrichedUsers,
       total,
