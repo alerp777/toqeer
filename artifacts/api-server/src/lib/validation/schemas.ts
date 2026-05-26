@@ -412,6 +412,7 @@ export const VendorRegisterSchema = z
       .or(z.literal("")),
     acceptedTermsVersion: z.string().optional(),
     password: z.string().min(8, "Password must be at least 8 characters").optional(),
+    documents: z.string().optional(),
   })
   .strip();
 
@@ -593,6 +594,12 @@ export const EmailRegisterSchema = z
     vehiclePlate: z.string().optional(),
     vehiclePhoto: z.string().optional(),
     documents: z.string().optional(),
+    businessName: z.string().max(120).optional(),
+    businessType: z.string().optional(),
+    storeAddress: z.string().max(255).optional(),
+    storeName: z.string().max(120).optional(),
+    storeCategory: z.string().max(80).optional(),
+    ntn: z.string().optional(),
     captchaToken: z.string().optional(),
   })
   .strip();

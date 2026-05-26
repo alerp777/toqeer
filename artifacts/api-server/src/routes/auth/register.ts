@@ -116,6 +116,7 @@ router.post(
         username,
         acceptedTermsVersion,
         password,
+        documents,
       } = req.body;
       if (!storeName) {
         sendError(res, "Store name is required", 400);
@@ -282,16 +283,33 @@ router.post(
           .values({ id: generateId(), userId: user.id, role: "vendor" })
           .onConflictDoNothing();
 
+        let docUrls: { cnicFront?: string; cnicBack?: string; storeFront?: string } = {};
+        if (documents && typeof documents === "string") {
+          try { docUrls = JSON.parse(documents); } catch { /* not JSON */ }
+        }
         await tx
           .insert(vendorProfilesTable)
           .values({
             userId: user.id,
             storeName,
             storeCategory: storeCategory || null,
+            businessName: storeName || null,
+            storeAddress: address || null,
+            cnicFrontUrl: docUrls.cnicFront || null,
+            cnicBackUrl: docUrls.cnicBack || null,
+            businessDocUrl: docUrls.storeFront || null,
           })
           .onConflictDoUpdate({
             target: vendorProfilesTable.userId,
-            set: { storeName, storeCategory: storeCategory || null },
+            set: {
+              storeName,
+              storeCategory: storeCategory || null,
+              businessName: storeName || null,
+              storeAddress: address || null,
+              cnicFrontUrl: docUrls.cnicFront || null,
+              cnicBackUrl: docUrls.cnicBack || null,
+              businessDocUrl: docUrls.storeFront || null,
+            },
           });
       });
 
@@ -847,6 +865,10 @@ router.post(
         storeAddress,
         ntn,
         storeName,
+        storeCategory,
+        bankName,
+        bankAccount,
+        bankAccountTitle,
       } = req.body;
 
       const ip = getClientIp(req);
@@ -948,8 +970,12 @@ router.post(
       }
 
       if (userRole === "vendor") {
-        if (!businessName && !storeName) {
-          sendError(res, "Business/store name is required for vendor registration", 400);
+        if (!storeName) {
+          sendError(res, "Store name is required", 400);
+          return;
+        }
+        if (!storeCategory) {
+          sendError(res, "Store category is required", 400);
           return;
         }
       }
@@ -1111,6 +1137,9 @@ router.post(
             address: address || null,
             city: city || null,
             emergencyContact: emergencyContact || null,
+            bankName: bankName || null,
+            bankAccount: bankAccount || null,
+            bankAccountTitle: bankAccountTitle || null,
           });
 
           await tx
@@ -1131,13 +1160,21 @@ router.post(
           }
 
           if (userRole === "vendor") {
+            let docUrls: { cnicFront?: string; cnicBack?: string; storeFront?: string } = {};
+            if (documents && typeof documents === "string") {
+              try { docUrls = JSON.parse(documents); } catch { /* not JSON, treat as plain string */ }
+            }
             await tx.insert(vendorProfilesTable).values({
               userId,
               businessName: businessName || storeName || null,
               storeName: storeName || businessName || null,
               businessType: businessType || null,
               storeAddress: storeAddress || null,
+              storeCategory: storeCategory || null,
               ntn: ntn || null,
+              cnicFrontUrl: docUrls.cnicFront || null,
+              cnicBackUrl: docUrls.cnicBack || null,
+              businessDocUrl: docUrls.storeFront || null,
             });
           }
         });
@@ -1364,6 +1401,12 @@ router.post(
         vehiclePlate,
         vehiclePhoto,
         documents,
+        businessName,
+        businessType,
+        storeAddress,
+        storeName,
+        storeCategory,
+        ntn,
       } = req.body;
       const ip = getClientIp(req);
       const settings = await getCachedSettings();
@@ -1493,6 +1536,25 @@ router.post(
           drivingLicense: drivingLicense ? drivingLicense.trim() : null,
           vehiclePhoto: vehiclePhoto || null,
           documents: documents || null,
+        });
+      }
+
+      if (userRole === "vendor") {
+        let docUrls: { cnicFront?: string; cnicBack?: string; storeFront?: string } = {};
+        if (documents && typeof documents === "string") {
+          try { docUrls = JSON.parse(documents); } catch { /* not JSON */ }
+        }
+        await db.insert(vendorProfilesTable).values({
+          userId,
+          businessName: businessName || storeName || null,
+          storeName: storeName || businessName || null,
+          businessType: businessType || null,
+          storeAddress: storeAddress || null,
+          storeCategory: storeCategory || null,
+          ntn: ntn || null,
+          cnicFrontUrl: docUrls.cnicFront || null,
+          cnicBackUrl: docUrls.cnicBack || null,
+          businessDocUrl: docUrls.storeFront || null,
         });
       }
 

@@ -235,6 +235,9 @@ export const registerSchema = z
     storeAddress: z.string().max(255).optional(),
     ntn: z.string().optional(),
     storeName: z.string().max(120).optional(),
+    bankName: z.string().optional(),
+    bankAccount: z.string().optional(),
+    bankAccountTitle: z.string().optional(),
     captchaToken: z.string().optional(),
   })
   .strip();
