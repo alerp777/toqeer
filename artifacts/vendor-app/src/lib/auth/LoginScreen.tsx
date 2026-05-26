@@ -38,8 +38,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const auth = getVendorAuthConfig(config);
   const { supportPhone } = useAppStatus();
 
-  const [overlay, setOverlay] = useState<"pending" | "rejected" | null>(null);
+  const [overlay, setOverlay] = useState<"pending" | "rejected" | "error" | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | undefined>();
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [pendingStatusMsg, setPendingStatusMsg] = useState<string | null>(null);
   const capturedTokenRef = useRef("");
@@ -56,6 +57,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
         profile = (await api.getMe()) as VendorAuthUser;
       } catch {
         api.clearTokens();
+        setErrorMsg("Unable to verify your account. Please check your connection and try again.");
+        setOverlay("error");
         return;
       }
       const approvalStatus = profile.approvalStatus;
@@ -102,6 +105,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const handleSignOut = useCallback(() => {
     api.clearTokens();
     setOverlay(null);
+    setErrorMsg("");
   }, []);
 
   if (overlay === "pending")
@@ -129,6 +133,32 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           supportPhone={supportPhone}
         />
       </ThemeProvider>
+    );
+  if (overlay === "error")
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 py-10 font-[Inter,system-ui,sans-serif]">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/25">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Something went wrong</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-red-500/90">{errorMsg}</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center justify-center rounded-xl bg-[#1A56DB] px-6 py-3 text-[14px] font-bold text-white transition-all duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A56DB]/60"
+            >
+              Back to Login
+            </button>
+          </div>
+        </div>
+      </div>
     );
 
   return (
